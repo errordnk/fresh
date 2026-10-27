@@ -58,8 +58,9 @@ impl PluginDevWorkspace {
         fresh_dts_source: &Path,
     ) -> Result<Self, String> {
         let cache_dir =
-            dirs::cache_dir().ok_or_else(|| "Could not determine cache directory".to_string())?;
+            dirs::home_dir().ok_or_else(|| "Could not determine cache directory".to_string())?;
         let dir = cache_dir
+            .join(".cache")
             .join("fresh")
             .join("plugin-dev")
             .join(buffer_id.to_string());

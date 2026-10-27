@@ -51,11 +51,12 @@ pub fn get_data_dir() -> std::io::Result<PathBuf> {
     if let Some(dir) = DATA_DIR_OVERRIDE.with(|slot| slot.borrow().clone()) {
         return Ok(dir);
     }
-    let data_dir = dirs::data_dir().ok_or_else(|| {
+    // Same layout on every platform (XDG-style, under the home directory).
+    let home = dirs::home_dir().ok_or_else(|| {
         std::io::Error::new(
             std::io::ErrorKind::NotFound,
             "Could not determine data directory",
         )
     })?;
-    Ok(data_dir.join("fresh"))
+    Ok(home.join(".local").join("share").join("fresh"))
 }

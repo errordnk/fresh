@@ -956,13 +956,16 @@ impl DirectoryContext {
     /// Create a DirectoryContext from the system directories
     /// This should ONLY be called from main()
     pub fn from_system() -> std::io::Result<Self> {
-        let data_dir = dirs::data_dir()
+        // Same layout on every platform (XDG-style, under the home directory).
+        let data_dir = dirs::home_dir()
             .ok_or_else(|| {
                 std::io::Error::new(
                     std::io::ErrorKind::NotFound,
                     "Could not determine data directory",
                 )
             })?
+            .join(".local")
+            .join("share")
             .join("fresh");
 
         let config_dir = Self::default_config_dir().ok_or_else(|| {
