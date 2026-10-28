@@ -387,11 +387,11 @@ impl JsonSchema for LineEndingOption {
 #[serde(rename_all = "lowercase")]
 pub enum VirtualSpaceMode {
     /// Cursor is always clamped to line content (traditional behavior)
-    #[default]
     Off,
     /// Only block (rectangular) selections extend past line ends
     Block,
     /// Cursor movement, clicks, and block selections may go past line ends
+    #[default]
     On,
 }
 
@@ -418,7 +418,7 @@ impl JsonSchema for VirtualSpaceMode {
             "description": "Where the cursor may move beyond the end of a line",
             "type": "string",
             "enum": ["off", "block", "on"],
-            "default": "off"
+            "default": "on"
         })
     }
 }
@@ -1417,8 +1417,8 @@ pub struct EditorConfig {
     #[schemars(extend("x-section" = "Editing"))]
     pub auto_surround: bool,
 
-    /// Let the cursor go past the end of a line. "off" (default): never.
-    /// "block": only block selections. "on": also arrows and clicks; typing there fills with spaces.
+    /// Let the cursor go past the end of a line. "off": never.
+    /// "block": only block selections. "on" (default): also arrows and clicks; typing there fills with spaces.
     #[serde(default)]
     #[schemars(extend("x-section" = "Editing"))]
     pub virtual_space: VirtualSpaceMode,

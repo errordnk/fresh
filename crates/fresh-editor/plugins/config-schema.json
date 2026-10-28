@@ -124,7 +124,7 @@
         "auto_indent": true,
         "auto_close": true,
         "auto_surround": true,
-        "virtual_space": "off",
+        "virtual_space": "on",
         "scroll_offset": 3,
         "default_line_ending": "lf",
         "trim_trailing_whitespace_on_save": false,
@@ -784,9 +784,9 @@
           "x-section": "Editing"
         },
         "virtual_space": {
-          "description": "Let the cursor go past the end of a line. \"off\" (default): never.\n\"block\": only block selections. \"on\": also arrows and clicks; typing there fills with spaces.",
+          "description": "Let the cursor go past the end of a line. \"off\": never.\n\"block\": only block selections. \"on\" (default): also arrows and clicks; typing there fills with spaces.",
           "$ref": "#/$defs/VirtualSpaceMode",
-          "default": "off",
+          "default": "on",
           "x-section": "Editing"
         },
         "scroll_offset": {
@@ -1253,7 +1253,7 @@
         "block",
         "on"
       ],
-      "default": "off"
+      "default": "on"
     },
     "LineEndingOption": {
       "description": "Default line ending format for new files",
