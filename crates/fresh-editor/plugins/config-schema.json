@@ -67,6 +67,7 @@
         "menu_bar_mnemonics": true,
         "show_tab_bar": false,
         "code_folding": false,
+        "gutter_indicators": false,
         "show_status_bar": true,
         "status_bar": {
           "left": [
@@ -560,6 +561,12 @@
         },
         "code_folding": {
           "description": "Code folding: fold markers in the gutter, click-to-fold and the fold\ntoggle command. Default: false",
+          "type": "boolean",
+          "default": false,
+          "x-section": "Display"
+        },
+        "gutter_indicators": {
+          "description": "Reserve a column left of the line numbers for indicators (diagnostics,\nfold arrows, plugin markers such as git changes). Default: false",
           "type": "boolean",
           "default": false,
           "x-section": "Display"

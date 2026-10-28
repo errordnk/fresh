@@ -78,6 +78,7 @@ pub(super) fn render_left_margin(
     // the glyph actually appears in the gutter; subsequent wrapped
     // rows of the same virtual line set `virtual_gutter_glyph` to
     // `None`, so they keep the blank fallback.
+    if crate::config::gutter_indicators_enabled() {
     if let Some((glyph, color)) = ctx.virtual_gutter_glyph {
         let mut style = Style::default().fg(*color);
         if let Some(bg) = indicator_bg {
@@ -135,6 +136,8 @@ pub(super) fn render_left_margin(
             style = style.patch(bg);
         }
         push_span_with_map(line_spans, line_view_map, " ".to_string(), style, None);
+    }
+
     }
 
     let is_cursor_line = lookup_key.is_some_and(|k| k == ctx.cursor_line_start_byte);

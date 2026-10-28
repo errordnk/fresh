@@ -147,7 +147,7 @@ impl MarginConfig {
             width: MIN_LINE_NUMBER_DIGITS,
             enabled: true,
             show_separator: true,
-            separator: "  ".to_string(), // plain gap after the line numbers, no vertical bar
+            separator: " ".to_string(), // plain gap after the line numbers, no vertical bar
             style: Style::default().fg(Color::DarkGray),
             separator_style: Style::default().fg(Color::DarkGray),
         }
@@ -170,8 +170,9 @@ impl MarginConfig {
     /// Format: [indicator (1 char)][line_number (N chars)][separator (3 chars)]
     pub fn total_width(&self) -> usize {
         if self.enabled {
-            // 1 char for indicator column + line number width + separator
-            1 + self.width
+            // indicator column (when enabled) + line number width + separator
+            usize::from(crate::config::gutter_indicators_enabled())
+                + self.width
                 + if self.show_separator {
                     self.separator.chars().count()
                 } else {

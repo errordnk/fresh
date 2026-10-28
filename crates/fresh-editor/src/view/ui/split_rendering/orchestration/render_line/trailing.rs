@@ -163,8 +163,10 @@ fn push_left_margin(
     implicit_gutter_num: usize,
     implicit_cursor_bg: Option<Style>,
 ) {
-    // Diagnostic indicator column.
-    if ctx
+    // Diagnostic indicator column (only when the gutter has one).
+    if !crate::config::gutter_indicators_enabled() {
+        // no indicator column
+    } else if ctx
         .decorations
         .diagnostic_lines
         .contains(&implicit_line_byte)

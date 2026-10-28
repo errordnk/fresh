@@ -1232,6 +1232,12 @@ pub struct EditorConfig {
     #[schemars(extend("x-section" = "Display"))]
     pub code_folding: bool,
 
+    /// Reserve a column left of the line numbers for indicators (diagnostics,
+    /// fold arrows, plugin markers such as git changes). Default: false
+    #[serde(default = "default_false")]
+    #[schemars(extend("x-section" = "Display"))]
+    pub gutter_indicators: bool,
+
     /// Show the status bar at the bottom. Can be toggled at any time.
     /// Default: true
     #[serde(default = "default_true")]
@@ -1781,10 +1787,19 @@ pub fn code_folding_enabled() -> bool {
     CODE_FOLDING_ENABLED.load(std::sync::atomic::Ordering::Relaxed)
 }
 
+static GUTTER_INDICATORS_ENABLED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Whether the gutter has its indicator column (`editor.gutter_indicators`).
+pub fn gutter_indicators_enabled() -> bool {
+    GUTTER_INDICATORS_ENABLED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 impl EditorConfig {
     /// Makes the settings that deep code reads through free functions visible.
     pub fn publish_runtime_flags(&self) {
         CODE_FOLDING_ENABLED.store(self.code_folding, std::sync::atomic::Ordering::Relaxed);
+        GUTTER_INDICATORS_ENABLED.store(self.gutter_indicators, std::sync::atomic::Ordering::Relaxed);
     }
 }
 
@@ -1858,6 +1873,7 @@ impl Default for EditorConfig {
             menu_bar_mnemonics: true,
             show_tab_bar: false,
             code_folding: false,
+            gutter_indicators: false,
             show_status_bar: true,
             status_bar: StatusBarConfig::default(),
             search: SearchConfig::default(),
