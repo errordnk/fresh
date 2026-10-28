@@ -1805,7 +1805,7 @@ impl Editor {
             }
         };
 
-        self.active_window_mut().status_message = Some(message);
+        self.active_window_mut().post_status_message(message);
 
         if success {
             self.reopen_buffers_for_language(language);

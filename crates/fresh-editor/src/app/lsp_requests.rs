@@ -275,7 +275,7 @@ impl Editor {
             let message = self
                 .expired_request_message("textDocument/definition")
                 .unwrap_or_else(|| t!("lsp.no_definition").to_string());
-            self.active_window_mut().status_message = Some(message);
+            self.active_window_mut().post_status_message(message);
             return Ok(());
         }
 
@@ -408,7 +408,7 @@ impl Editor {
             .get(&buffer_id)
             .and_then(|s| s.buffer.file_path().map(|p| p.display().to_string()))
             .unwrap_or_default();
-        self.active_window_mut().status_message = Some(
+        self.active_window_mut().post_status_message(
             t!(
                 "lsp.jumped_to_definition",
                 path = display_path,
@@ -3512,7 +3512,7 @@ impl Editor {
 
         // Check if the name actually changed
         if new_name == original_text {
-            self.active_window_mut().status_message = Some(t!("lsp.name_unchanged").to_string());
+            self.active_window_mut().post_status_message(t!("lsp.name_unchanged").to_string());
             return;
         }
 

@@ -164,7 +164,7 @@ impl Editor {
         );
 
         // Status will be updated by poll_stdin_streaming
-        self.active_window_mut().status_message = Some(t!("stdin.streaming").to_string());
+        self.active_window_mut().post_status_message(t!("stdin.streaming").to_string());
 
         Ok(buffer_id)
     }
@@ -268,13 +268,12 @@ impl Editor {
             }
         }
 
-        self.active_window_mut().status_message = Some(
-            t!(
-                "stdin.read_complete",
-                bytes = self.stdin_stream.last_known_size()
-            )
-            .to_string(),
-        );
+        let message = t!(
+            "stdin.read_complete",
+            bytes = self.stdin_stream.last_known_size()
+        )
+        .to_string();
+        self.active_window_mut().post_status_message(message);
     }
 
     /// Check if stdin streaming is active (not complete).

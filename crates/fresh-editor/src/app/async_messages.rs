@@ -1277,7 +1277,7 @@ impl Editor {
 
                 if let Some(lsp) = self.windows.get_mut(&__active_id).map(|w| &mut w.lsp) {
                     let message = lsp.handle_server_crash(&language, &server_name_ref);
-                    self.active_window_mut().status_message = Some(message);
+                    self.active_window_mut().post_status_message(message);
                 }
             }
         }
@@ -1540,7 +1540,7 @@ impl Editor {
                     meta.auto_revert_enabled = false;
                 }
             }
-            self.active_window_mut().status_message = Some(format!(
+            self.active_window_mut().post_status_message(format!(
                 "Auto-revert disabled: {} is updating too frequently (use Ctrl+Shift+R to re-enable)",
                 path_buf.file_name().unwrap_or_default().to_string_lossy()
             ));
@@ -1895,7 +1895,7 @@ impl Editor {
         let restart_results = lsp.process_pending_restarts();
 
         for (language, success, message) in restart_results {
-            self.active_window_mut().status_message = Some(message.clone());
+            self.active_window_mut().post_status_message(message.clone());
 
             if success {
                 self.resend_did_open_for_language(&language);

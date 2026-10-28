@@ -54,7 +54,7 @@ impl Editor {
             };
 
             let (success, message) = lsp.manual_restart(&language, file_path.as_deref());
-            self.active_window_mut().status_message = Some(message);
+            self.active_window_mut().post_status_message(message);
 
             if success {
                 self.reopen_buffers_for_language(&language);
@@ -481,7 +481,7 @@ impl Editor {
                 let __active_id = self.active_window;
                 if let Some(lsp) = self.windows.get_mut(&__active_id).map(|w| &mut w.lsp) {
                     let (_, message) = lsp.manual_restart(language, file_path.as_deref());
-                    self.active_window_mut().status_message = Some(message);
+                    self.active_window_mut().post_status_message(message);
                 }
                 self.reopen_buffers_for_language(language);
             }
@@ -497,7 +497,7 @@ impl Editor {
 
             if let Some(lsp) = self.windows.get_mut(&__active_id).map(|w| &mut w.lsp) {
                 let (_, message) = lsp.manual_restart(language, file_path.as_deref());
-                self.active_window_mut().status_message = Some(message);
+                self.active_window_mut().post_status_message(message);
             } else {
                 self.active_window_mut().status_message =
                     Some("No LSP manager available".to_string());
@@ -527,7 +527,7 @@ impl Editor {
                     let _ = lsp.manual_restart(language, file_path.as_deref());
                 }
                 self.reopen_buffers_for_language(language);
-                self.active_window_mut().status_message = Some(format!(
+                self.active_window_mut().post_status_message(format!(
                     "Restarting LSP server: {}/{}",
                     language, server_name
                 ));
@@ -546,7 +546,7 @@ impl Editor {
                     self.active_window_mut().status_message =
                         Some(format!("Stopped LSP server: {}/{}", language, server_name));
                 } else {
-                    self.active_window_mut().status_message = Some(format!(
+                    self.active_window_mut().post_status_message(format!(
                         "LSP server not running: {}/{}",
                         language, server_name
                     ));
@@ -636,7 +636,7 @@ impl Editor {
                 self.stop_lsp_server_and_cleanup(&lang, Some(name));
             }
 
-            self.active_window_mut().status_message = Some(format!("LSP disabled for {}.", lang));
+            self.active_window_mut().post_status_message(format!("LSP disabled for {}.", lang));
         } else if let Some(language) = action_key.strip_prefix("enable:") {
             // Symmetric re-enable: flip `enabled = true` on every
             // configured server for this language and persist. The
@@ -667,7 +667,7 @@ impl Editor {
                     );
                 }
             }
-            self.active_window_mut().status_message = Some(format!("LSP enabled for {}.", lang));
+            self.active_window_mut().post_status_message(format!("LSP enabled for {}.", lang));
         }
     }
 

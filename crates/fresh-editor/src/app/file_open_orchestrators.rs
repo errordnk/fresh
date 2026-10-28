@@ -446,7 +446,7 @@ impl Editor {
             } else {
                 t!("buffer.opened", name = display_name)
             };
-            self.active_window_mut().status_message = Some(message.to_string());
+            self.active_window_mut().post_status_message(message.to_string());
         }
 
         Ok(buffer_id)

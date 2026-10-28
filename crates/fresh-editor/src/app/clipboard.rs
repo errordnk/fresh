@@ -145,7 +145,7 @@ impl Editor {
             let text = strip_ansi_codes(&self.copy_block_selection_text());
             if !text.is_empty() {
                 self.clipboard.copy(text);
-                self.active_window_mut().status_message = Some(t!("clipboard.copied").to_string());
+                self.active_window_mut().post_status_message(t!("clipboard.copied").to_string());
             }
             return;
         }
@@ -180,7 +180,7 @@ impl Editor {
             let text = strip_ansi_codes(&text);
             if !text.is_empty() {
                 self.clipboard.copy(text);
-                self.active_window_mut().status_message = Some(t!("clipboard.copied").to_string());
+                self.active_window_mut().post_status_message(t!("clipboard.copied").to_string());
             }
         } else {
             // No selection: copy entire line(s) for each cursor
@@ -424,7 +424,7 @@ impl Editor {
         };
 
         if text.is_empty() {
-            self.active_window_mut().status_message = Some(t!("clipboard.no_text").to_string());
+            self.active_window_mut().post_status_message(t!("clipboard.no_text").to_string());
             return;
         }
 
@@ -580,7 +580,7 @@ impl Editor {
             }
 
             if !deletions.is_empty() {
-                self.active_window_mut().status_message = Some(t!("clipboard.cut").to_string());
+                self.active_window_mut().post_status_message(t!("clipboard.cut").to_string());
             }
         } else {
             // No selection: delete entire line(s) for each cursor
@@ -1329,7 +1329,7 @@ impl Editor {
         if let Some(prompt) = self.active_window_mut().prompt.as_mut() {
             prompt.insert_str(&normalized);
             self.update_prompt_suggestions();
-            self.active_window_mut().status_message = Some(t!("clipboard.pasted").to_string());
+            self.active_window_mut().post_status_message(t!("clipboard.pasted").to_string());
             return;
         }
 
@@ -1466,7 +1466,7 @@ impl Editor {
             self.log_and_apply_event(&event);
         }
 
-        self.active_window_mut().status_message = Some(t!("clipboard.pasted").to_string());
+        self.active_window_mut().post_status_message(t!("clipboard.pasted").to_string());
     }
 
     /// Set clipboard content for testing purposes
@@ -1640,7 +1640,7 @@ impl Editor {
                 self.apply_event_to_active_buffer(&event);
             }
             AddCursorResult::Failed { message } => {
-                self.active_window_mut().status_message = Some(message);
+                self.active_window_mut().post_status_message(message);
             }
         }
     }
@@ -1670,7 +1670,7 @@ impl Editor {
                     Some(t!("clipboard.added_cursor_above", count = total_cursors).to_string());
             }
             AddCursorResult::Failed { message } => {
-                self.active_window_mut().status_message = Some(message);
+                self.active_window_mut().post_status_message(message);
             }
             AddCursorResult::WordSelected { .. } => unreachable!(),
         }
@@ -1701,7 +1701,7 @@ impl Editor {
                     Some(t!("clipboard.added_cursor_below", count = total_cursors).to_string());
             }
             AddCursorResult::Failed { message } => {
-                self.active_window_mut().status_message = Some(message);
+                self.active_window_mut().post_status_message(message);
             }
             AddCursorResult::WordSelected { .. } => unreachable!(),
         }

@@ -740,7 +740,7 @@ impl Editor {
             server_name,
             language
         );
-        self.active_window_mut().status_message = Some(format!("LSP ({}) ready", language));
+        self.active_window_mut().post_status_message(format!("LSP ({}) ready", language));
 
         // A (re)started server has none of the previous process's
         // semantic-token state: whatever we hold is stale and its `resultId`
@@ -819,7 +819,7 @@ impl Editor {
                     timeout.as_secs(),
                 )
             };
-            self.active_window_mut().status_message = Some(message);
+            self.active_window_mut().post_status_message(message);
         }
 
         // Remember it so a feature whose request expired can explain the
@@ -912,7 +912,7 @@ impl Editor {
                     Ok(buffer_id) => {
                         self.active_window_mut()
                             .mark_buffer_read_only(buffer_id, true);
-                        self.active_window_mut().status_message = Some(format!(
+                        self.active_window_mut().post_status_message(format!(
                             "LSP error ({}): {} - See stderr log",
                             language, error
                         ));

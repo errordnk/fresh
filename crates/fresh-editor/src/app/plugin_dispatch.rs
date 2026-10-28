@@ -6743,7 +6743,7 @@ impl Editor {
         }
         if let Err(e) = self.save_config() {
             tracing::error!("Failed to save config: {}", e);
-            self.active_window_mut().status_message = Some(format!(
+            self.active_window_mut().post_status_message(format!(
                 "LSP disabled for {} (config save failed)",
                 language
             ));
@@ -6764,10 +6764,10 @@ impl Editor {
         let __active_id = self.active_window;
         let success = if let Some(lsp) = self.windows.get_mut(&__active_id).map(|w| &mut w.lsp) {
             let (ok, msg) = lsp.manual_restart(&language, file_path.as_deref());
-            self.active_window_mut().status_message = Some(msg);
+            self.active_window_mut().post_status_message(msg);
             ok
         } else {
-            self.active_window_mut().status_message = Some("No LSP manager available".to_string());
+            self.active_window_mut().post_status_message("No LSP manager available".to_string());
             false
         };
         if success {
@@ -6807,7 +6807,7 @@ impl Editor {
                 if let Some(lsp) = self.windows.get_mut(&__active_id).map(|w| &mut w.lsp) {
                     let restarted = lsp.set_language_root_uri(&language, parsed_uri);
                     if restarted {
-                        self.active_window_mut().status_message = Some(format!(
+                        self.active_window_mut().post_status_message(format!(
                             "LSP root updated for {} (restarting server)",
                             language
                         ));

@@ -981,7 +981,7 @@ impl Editor {
 
         self.drop_prompt();
         self.active_window_mut().pending_search_range = None;
-        self.active_window_mut().status_message = Some(cancelled_message);
+        self.active_window_mut().post_status_message(cancelled_message);
 
         // Restore original theme if we were in SelectTheme prompt
         if let Some(original_theme) = theme_to_restore {

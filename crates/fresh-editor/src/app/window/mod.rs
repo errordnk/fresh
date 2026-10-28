@@ -461,10 +461,13 @@ pub struct Window {
     /// messages are naturally invisible.
     pub status_message: Option<String>,
 
-    /// The status message the expiry timer is counting for, and when it first
-    /// appeared. Messages are set from many places, so the timer follows the text
-    /// itself rather than the setters.
-    pub status_message_seen: Option<(String, std::time::Instant)>,
+    /// Bumped by every `post_status_message`, so a message that repeats the text
+    /// on screen still counts as a new one.
+    pub status_message_serial: u64,
+
+    /// The status message (by serial) the expiry timer is counting for, and
+    /// when the clock started.
+    pub status_message_seen: Option<(u64, std::time::Instant)>,
 
     /// Plugin-provided status message (displayed alongside the core
     /// status, also per-window).
@@ -2562,6 +2565,7 @@ impl Window {
             terminal_fg_cache: HashMap::new(),
             event_logs: HashMap::new(),
             status_message: None,
+            status_message_serial: 0,
             status_message_seen: None,
             plugin_status_message: None,
             prompt: None,
@@ -2772,7 +2776,14 @@ impl Window {
     pub fn set_status_message(&mut self, message: String) {
         tracing::info!(target: "status", "{}", message);
         self.plugin_status_message = None;
+        self.post_status_message(message);
+    }
+
+    /// Show `message` in the status bar and restart its expiry clock (unlike
+    /// `set_status_message` this leaves the plugin message alone).
+    pub fn post_status_message(&mut self, message: String) {
         self.status_message = Some(message);
+        self.status_message_serial = self.status_message_serial.wrapping_add(1);
     }
 
     /// Clear this window's status-bar message.
@@ -2784,15 +2795,16 @@ impl Window {
     /// Clear the status message once it has been up for `seconds` (0 = never).
     /// Returns true when it was cleared.
     pub fn expire_status_message(&mut self, seconds: u32) -> bool {
-        let Some(current) = self.status_message.as_ref() else {
+        if self.status_message.is_none() {
             self.status_message_seen = None;
             return false;
-        };
+        }
         let now = std::time::Instant::now();
-        let first_seen = match &self.status_message_seen {
-            Some((text, at)) if text == current => *at,
+        let serial = self.status_message_serial;
+        let first_seen = match self.status_message_seen {
+            Some((seen, at)) if seen == serial => at,
             _ => {
-                self.status_message_seen = Some((current.clone(), now));
+                self.status_message_seen = Some((serial, now));
                 now
             }
         };

@@ -328,7 +328,7 @@ impl Editor {
         }
 
         if !silent {
-            self.active_window_mut().status_message = Some(t!("status.file_saved").to_string());
+            self.active_window_mut().post_status_message(t!("status.file_saved").to_string());
         }
 
         // Mark the event log position as saved (for undo modified tracking)
@@ -406,7 +406,7 @@ impl Editor {
                 }
                 Err(e) => {
                     // Action failed, show error but don't fail the save
-                    self.active_window_mut().status_message = Some(e);
+                    self.active_window_mut().post_status_message(e);
                 }
             }
         }
@@ -868,7 +868,7 @@ impl Editor {
             },
         );
 
-        self.active_window_mut().status_message = Some(t!("status.reverted").to_string());
+        self.active_window_mut().post_status_message(t!("status.reverted").to_string());
         Ok(true)
     }
 
@@ -893,7 +893,7 @@ impl Editor {
             None => return,
         };
 
-        self.active_window_mut().status_message = Some(if enabled {
+        self.active_window_mut().post_status_message(if enabled {
             t!("status.auto_revert_enabled").to_string()
         } else {
             t!("status.auto_revert_disabled").to_string()
@@ -1643,7 +1643,7 @@ impl Editor {
                     _ => None,
                 };
                 if change.is_none() || reported != change {
-                    self.active_window_mut().status_message = Some(format!(
+                    self.active_window_mut().post_status_message(format!(
                         "File {} changed on disk (buffer has unsaved changes)",
                         path.display()
                     ));

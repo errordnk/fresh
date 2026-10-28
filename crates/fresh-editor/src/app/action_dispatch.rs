@@ -48,7 +48,7 @@ impl Editor {
             TrustLevel::Blocked => t!("trust.now_blocked"),
         }
         .to_string();
-        self.active_window_mut().status_message = Some(msg);
+        self.active_window_mut().post_status_message(msg);
 
         // Refresh the plugin-visible state snapshot so `editor.workspaceTrustLevel()`
         // reflects the new level, then notify plugins. The `trust_changed` hook
@@ -214,7 +214,7 @@ impl Editor {
                     Ok(outcome) => Self::save_all_message(&outcome),
                     Err(e) => t!("file.save_failed", error = &format!("{}", e)).to_string(),
                 };
-                self.active_window_mut().status_message = Some(msg);
+                self.active_window_mut().post_status_message(msg);
             }
             Action::Open => {
                 self.start_prompt(t!("file.open_prompt").to_string(), PromptType::OpenFile);
