@@ -251,6 +251,14 @@ fn build(bar: &StatusBar) -> Node<UiMsg> {
         kids.push(row().flex(1));
         kids.extend(side_kids(bar, Side::Right, &bar.right));
     }
+    // One more cell after the right side: the editor's vertical scrollbar
+    // runs down the last column above the bar, and the right side's last
+    // character would otherwise sit right under it.
+    kids.push(
+        row()
+            .w(Sizing::Cells(1))
+            .priority(yields_last::RIGHT),
+    );
     // **The row claims its own gaps.** A press between elements means
     // nothing, and letting it through would put the caret in the buffer
     // below.

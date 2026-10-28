@@ -19,11 +19,12 @@ fn config_with_status_bar(left: Vec<StatusBarElement>, right: Vec<StatusBarEleme
     config
 }
 
-/// The right side's content is right-aligned, one space from the edge: the
-/// default `line:col` is padded on its left, not its right, both with a
-/// message in the middle and without.
+/// The right side's content is right-aligned, two spaces from the edge (its
+/// own padding, then one cell clear of the scrollbar column): the default
+/// `line:col` is padded on its left, not its right, both with a message in
+/// the middle and without.
 #[test]
-fn test_right_side_is_one_space_from_the_edge() {
+fn test_right_side_is_two_spaces_from_the_edge() {
     let mut harness = EditorTestHarness::create(
         100,
         30,
@@ -41,8 +42,8 @@ fn test_right_side_is_one_space_from_the_edge() {
     for _ in 0..2 {
         let status = harness.get_status_bar();
         assert!(
-            status.ends_with(" 1:1 ") && !status.ends_with("  "),
-            "line:col must end one space from the right edge.\nStatus bar: {status:?}"
+            status.ends_with(" 1:1  ") && !status.ends_with("   "),
+            "line:col must end two spaces from the right edge.\nStatus bar: {status:?}"
         );
         harness.editor_mut().set_status_message("Saved".to_string());
         harness.render().unwrap();
