@@ -7024,7 +7024,7 @@ fn run_event_loop(
     key_translator: &KeyTranslator,
     terminal_modes: &mut TerminalModes,
 ) -> AnyhowResult<()> {
-    use fresh::server::input_parser::InputParser;
+    use fresh::server::input_parser::ClientInputParser;
     use fresh_winterm::{VtInputEvent, VtInputReader};
 
     let old_console_mode = fresh_winterm::enable_vt_input()?;
@@ -7044,7 +7044,7 @@ fn run_event_loop(
     // from VT mouse sequences under high event rates (1003 all-motion).
     let reader = VtInputReader::spawn();
 
-    let mut input_parser = InputParser::new();
+    let mut input_parser = ClientInputParser::new();
     let mut event_buffer: std::collections::VecDeque<InputEvent> =
         std::collections::VecDeque::new();
 
@@ -7097,8 +7097,9 @@ fn run_event_loop(
             }
 
             if !got_any {
-                // Timed out — flush standalone ESC if any (MS Edit pattern)
-                let flushed = input_parser.parse(b"");
+                // Timed out — a lone ESC that nothing continued is the Escape key.
+                // (`parse(b"")` never resolves it; only an idle flush does.)
+                let flushed = input_parser.flush_idle(std::time::Instant::now());
                 for ev in flushed {
                     event_buffer.push_back(ev);
                 }
