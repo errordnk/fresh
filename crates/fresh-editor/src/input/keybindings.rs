@@ -467,6 +467,8 @@ pub enum Action {
     AddCursorNextMatch,
     AddCursorsToLineEnds,
     RemoveSecondaryCursors,
+    /// Escape: dismiss secondary cursors/selections first, quit when there is nothing left.
+    DismissOrQuit,
 
     // File operations
     Save,
@@ -1074,6 +1076,7 @@ impl Action {
             "add_cursor_next_match" => AddCursorNextMatch,
             "add_cursors_to_line_ends" => AddCursorsToLineEnds,
             "remove_secondary_cursors" => RemoveSecondaryCursors,
+            "dismiss_or_quit" => DismissOrQuit,
 
             "save" => Save,
             "save_as" => SaveAs,
@@ -3120,6 +3123,7 @@ impl KeybindingResolver {
             Action::AddCursorNextMatch => t!("action.add_cursor_next_match"),
             Action::AddCursorsToLineEnds => t!("action.add_cursors_to_line_ends"),
             Action::RemoveSecondaryCursors => t!("action.remove_secondary_cursors"),
+            Action::DismissOrQuit => t!("action.dismiss_or_quit"),
             Action::Save => t!("action.save"),
             Action::SaveAs => t!("action.save_as"),
             Action::SaveAll => t!("action.save_all"),
@@ -4774,10 +4778,10 @@ mod tests {
             Action::Quit
         );
 
-        // In normal context, should still be RemoveSecondaryCursors
+        // In normal context, should still be DismissOrQuit
         assert_eq!(
             resolver.resolve(&esc_event, KeyContext::Normal),
-            Action::RemoveSecondaryCursors
+            Action::DismissOrQuit
         );
     }
 

@@ -14,7 +14,7 @@
     "theme": {
       "description": "Color theme name",
       "$ref": "#/$defs/ThemeOptions",
-      "default": "high-contrast"
+      "default": "nord-darker"
     },
     "locale": {
       "description": "UI language. If not set, detected from LC_ALL, LC_MESSAGES or LANG.",

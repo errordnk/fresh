@@ -708,7 +708,7 @@ fn default_keybinding_map_schema() -> KeybindingMapName {
 }
 
 fn default_theme_name() -> ThemeName {
-    ThemeName("high-contrast".to_string())
+    ThemeName("nord-darker".to_string())
 }
 
 /// Resolved whitespace indicator visibility for a buffer.

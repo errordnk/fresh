@@ -291,6 +291,7 @@
   "action.redraw_screen": "Redraw screen",
   "action.remove_ruler": "Remove ruler",
   "action.remove_secondary_cursors": "Remove secondary cursors",
+  "action.dismiss_or_quit": "Dismiss cursors and selection, or quit",
   "action.replace": "Replace text in buffer",
   "action.reset_buffer_settings": "Reset buffer settings to config",
   "action.revert": "Revert to saved file",

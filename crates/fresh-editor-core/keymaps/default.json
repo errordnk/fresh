@@ -905,10 +905,10 @@
       "when": "normal"
     },
     {
-      "comment": "Normal context - Cancel/Escape",
+      "comment": "Normal context - Escape dismisses cursors/selection, then quits",
       "key": "Escape",
       "modifiers": [],
-      "action": "remove_secondary_cursors",
+      "action": "dismiss_or_quit",
       "args": {},
       "when": "normal"
     },

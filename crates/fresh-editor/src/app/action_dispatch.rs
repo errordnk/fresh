@@ -1193,6 +1193,19 @@ impl Editor {
                 self.active_window_mut().file_explorer_toggle_select()
             }
             Action::FileExplorerSelectAll => self.active_window_mut().file_explorer_select_all(),
+            Action::DismissOrQuit => {
+                // Esc dismisses extra cursors and selections first; with nothing
+                // left to dismiss it quits.
+                let nothing_to_dismiss = {
+                    let cursors = self.active_cursors();
+                    cursors.count() <= 1 && cursors.iter().all(|(_, c)| c.collapsed())
+                };
+                if nothing_to_dismiss {
+                    self.quit();
+                } else {
+                    self.handle_action(Action::RemoveSecondaryCursors)?;
+                }
+            }
             Action::RemoveSecondaryCursors => {
                 // Convert action to events and apply them
                 if let Some(events) = self
