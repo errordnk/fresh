@@ -650,13 +650,15 @@ mod tests {
 
     #[test]
     fn test_margin_config_total_width() {
+        // The indicator column is there only while gutter indicators are on.
+        let indicator = usize::from(crate::config::gutter_indicators_enabled());
         let mut config = MarginConfig::left_default();
         config.width = 4;
         config.separator = " │ ".to_string();
-        assert_eq!(config.total_width(), 8); // 1 (indicator) + 4 (line num) + 3 (separator)
+        assert_eq!(config.total_width(), indicator + 7); // 4 (line num) + 3 (separator)
 
         config.show_separator = false;
-        assert_eq!(config.total_width(), 5); // 1 (indicator) + 4 (line num)
+        assert_eq!(config.total_width(), indicator + 4); // 4 (line num)
 
         config.enabled = false;
         assert_eq!(config.total_width(), 0);
@@ -761,26 +763,30 @@ mod tests {
         // scale with the actual line count instead of being pinned to a fixed
         // minimum of 4 digits.
         let mut manager = MarginManager::new();
+        // The indicator column is there only while gutter indicators are on.
+        let indicator = usize::from(crate::config::gutter_indicators_enabled());
 
-        // Small buffer — 2-digit minimum, gutter = 1 (indicator) + 2 + 3 (" │ ")
+        // Small buffer — 2-digit minimum, gutter = 2 + 1 (" ")
         manager.update_width_for_buffer(10, true);
-        assert_eq!(manager.left_total_width(), 6);
+        assert_eq!(manager.left_total_width(), indicator + 3);
 
-        // 3-digit line count — gutter grows to 7
+        // 3-digit line count — the gutter grows by one
         manager.update_width_for_buffer(250, true);
-        assert_eq!(manager.left_total_width(), 7);
+        assert_eq!(manager.left_total_width(), indicator + 4);
 
-        // 4-digit line count — gutter grows to 8
+        // 4-digit line count — and by one more
         manager.update_width_for_buffer(5000, true);
-        assert_eq!(manager.left_total_width(), 8);
+        assert_eq!(manager.left_total_width(), indicator + 5);
     }
 
     #[test]
     fn test_margin_manager_without_line_numbers() {
         let mut manager = MarginManager::new();
         manager.configure_for_line_numbers(false);
-        // The digits and separator go; the one-cell indicator slot stays.
-        assert_eq!(manager.left_total_width(), 1);
+        // The digits and separator go; the indicator slot stays while gutter
+        // indicators are on.
+        let indicator = usize::from(crate::config::gutter_indicators_enabled());
+        assert_eq!(manager.left_total_width(), indicator);
 
         let content = manager.render_line(5, MarginPosition::Left, 100, false);
         assert!(content.is_empty());

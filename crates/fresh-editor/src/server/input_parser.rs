@@ -124,14 +124,16 @@ mod tests {
 
     /// The guard: an OSC reply whose payload arrives (even on a later parse
     /// call) before the stream goes idle is committed as a string sequence —
-    /// no amount of idling may tear it into keystrokes.
+    /// no amount of idling may tear it into keystrokes. Complete, an OSC 52
+    /// reply (the terminal answering a clipboard query) is the one paste it
+    /// makes.
     #[test]
     fn osc_reply_split_across_parses_stays_swallowed() {
         let mut p = ClientInputParser::new();
         assert!(p.parse(b"\x1b]").is_empty());
         assert!(p.parse(b"52;c;SGVsbG8=").is_empty());
         assert!(p.flush_idle(Instant::now() + ESC_GRACE).is_empty());
-        assert!(p.parse(b"\x1b\\").is_empty());
+        assert_eq!(p.parse(b"\x1b\\"), vec![Event::Paste("Hello".to_string())]);
         assert!(p.flush_idle(Instant::now() + ESC_GRACE).is_empty());
     }
 }

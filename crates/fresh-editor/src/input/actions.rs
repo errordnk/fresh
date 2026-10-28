@@ -5373,6 +5373,9 @@ mod tests {
             crate::config::LARGE_FILE_THRESHOLD_BYTES as usize,
             test_fs(),
         );
+        // The cursor kept to the text: with virtual space (the default) Down
+        // on the last line goes nowhere at all.
+        state.buffer_settings.virtual_space = crate::config::VirtualSpaceMode::Off;
         let mut cursors = Cursors::new();
 
         // Insert a single line

@@ -1299,6 +1299,10 @@ mod integration_tests {
         let (conn, mut output, shutdown_handle, server_handle, socket_paths, temp_dir) =
             setup_editor_server_e2e("esc-mouse");
 
+        // A selection for the Escape to dismiss: with nothing to dismiss,
+        // Escape quits the editor.
+        conn.write_data(b"sel\x1b[1;2D").unwrap();
+
         // Send ESC (0x1b) followed by mouse motion event (SGR format)
         // This is the exact sequence: user presses Escape, then moves mouse.
         // The mouse event is: CSI < 35 ; 10 ; 5 M  (motion, no button, at col 10 row 5)
@@ -1380,6 +1384,10 @@ mod integration_tests {
         // Type text first
         conn.write_data(b"hello").unwrap();
         read_until_contains(&conn, &mut output, "hello");
+
+        // A selection (Shift+Left) for the Escape to dismiss: with nothing
+        // to dismiss, Escape quits the editor.
+        conn.write_data(b"\x1b[1;2D").unwrap();
 
         // Send ESC then Down arrow (CSI B = ESC [ B)
         // If the bug exists, ESC+ESC would be consumed as Alt+Esc,

@@ -313,24 +313,28 @@ impl BufferViewState {
     /// global value there would silently undo "Toggle X (Current Buffer)" the
     /// next time that buffer was activated. Fields with no override
     /// (`None`, the case for every freshly created view state) are unaffected.
-    /// Whether the gutter should draw fold arrows in this split.
+    /// Whether the gutter should draw fold arrows in this split: only while
+    /// code folding is on, and then as [`Self::fold_indicators_wanted`] says.
+    pub fn fold_indicators_visible(&self) -> bool {
+        crate::config::code_folding_enabled() && self.fold_indicators_wanted()
+    }
+
+    /// Whether this split wants fold arrows, code folding being on.
     ///
     /// The user's own toggle wins outright; a plugin (markdown compose)
     /// supplies the default when they have not expressed one; failing both,
     /// they show. That ordering is what lets "Toggle Folding Indicators"
     /// still do something while a mode is hiding them.
-    pub fn fold_indicators_visible(&self) -> bool {
-        crate::config::code_folding_enabled()
-            && self
-                .fold_indicators_override
-                .or(self.fold_indicators_plugin_override)
-                .unwrap_or(true)
+    pub fn fold_indicators_wanted(&self) -> bool {
+        self.fold_indicators_override
+            .or(self.fold_indicators_plugin_override)
+            .unwrap_or(true)
     }
 
     /// Whether the gutter should draw line numbers in this split, given the
     /// global `editor.line_numbers` default.
     ///
-    /// Same precedence as [`Self::fold_indicators_visible`], and for the same
+    /// Same precedence as [`Self::fold_indicators_wanted`], and for the same
     /// reason: the user's own pin wins outright, a plugin (markdown compose)
     /// supplies the default when they have not expressed one, and failing both
     /// the global setting decides. That ordering is what lets "Toggle Line
@@ -1976,30 +1980,35 @@ mod tests {
     #[test]
     fn test_fold_indicator_precedence() {
         let mut vs = BufferViewState::new(80, 24);
-        assert!(vs.fold_indicators_visible(), "default is on");
+        assert!(vs.fold_indicators_wanted(), "default is on");
+        assert_eq!(
+            vs.fold_indicators_visible(),
+            crate::config::code_folding_enabled(),
+            "and drawn only while code folding is on"
+        );
 
         vs.fold_indicators_plugin_override = Some(false);
         assert!(
-            !vs.fold_indicators_visible(),
+            !vs.fold_indicators_wanted(),
             "a plugin can hide them when the user has no opinion",
         );
 
         vs.fold_indicators_override = Some(true);
         assert!(
-            vs.fold_indicators_visible(),
+            vs.fold_indicators_wanted(),
             "the user's own choice overrules the plugin's",
         );
 
         vs.fold_indicators_plugin_override = None;
         assert!(
-            vs.fold_indicators_visible(),
+            vs.fold_indicators_wanted(),
             "withdrawing the plugin's opinion leaves the user's choice standing",
         );
 
         vs.fold_indicators_override = Some(false);
         vs.fold_indicators_plugin_override = Some(true);
         assert!(
-            !vs.fold_indicators_visible(),
+            !vs.fold_indicators_wanted(),
             "a user who hid them keeps them hidden whatever the plugin says",
         );
     }

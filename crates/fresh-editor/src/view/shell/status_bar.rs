@@ -421,7 +421,11 @@ mod tests {
         );
         let (left, right) = fitted(&bar, 100);
         assert_eq!(right, vec![20], "the clickable element keeps its width");
-        assert_eq!(left, vec![80], "and the message takes exactly the rest");
+        assert_eq!(
+            left,
+            vec![79],
+            "and the message takes exactly the rest, the scrollbar's cell aside"
+        );
     }
 
     /// And the reservation itself: the right side keeps its width and the left
@@ -439,7 +443,11 @@ mod tests {
             r.width, 30,
             "the right side keeps every column it asked for"
         );
-        assert_eq!(r.x + r.width, w, "and sits against the edge");
+        assert_eq!(
+            r.x + r.width,
+            w - 1,
+            "and ends one cell from the edge, clear of the scrollbar column"
+        );
         assert_eq!(
             l.x + l.width,
             r.x,
@@ -598,8 +606,9 @@ mod tests {
         (0..w).map(|x| buf[(x, y)].symbol().to_string()).collect()
     }
 
-    /// Left elements from the left edge, right elements against the right one,
-    /// separators between neighbours on the same side and nowhere else.
+    /// Left elements from the left edge, right elements against the right one
+    /// (but for the scrollbar column's cell), separators between neighbours on
+    /// the same side and nowhere else.
     #[test]
     fn the_two_sides_tile_from_their_own_edges() {
         let got = row_text(
@@ -610,7 +619,7 @@ mod tests {
             40,
             3,
         );
-        assert_eq!(got, "main.rs | 1:1                 UTF-8 | LF");
+        assert_eq!(got, "main.rs | 1:1                UTF-8 | LF ");
     }
 
     /// A separator sits *between* elements, so one element on a side has none
@@ -634,8 +643,8 @@ mod tests {
             vec![plain("main.rs", "text")],
             vec![plain("UTF-8", "encoding")],
         );
-        assert_eq!(row_text(bar.clone(), 13, 3), "main.rs UTF-8");
-        assert_eq!(row_text(bar, 12, 3), "main.rsUTF-8");
+        assert_eq!(row_text(bar.clone(), 14, 3), "main.rs UTF-8 ");
+        assert_eq!(row_text(bar, 13, 3), "main.rsUTF-8 ");
     }
 
     /// Every element's rectangle is read back from the tree: a clickable one
@@ -654,13 +663,14 @@ mod tests {
         let size = Rect::new(0, 0, 40, 3);
 
         let at = |id| rect_of(&ui, &clickable_key(id), size).expect("keyed by its id");
-        // "UTF-8 | LF" ends at the right edge: LF at 38..40, UTF-8 at 30..35.
+        // "UTF-8 | LF" ends a cell before the right edge: LF at 37..39, UTF-8
+        // at 29..34.
         let (enc, le) = (
             at(StatusBarClickable::Encoding),
             at(StatusBarClickable::LineEnding),
         );
-        assert_eq!((enc.x, enc.width), (30, 5));
-        assert_eq!((le.x, le.width), (38, 2));
+        assert_eq!((enc.x, enc.width), (29, 5));
+        assert_eq!((le.x, le.width), (37, 2));
 
         let segs = segments(&ui, &bar, size);
         assert_eq!(segs.len(), 3, "every element, clickable or not");
@@ -670,7 +680,7 @@ mod tests {
         );
         assert_eq!(
             (segs[2].text.as_str(), segs[2].x, segs[2].side),
-            ("LF", 38, "right")
+            ("LF", 37, "right")
         );
     }
 

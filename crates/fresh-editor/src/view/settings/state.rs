@@ -3153,7 +3153,7 @@ mod tests {
   "properties": {
     "theme": {
       "type": "string",
-      "enum": ["dark", "light", "high-contrast"],
+      "enum": ["dark", "light", "high-contrast", "nord-darker"],
       "default": "dark"
     },
     "tab_size": {
@@ -3177,8 +3177,8 @@ mod tests {
   "properties": {
     "theme": {
       "type": "string",
-      "enum": ["dark", "light", "high-contrast"],
-      "default": "high-contrast"
+      "enum": ["dark", "light", "high-contrast", "nord-darker"],
+      "default": "nord-darker"
     }
   },
   "$defs": {}
@@ -3369,7 +3369,7 @@ mod tests {
         assert!(state.has_changes());
         assert!(state.current_item().unwrap().modified);
 
-        state.select_dropdown_option(2); // high-contrast, matching Config::default()
+        state.select_dropdown_option(3); // nord-darker, matching Config::default()
         assert!(!state.has_changes());
         let item = state.current_item().unwrap();
         assert!(!item.modified);
@@ -3391,7 +3391,7 @@ mod tests {
         assert_eq!(item.layer_source, ConfigLayer::System);
         assert_eq!(
             item.control.dropdown_selected_value(),
-            Some("high-contrast"),
+            Some("nord-darker"),
             "theme should render as a dropdown showing the default"
         );
     }

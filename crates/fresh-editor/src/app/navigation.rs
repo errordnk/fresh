@@ -337,7 +337,12 @@ mod tests {
             let gutter = viewport.gutter_width(&state.buffer);
             (viewport.width as usize, gutter, viewport.left_column)
         };
-        assert!(gutter > 6, "the drawn gutter is wider than six: {gutter}");
+        // Wider than a buffer under a hundred lines draws (two digits and a
+        // space).
+        assert!(
+            gutter > 3,
+            "the drawn gutter is wider than a two-digit one: {gutter}"
+        );
         // The text area: the pane less the gutter and the scrollbar.
         let text = width - gutter - 1;
         let margin = (text / 8).min(8);
