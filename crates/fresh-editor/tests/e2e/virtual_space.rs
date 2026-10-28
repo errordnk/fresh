@@ -440,32 +440,41 @@ fn test_click_below_last_line_places_virtual_cursor() {
     harness.assert_buffer_content("ab");
 }
 
-/// ArrowDown at the bottom of the buffer floats the cursor onto virtual
-/// lines below the end, one per press, keeping the goal column; ArrowUp
-/// steps back through them. Typing materializes the lines.
+/// ArrowDown at the bottom of the buffer stays on the last line, even with
+/// virtual space on (as in micro); ArrowUp then moves straight away,
+/// however many times Down was pressed.
 #[test]
-fn test_arrow_down_extends_below_eof() {
+fn test_arrow_down_at_eof_stays_on_the_last_line() {
     let mut harness = harness_with_mode(VirtualSpaceMode::On);
-    harness.load_buffer_from_text("ab").unwrap();
+    harness.load_buffer_from_text("ab\nxyz").unwrap();
 
-    let (x0, y0) = harness.find_text_on_screen("ab").expect("line visible");
+    let (x0, y0) = harness.find_text_on_screen("xyz").expect("line visible");
 
+    harness
+        .send_key(KeyCode::Down, KeyModifiers::NONE)
+        .unwrap();
     harness.send_key(KeyCode::End, KeyModifiers::NONE).unwrap();
-    harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
+    for _ in 0..3 {
+        harness
+            .send_key(KeyCode::Down, KeyModifiers::NONE)
+            .unwrap();
+    }
     harness.render().unwrap();
-    assert_eq!(harness.screen_cursor_position(), (x0 + 2, y0 + 1));
+    assert_eq!(
+        harness.screen_cursor_position(),
+        (x0 + 3, y0),
+        "Down at the last line goes nowhere"
+    );
 
-    harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
-    harness.render().unwrap();
-    assert_eq!(harness.screen_cursor_position(), (x0 + 2, y0 + 2));
-
+    // One Up reaches the shorter line above, past its end at the kept column.
     harness.send_key(KeyCode::Up, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
-    assert_eq!(harness.screen_cursor_position(), (x0 + 2, y0 + 1));
-
-    // Nothing was inserted by the movement; typing materializes one line.
-    harness.type_text("X").unwrap();
-    harness.assert_buffer_content("ab\n  X");
+    assert_eq!(
+        harness.screen_cursor_position(),
+        (x0 + 3, y0 - 1),
+        "a single Up reaches the line above"
+    );
+    harness.assert_buffer_content("ab\nxyz");
 }
 
 /// With virtual space off, ArrowDown at the bottom stays put.
@@ -672,16 +681,16 @@ fn test_status_bar_reports_virtual_line_below_eof() {
     let mut harness = harness_with_mode(VirtualSpaceMode::On);
     harness.load_buffer_from_text("ab").unwrap();
 
-    // End of the only line ("ab"), then float two virtual lines below it.
-    harness.send_key(KeyCode::End, KeyModifiers::NONE).unwrap();
-    harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
-    harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
+    // A click two virtual lines below the only line ("ab"), at its end
+    // column.
+    let (x0, y0) = harness.find_text_on_screen("ab").expect("line visible");
+    harness.mouse_click(x0 + 2, y0 + 2).unwrap();
     harness.render().unwrap();
 
     // Two lines below line 1, keeping the goal column (Col 3).
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 3, Col 3"),
+        status.contains(" 3:3 "),
         "status bar tracks the virtual line and column, got: {status}"
     );
 }

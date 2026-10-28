@@ -2237,10 +2237,6 @@ fn handle_vertical_down(
             cursor.deselect_on_move,
             extend_selection,
         );
-        // Floating below the buffer's end is a move of its own: the byte
-        // position parks at the end while the virtual line count grows, so the
-        // event has to go out even though the position does not change.
-        let mut floated = false;
         let new_pos = if let Some((next_line_start, next_line_content)) = next {
             let next_line_text = next_line_content.trim_end_matches('\n');
             let byte_offset = byte_offset_at_visual_column(next_line_text, goal_visual_column);
@@ -2251,15 +2247,12 @@ fn handle_vertical_down(
                 landed
             }
         } else if !extend_selection && cursor.anchor.is_none() && vs_mode.cursor_beyond_eol() {
-            // Virtual space: float one line deeper below the buffer's end,
-            // keeping the goal column. The byte position parks at the end; the
-            // line count is installed when the event applies (see
-            // pending_virtual_lines). This comes before the plain boundary
-            // answer below, which would otherwise swallow the float.
-            let vlines = cursor_virtual_lines(vs_mode, &state.buffer, cursor);
-            state.pending_virtual_lines.push((cursor_id, vlines + 1));
-            floated = true;
-            state.buffer.len()
+            // Virtual space: the last line is as far down as Down goes, and
+            // the cursor keeps its column there (as in micro). It does not
+            // float below the buffer's end: those presses went nowhere you
+            // could see, yet Up had to undo every one of them before the
+            // cursor moved.
+            from_pos
         } else if cursor.position < state.buffer.len() || cursor.anchor.is_some() {
             // The cursor is on the last line, so Down goes as far down as
             // there is: the end of the buffer. The mirror of the first-line
@@ -2273,7 +2266,7 @@ fn handle_vertical_down(
         };
 
         // See the mirror of this in `handle_vertical_up`.
-        if floated || new_pos != cursor.position || new_anchor != cursor.anchor {
+        if new_pos != cursor.position || new_anchor != cursor.anchor {
             events.push(Event::MoveCursor {
                 cursor_id,
                 old_position: cursor.position,
