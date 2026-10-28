@@ -818,6 +818,9 @@ pub struct Editor {
     /// entries, each capturing the OS clipboard contents at the moment
     /// its own background thread starts.
     pub(super) paste_pending: std::collections::HashMap<u64, crate::app::clipboard::PendingPaste>,
+    /// Set while a Ctrl+V waits for the terminal's answer to an OSC 52
+    /// clipboard query; the answer arrives as a paste event.
+    pub(super) terminal_paste_deadline: Option<std::time::Instant>,
 
     /// Set by `paste()` when it took the slow placeholder path. The
     /// input dispatch reads and clears this to suppress the

@@ -215,6 +215,31 @@ impl Clipboard {
         self.use_system_clipboard = config.use_system_clipboard;
     }
 
+    /// True when a paste should ask the terminal for its clipboard (OSC 52
+    /// query) instead of reading the local system clipboard: over SSH, or where
+    /// there is no local clipboard to read (no display server). The terminal's
+    /// clipboard is the one the user means there. The answer arrives as a paste
+    /// event (see the input parser).
+    pub fn prefers_terminal_read(&self) -> bool {
+        if !self.use_osc52 || self.internal_only || self.session_mode {
+            return false;
+        }
+        static LOCAL_CLIPBOARD_OK: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+        let over_ssh =
+            std::env::var_os("SSH_CONNECTION").is_some() || std::env::var_os("SSH_TTY").is_some();
+        over_ssh || !*LOCAL_CLIPBOARD_OK.get_or_init(|| arboard::Clipboard::new().is_ok())
+    }
+
+    /// Ask the terminal to send its clipboard (`OSC 52 ; c ; ?`).
+    pub fn request_terminal_clipboard(&self) {
+        use std::io::Write as _;
+        let mut out = stdout();
+        #[allow(clippy::let_underscore_must_use)]
+        let _ = out.write_all(b"\x1b]52;c;?\x07");
+        #[allow(clippy::let_underscore_must_use)]
+        let _ = out.flush();
+    }
+
     /// Enable internal-only mode (for testing)
     /// When enabled, paste() uses internal clipboard only, ignoring system clipboard
     pub fn set_internal_only(&mut self, enabled: bool) {

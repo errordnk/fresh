@@ -34,6 +34,10 @@ use super::Editor;
 /// recognise a stalled paste before they've moved on.
 pub(crate) const PASTE_ASYNC_DEADLINE: Duration = Duration::from_millis(500);
 
+/// How long a Ctrl+V waits for the terminal's answer to its clipboard query
+/// before falling back to the local clipboard.
+pub(crate) const TERMINAL_PASTE_WAIT: Duration = Duration::from_millis(700);
+
 /// Inline-wait budget at the top of `paste()`. Before going async, we
 /// race the arboard read against this duration; if the clipboard
 /// responds within the window (the common case on a responsive
@@ -648,6 +652,23 @@ impl Editor {
     /// - Selection replacement (deletes selection before inserting)
     /// - Atomic undo (single undo step for entire operation)
     pub fn paste(&mut self) {
+        // Where the terminal owns the clipboard (SSH, no display), ask it:
+        // the reply comes back as a paste event. If none arrives in time
+        // (a terminal without OSC 52 query support) `check_paste_deadline`
+        // falls back to the local read below.
+        if self.active_window().prompt.is_none()
+            && !self.active_window().focused_terminal_live()
+            && self.clipboard.prefers_terminal_read()
+        {
+            self.clipboard.request_terminal_clipboard();
+            self.terminal_paste_deadline = Some(Instant::now() + TERMINAL_PASTE_WAIT);
+            return;
+        }
+        self.paste_local();
+    }
+
+    /// Paste from the local system clipboard (or the internal one).
+    pub(crate) fn paste_local(&mut self) {
         // Defensive fast-paths. Prompt/terminal/file-explorer paste
         // routes go through their own actions (PromptPaste,
         // TerminalPaste, FileExplorerPaste); the buffer paste path
@@ -1096,6 +1117,11 @@ impl Editor {
     /// should redraw to refresh the now-empty placeholder cells).
     pub(crate) fn check_paste_deadline(&mut self) -> bool {
         let now = Instant::now();
+        if self.terminal_paste_deadline.is_some_and(|d| now >= d) {
+            // The terminal never answered the clipboard query.
+            self.terminal_paste_deadline = None;
+            self.paste_local();
+        }
         let expired_ids: Vec<u64> = self
             .paste_pending
             .iter()
@@ -1137,7 +1163,9 @@ impl Editor {
     /// on the bridge plus a few cheap checks; no rendering work
     /// happens unless something actually changed.
     pub(crate) fn next_paste_deadline(&self) -> Option<Instant> {
-        let cancel_deadline = self.paste_pending.values().map(|p| p.deadline).min()?;
+        let Some(cancel_deadline) = self.paste_pending.values().map(|p| p.deadline).min() else {
+            return self.terminal_paste_deadline;
+        };
         let drain_hint = Instant::now() + Duration::from_millis(1);
         Some(cancel_deadline.min(drain_hint))
     }
@@ -1287,6 +1315,7 @@ impl Editor {
     /// - Atomic undo (single undo step for entire operation)
     /// - Routing to prompt if one is open
     pub fn paste_text(&mut self, paste_text: String) {
+        self.terminal_paste_deadline = None;
         self.mark_plugin_snapshot_dirty();
         if paste_text.is_empty() {
             return;

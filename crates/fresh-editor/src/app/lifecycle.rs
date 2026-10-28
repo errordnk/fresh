@@ -493,6 +493,8 @@ impl Editor {
                 Ok(true)
             }
             Ev::Paste(text) => {
+                // Also the answer to a pending OSC 52 clipboard query.
+                self.terminal_paste_deadline = None;
                 // Terminal-initiated bracketed paste — no async read
                 // needed, the terminal already harvested the clipboard.
                 // When a floating modal / dock owns the keyboard the

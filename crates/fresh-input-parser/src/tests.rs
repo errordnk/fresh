@@ -709,7 +709,9 @@ fn osc_with_payload_in_same_burst_is_not_flushable() {
     assert!(!p.escape_pending(), "committed OSC must not be flushable");
     assert!(p.flush().is_empty());
     // The rest of the reply arrives on a later read and is swallowed whole.
-    assert!(p.parse(b"bG8=\x07").is_empty());
+    // (An OSC 52 reply is the terminal answering a clipboard query: it
+    // surfaces as a paste, never as keys.)
+    assert_eq!(p.parse(b"bG8=\x07"), vec![Event::Paste("Hello".to_string())]);
     assert_eq!(
         keys(&p.parse(b"a")),
         vec![(KeyCode::Char('a'), KeyModifiers::empty())]
@@ -1354,7 +1356,11 @@ fn osc_replies_are_swallowed_not_emitted_as_text() {
     // as literal characters (the pre-fix behaviour).
     let mut p = InputParser::new();
     // ST-terminated (`ESC \`).
-    assert!(p.parse(b"\x1b]52;c;SGVsbG8=\x1b\\").is_empty());
+    // (An OSC 52 reply surfaces as a paste, see `osc52_reply_surfaces_as_a_paste`.)
+    assert_eq!(
+        p.parse(b"\x1b]52;c;SGVsbG8=\x1b\\"),
+        vec![Event::Paste("Hello".to_string())]
+    );
     // BEL-terminated (legacy OSC).
     assert!(p.parse(b"\x1b]11;rgb:2e2e/3434/3636\x07").is_empty());
 }
@@ -2018,4 +2024,19 @@ fn scanner_survives_keystrokes_mixed_into_the_stream() {
         sc.button_down(),
         "a report between keystrokes still registers"
     );
+}
+
+#[test]
+fn osc52_reply_surfaces_as_a_paste() {
+    let mut p = InputParser::new();
+    // "héllo" in base64, BEL- and ST-terminated.
+    let bel = b"\x1b]52;c;aMOpbGxv\x07";
+    let st = b"\x1b]52;c;aMOpbGxv\x1b\\";
+    assert_eq!(p.parse(bel), vec![Event::Paste("h\u{e9}llo".to_string())]);
+    assert_eq!(p.parse(st), vec![Event::Paste("h\u{e9}llo".to_string())]);
+    // An empty reply (clipboard unreadable) and a query echo produce nothing.
+    assert!(p.parse(b"\x1b]52;c;\x07").is_empty());
+    assert!(p.parse(b"\x1b]52;c;?\x07").is_empty());
+    // Other OSC strings are still swallowed.
+    assert!(p.parse(b"\x1b]11;rgb:0000/0000/0000\x07").is_empty());
 }

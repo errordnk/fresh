@@ -299,6 +299,11 @@ pub struct InputParser {
     /// Accumulated bracketed-paste content (including the trailing end marker
     /// until it is recognised and stripped).
     paste: Vec<u8>,
+    /// Introducer byte (`]`, `P`, `_`, `^`, `X`) of the string sequence being read.
+    string_intro: u8,
+    /// Body of the OSC string being read (an OSC 52 clipboard reply is
+    /// surfaced as a paste); empty for every other string type.
+    osc: Vec<u8>,
 }
 
 impl Default for InputParser {
@@ -313,6 +318,8 @@ impl InputParser {
             state: State::Ground,
             buffer: Vec::with_capacity(32),
             paste: Vec::new(),
+            string_intro: 0,
+            osc: Vec::new(),
         }
     }
 
@@ -437,7 +444,7 @@ impl InputParser {
                     }
                 }
                 State::StringSeq { saw_esc, .. } => {
-                    if !self.feed_string(byte, saw_esc) {
+                    if !self.feed_string(byte, saw_esc, out) {
                         continue;
                     }
                 }
@@ -493,6 +500,8 @@ impl InputParser {
             // rather than swallow all further input as string content
             // (sinelaw/fresh#2930).
             b'P' | b']' | b'_' | b'^' | b'X' => {
+                self.string_intro = byte;
+                self.osc.clear();
                 self.state = State::StringSeq {
                     saw_esc: false,
                     pending_alt: Some(byte),
@@ -712,22 +721,28 @@ impl InputParser {
     /// `StringSeq` state: discard the body of a DCS/OSC/APC/PM/SOS string until
     /// its terminator. Returns `false` if `byte` must be reprocessed from
     /// ground (an `ESC` that turned out to start a fresh sequence, not `ST`).
-    fn feed_string(&mut self, byte: u8, saw_esc: bool) -> bool {
+    fn feed_string(&mut self, byte: u8, saw_esc: bool, out: &mut Vec<Event>) -> bool {
         if saw_esc {
             if byte == b'\\' {
-                // `ST` (ESC \): string complete, discard it.
+                // `ST` (ESC \): string complete.
+                self.finish_string(out);
                 self.state = State::Ground;
                 true
             } else {
                 // The `ESC` was not part of an `ST`: it begins a new escape
                 // sequence. Resync through the Escape state, reprocessing this
                 // byte as the disambiguator.
+                self.osc.clear();
                 self.state = State::Escape;
                 false
             }
         } else {
             match byte {
-                0x07 => self.state = State::Ground, // BEL: legacy OSC terminator
+                0x07 => {
+                    // BEL: legacy OSC terminator
+                    self.finish_string(out);
+                    self.state = State::Ground;
+                }
                 0x1b => {
                     self.state = State::StringSeq {
                         saw_esc: true,
@@ -735,9 +750,13 @@ impl InputParser {
                     }
                 }
                 _ => {
-                    // Discard the content byte. Any body byte commits the
-                    // prefix as a real string sequence: it is no longer
-                    // flushable as an Alt chord.
+                    // Keep an OSC body (bounded) so an OSC 52 reply can be read;
+                    // every other string's content is discarded. Any body byte
+                    // commits the prefix as a real string sequence: it is no
+                    // longer flushable as an Alt chord.
+                    if self.string_intro == b']' && self.osc.len() < MAX_OSC_BODY {
+                        self.osc.push(byte);
+                    }
                     self.state = State::StringSeq {
                         saw_esc: false,
                         pending_alt: None,
@@ -745,6 +764,33 @@ impl InputParser {
                 }
             }
             true
+        }
+    }
+
+    /// A string sequence just ended. An OSC 52 clipboard reply
+    /// (`52;<selection>;<base64>`) is the terminal answering our clipboard
+    /// query, so it surfaces as a paste, exactly like a bracketed paste;
+    /// everything else is dropped.
+    fn finish_string(&mut self, out: &mut Vec<Event>) {
+        let body = std::mem::take(&mut self.osc);
+        if self.string_intro != b']' {
+            return;
+        }
+        let Some(rest) = body.strip_prefix(b"52;") else {
+            return;
+        };
+        let Some(sep) = rest.iter().position(|&b| b == b';') else {
+            return;
+        };
+        let data = &rest[sep + 1..];
+        if data == b"?" || data.is_empty() {
+            return;
+        }
+        if let Some(bytes) = decode_base64(data) {
+            let text = sanitize_paste(&bytes);
+            if !text.is_empty() {
+                out.push(Event::Paste(text));
+            }
         }
     }
 
@@ -1578,6 +1624,42 @@ fn x10_mouse_event(buf: [u8; 3]) -> Option<Event> {
 /// and the bracketed-paste security note warns that embedded control bytes can
 /// be used to smuggle commands. Tab, newline, carriage return and ESC are kept
 /// so multi-line and styled (SGR-coloured) pastes survive intact.
+/// Longest OSC body kept (an OSC 52 clipboard reply can be large).
+const MAX_OSC_BODY: usize = 16 * 1024 * 1024;
+
+/// Standard base64 (RFC 4648) decoder; `None` on any invalid input.
+fn decode_base64(data: &[u8]) -> Option<Vec<u8>> {
+    fn val(b: u8) -> Option<u32> {
+        match b {
+            b'A'..=b'Z' => Some((b - b'A') as u32),
+            b'a'..=b'z' => Some((b - b'a') as u32 + 26),
+            b'0'..=b'9' => Some((b - b'0') as u32 + 52),
+            b'+' => Some(62),
+            b'/' => Some(63),
+            _ => None,
+        }
+    }
+    let data: Vec<u8> = data
+        .iter()
+        .copied()
+        .filter(|b| !b.is_ascii_whitespace() && *b != b'=')
+        .collect();
+    let mut out = Vec::with_capacity(data.len() / 4 * 3 + 3);
+    for chunk in data.chunks(4) {
+        if chunk.len() == 1 {
+            return None;
+        }
+        let mut acc = 0u32;
+        for &b in chunk {
+            acc = (acc << 6) | val(b)?;
+        }
+        acc <<= 6 * (4 - chunk.len()) as u32;
+        let bytes = acc.to_be_bytes();
+        out.extend_from_slice(&bytes[1..chunk.len()]);
+    }
+    Some(out)
+}
+
 fn sanitize_paste(bytes: &[u8]) -> String {
     String::from_utf8_lossy(bytes)
         .chars()
