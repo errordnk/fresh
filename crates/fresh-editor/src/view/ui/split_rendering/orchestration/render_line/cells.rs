@@ -420,6 +420,13 @@ impl CellPass<'_, '_, '_> {
         // foreground, which made every `·` and `→` in a selection read as
         // full-contrast text — louder than the code it sits between.
         let mut style = resolved.style;
+        // A theme with `selection_fg` draws selected text in that color instead of
+        // each cell's own syntax color (dark text on a bright selection, as in micro).
+        if is_selected && !style_as_cursor {
+            if let Some(fg) = self.input.theme.selection_fg {
+                style = style.fg(fg);
+            }
+        }
         if is_indentation_guide && !is_cursor {
             style = style.theme_fg(self.input.theme, self.indentation_guide_key());
         } else if is_whitespace_indicator && !style_as_cursor {

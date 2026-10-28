@@ -24,6 +24,7 @@
         "cursor": null,
         "inactive_cursor": null,
         "selection_bg": null,
+        "selection_fg": null,
         "selection_modifier": null,
         "current_line_bg": null,
         "line_number_fg": null,
@@ -252,6 +253,18 @@
         },
         "selection_bg": {
           "description": "Selected text background",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StyledColorDef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "selection_fg": {
+          "description": "Selected text foreground. Unset keeps each cell's own (syntax)\nforeground; set, every selected cell takes this color, which is how\nthemes get the inverted \"dark text on a bright selection\" look.",
           "anyOf": [
             {
               "$ref": "#/$defs/StyledColorDef"

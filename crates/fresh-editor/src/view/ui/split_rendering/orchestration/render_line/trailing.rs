@@ -113,7 +113,7 @@ fn render_implicit_line_into(
             ctx,
             implicit_line_byte,
             implicit_gutter_num,
-            implicit_cursor_bg,
+            None, // the current-line highlight stays out of the gutter
         );
     }
 

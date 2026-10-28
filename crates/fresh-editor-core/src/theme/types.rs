@@ -500,6 +500,11 @@ pub struct EditorColors {
     /// Selected text background
     #[serde(default)]
     pub selection_bg: Option<StyledColorDef>,
+    /// Selected text foreground. Unset keeps each cell's own (syntax)
+    /// foreground; set, every selected cell takes this color, which is how
+    /// themes get the inverted "dark text on a bright selection" look.
+    #[serde(default)]
+    pub selection_fg: Option<StyledColorDef>,
     /// Optional text-attribute modifiers (e.g. `["reversed"]`) layered
     /// on top of `selection_bg`. Themes that want a terminal-adaptive
     /// visual selection (the canonical pattern for native-palette
@@ -1062,6 +1067,8 @@ pub struct Theme {
     pub cursor: Color,
     pub inactive_cursor: Color,
     pub selection_bg: Color,
+    /// Foreground forced onto selected cells; `None` keeps the cell's own.
+    pub selection_fg: Option<Color>,
     /// SGR text attributes layered onto selected cells. Empty for
     /// traditional themes; native-palette themes set
     /// `Modifier::REVERSED` so the selection inverts the terminal's
@@ -1339,6 +1346,11 @@ impl From<ThemeFile> for Theme {
             cursor: styled_color(&file.editor.cursor),
             inactive_cursor: styled_color(&file.editor.inactive_cursor),
             selection_bg: styled_color(&file.editor.selection_bg),
+            selection_fg: file
+                .editor
+                .selection_fg
+                .as_ref()
+                .map(|c| c.color().clone().into()),
             selection_modifier: Modifier::empty(),
             current_line_bg: styled_color(&file.editor.current_line_bg),
             line_number_fg: styled_color(&file.editor.line_number_fg),
@@ -1531,6 +1543,7 @@ impl From<Theme> for ThemeFile {
                 cursor: styled(&theme, "editor.cursor"),
                 inactive_cursor: styled(&theme, "editor.inactive_cursor"),
                 selection_bg: styled(&theme, "editor.selection_bg"),
+                selection_fg: styled(&theme, "editor.selection_fg"),
                 selection_modifier: None, // carried by the `{color, modifier}` bundle of its color key
                 current_line_bg: styled(&theme, "editor.current_line_bg"),
                 line_number_fg: styled(&theme, "editor.line_number_fg"),
@@ -2313,6 +2326,7 @@ theme_color_keys! {
         "line_number_fg" => color line_number_fg,
         "ruler_bg" => color ruler_bg fallback "editor.current_line_bg",
         "selection_bg" => color selection_bg modifier selection_modifier,
+        "selection_fg" => opt selection_fg,
         "whitespace_indicator_fg" => color whitespace_indicator_fg fallback "editor.line_number_fg",
         "whitespace_indicator_selected_fg" => color whitespace_indicator_selected_fg fallback "editor.whitespace_indicator_fg",
         "bracket_match_fg" => color bracket_match_fg fallback "editor.cursor",

@@ -147,7 +147,7 @@ impl MarginConfig {
             width: MIN_LINE_NUMBER_DIGITS,
             enabled: true,
             show_separator: true,
-            separator: " │ ".to_string(), // Separator with spaces: " │ " (space before for indicators, space after for readability)
+            separator: "  ".to_string(), // plain gap after the line numbers, no vertical bar
             style: Style::default().fg(Color::DarkGray),
             separator_style: Style::default().fg(Color::DarkGray),
         }

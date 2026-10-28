@@ -68,13 +68,9 @@ pub(super) fn render_left_margin(
     }
 
     let lookup_key = ctx.line_start_byte;
-    // Pre-compute indicator bg for cursor line highlighting
-    let indicator_is_cursor_line = lookup_key.is_some_and(|k| k == ctx.cursor_line_start_byte);
-    let indicator_bg = if indicator_is_cursor_line && ctx.highlight_current_line && ctx.is_active {
-        Some(Style::default().theme_bg(ctx.theme, "editor.current_line_bg"))
-    } else {
-        None
-    };
+    // The current-line highlight never reaches the gutter: the line number
+    // changes color instead (see `is_cursor_line` below).
+    let indicator_bg: Option<Style> = None;
 
     // Virtual lines whose source `VirtualText` carries a `gutter_glyph`
     // get their own indicator (e.g. live-diff's "-" on a deletion
@@ -142,7 +138,7 @@ pub(super) fn render_left_margin(
     }
 
     let is_cursor_line = lookup_key.is_some_and(|k| k == ctx.cursor_line_start_byte);
-    let use_cursor_line_bg = is_cursor_line && ctx.highlight_current_line && ctx.is_active;
+    let use_cursor_line_bg = false;
 
     if ctx.is_continuation {
         let blank = " ".repeat(ctx.margin.width);
@@ -200,8 +196,13 @@ pub(super) fn render_left_margin(
         );
         let (rendered_text, style_opt) = margin_content.render(ctx.margin.width);
 
-        let mut margin_style = style_opt
-            .unwrap_or_else(|| Style::default().theme_fg(ctx.theme, "editor.line_number_fg"));
+        let mut margin_style = style_opt.unwrap_or_else(|| {
+            if is_cursor_line {
+                Style::default().theme_fg(ctx.theme, "editor.fg")
+            } else {
+                Style::default().theme_fg(ctx.theme, "editor.line_number_fg")
+            }
+        });
         if use_cursor_line_bg {
             margin_style = margin_style.theme_bg(ctx.theme, "editor.current_line_bg");
         }
