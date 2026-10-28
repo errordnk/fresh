@@ -274,6 +274,7 @@
   "action.quick_open_buffers": "Quick Open Buffers",
   "action.quick_open_files": "Quick Open Files",
   "action.quit": "Quitter l'éditeur",
+  "action.dismiss_or_quit": "Annuler les curseurs et la sélection, ou quitter",
   "action.recenter": "Recentrer la vue sur le curseur",
   "action.redo": "Refaire",
   "action.redraw_screen": "Redessiner l'écran",

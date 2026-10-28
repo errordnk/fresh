@@ -274,6 +274,7 @@
   "action.quick_open_buffers": "Quick Open Buffers",
   "action.quick_open_files": "Quick Open Files",
   "action.quit": "退出编辑器",
+  "action.dismiss_or_quit": "取消光标和选区，或退出",
   "action.recenter": "重新居中视图到光标",
   "action.redo": "重做",
   "action.redraw_screen": "重绘屏幕",

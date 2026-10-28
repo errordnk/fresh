@@ -274,6 +274,7 @@
   "action.quick_open_buffers": "Quick Open Buffers",
   "action.quick_open_files": "Quick Open Files",
   "action.quit": "ออกจากโปรแกรม",
+  "action.dismiss_or_quit": "ยกเลิกเคอร์เซอร์และการเลือก หรือออก",
   "action.recenter": "จัดมุมมองให้เคอร์เซอร์อยู่ตรงกลาง",
   "action.redo": "ทำซ้ำ",
   "action.redraw_screen": "วาดหน้าจอใหม่",

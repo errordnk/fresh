@@ -274,6 +274,7 @@
   "action.quick_open_buffers": "Quick Open Buffers",
   "action.quick_open_files": "Quick Open Files",
   "action.quit": "Ukončit editor",
+  "action.dismiss_or_quit": "Zrušit kurzory a výběr, nebo ukončit",
   "action.recenter": "Vycentrovat pohled na kurzor",
   "action.redo": "Znovu",
   "action.redraw_screen": "Překreslit obrazovku",

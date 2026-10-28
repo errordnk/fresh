@@ -21,6 +21,11 @@
       192,
       208
     ],
+    "inactive_cursor": [
+      129,
+      161,
+      193
+    ],
     "current_line_bg": [
       59,
       66,
@@ -110,6 +115,21 @@
       180,
       142,
       173
+    ],
+    "diff_add_bg": [
+      67,
+      77,
+      78
+    ],
+    "diff_remove_bg": [
+      72,
+      60,
+      72
+    ],
+    "diff_modify_bg": [
+      80,
+      79,
+      78
     ],
     "diff_add_highlight_bg": [
       75,

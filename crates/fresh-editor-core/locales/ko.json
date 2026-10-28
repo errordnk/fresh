@@ -274,6 +274,7 @@
   "action.quick_open_buffers": "Quick Open Buffers",
   "action.quick_open_files": "Quick Open Files",
   "action.quit": "편집기 종료",
+  "action.dismiss_or_quit": "커서와 선택 해제 또는 종료",
   "action.recenter": "커서에 화면 중앙 맞추기",
   "action.redo": "다시 실행",
   "action.redraw_screen": "화면 다시 그리기",

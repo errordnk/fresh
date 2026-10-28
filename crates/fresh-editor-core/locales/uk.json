@@ -274,6 +274,7 @@
   "action.quick_open_buffers": "Quick Open Buffers",
   "action.quick_open_files": "Quick Open Files",
   "action.quit": "Вийти з редактора",
+  "action.dismiss_or_quit": "Скинути курсори й виділення або вийти",
   "action.recenter": "Центрувати вигляд на курсорі",
   "action.redo": "Повторити",
   "action.redraw_screen": "Перемалювати екран",

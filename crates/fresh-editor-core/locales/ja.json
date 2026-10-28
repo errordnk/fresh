@@ -274,6 +274,7 @@
   "action.quick_open_buffers": "Quick Open Buffers",
   "action.quick_open_files": "Quick Open Files",
   "action.quit": "エディタを終了",
+  "action.dismiss_or_quit": "カーソルと選択を解除、または終了",
   "action.recenter": "カーソルを中央に表示",
   "action.redo": "やり直し",
   "action.redraw_screen": "画面を再描画",

@@ -209,6 +209,7 @@
   "action.quick_open_buffers": "Бързо отваряне на буфери",
   "action.quick_open_files": "Бързо отваряне на файлове",
   "action.quit": "Изход от редактора",
+  "action.dismiss_or_quit": "Отмяна на курсорите и селекцията или изход",
   "action.recenter": "Центриране на изгледа спрямо курсора",
   "action.redo": "Повторение (Redo)",
   "action.redraw_screen": "Преначертаване на екрана",

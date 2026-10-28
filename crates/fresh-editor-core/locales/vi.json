@@ -274,6 +274,7 @@
   "action.quick_open_buffers": "Quick Open Buffers",
   "action.quick_open_files": "Quick Open Files",
   "action.quit": "Thoát trình soạn thảo",
+  "action.dismiss_or_quit": "Bỏ con trỏ và vùng chọn, hoặc thoát",
   "action.recenter": "Căn giữa hiển thị theo con trỏ",
   "action.redo": "Làm lại",
   "action.redraw_screen": "Vẽ lại màn hình",
