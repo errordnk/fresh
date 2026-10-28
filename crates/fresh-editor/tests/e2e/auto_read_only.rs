@@ -168,12 +168,14 @@ fn test_editable_buffer_has_no_ro_status_indicator() {
     );
 }
 
-/// Locate a substring on the rendered screen, returning `(col, row)` of its
-/// first character. Columns are counted as grapheme cells (the status bar is
-/// ASCII here, so char count == display column).
+/// Locate the last occurrence of a substring on its row of the rendered
+/// screen, returning `(col, row)` of its first character. The status bar's
+/// file name carries an `[RO]` of its own; the clickable indicator is the
+/// element on the right. Columns are counted as grapheme cells (the status
+/// bar is ASCII here, so char count == display column).
 fn find_on_screen(screen: &str, needle: &str) -> Option<(u16, u16)> {
     for (row, line) in screen.lines().enumerate() {
-        if let Some(byte_idx) = line.find(needle) {
+        if let Some(byte_idx) = line.rfind(needle) {
             let col = line[..byte_idx].chars().count();
             return Some((col as u16, row as u16));
         }

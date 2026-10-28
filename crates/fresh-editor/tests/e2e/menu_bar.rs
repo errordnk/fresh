@@ -5,10 +5,12 @@ use std::time::Duration;
 /// A harness with the menu bar and the tab bar shown, as the menu tests
 /// expect (both are hidden by default).
 fn menu_harness(width: u16, height: u16) -> EditorTestHarness {
-    let mut config = fresh::config::Config::default();
-    config.editor.show_menu_bar = true;
-    config.editor.show_tab_bar = true;
-    EditorTestHarness::with_config(width, height, config).unwrap()
+    EditorTestHarness::with_config(
+        width,
+        height,
+        crate::common::harness::config_with_menu_and_tab_bar(),
+    )
+    .unwrap()
 }
 
 /// Test that Alt+F opens the File menu
@@ -298,22 +300,21 @@ fn test_mouse_click_menu_item_executes_action() {
     harness.render().unwrap();
     harness.assert_screen_contains("Show Fresh Manual");
 
-    // The Help menu dropdown appears at row 1 (below menu bar)
-    // Help is the 6th menu, so x position = " File " (7) + " Edit " (7) + " View " (7) + " Selection " (12) + " Go " (5) = 38
-    // Click on "Show Fresh Manual" item - it should be the first item
-    // Menu items are rendered with border, so first item starts at row 2
-    harness.mouse_click(40, 2).unwrap();
+    // Click on the "Show Fresh Manual" item, the dropdown's first, under
+    // the Help menu at the bar's end.
+    let (item_col, item_row) = harness
+        .find_text_on_screen("Show Fresh Manual")
+        .expect("the Help menu lists Show Fresh Manual");
+    harness.mouse_click(item_col + 2, item_row).unwrap();
     harness.render().unwrap();
 
-    // After clicking, the help panel should open
+    // After clicking, the manual should open
     // The menu should close after executing
     harness.assert_screen_not_contains("Show Fresh Manual");
-    // Help panel shows keybinding information (look for actual keybinding entries)
-    // On macOS, Ctrl is rendered as ⌘, on other platforms as "Ctrl"
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ctrl+") || screen.contains("⌘+"),
-        "Help panel should show keybinding entries"
+        screen.contains("*Fresh Manual*") && screen.contains("The Terminal Text Editor"),
+        "the Fresh Manual should open. Screen:\n{screen}"
     );
 }
 

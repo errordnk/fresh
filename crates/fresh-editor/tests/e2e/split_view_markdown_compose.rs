@@ -620,11 +620,13 @@ Text after the code.
         .into_iter()
         .find(|r| r.contains("println!"))
         .unwrap_or_else(|| panic!("the source split never showed the code.\nScreen:\n{screen}"));
+    // The gutter is the line number and the space after it.
     let (gutter, text) = row
-        .split_once('│')
+        .trim_start()
+        .split_once(' ')
         .unwrap_or_else(|| panic!("the source split drew no gutter: {row:?}.\nScreen:\n{screen}"));
     assert!(
-        gutter.contains('7'),
+        gutter == "7",
         "the source split's code line lost its gutter line number: {row:?}.\n\
          Screen:\n{screen}",
     );

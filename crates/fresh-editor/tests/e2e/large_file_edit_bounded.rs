@@ -242,9 +242,10 @@ fn soft_wrap_off_draws_one_row_for_a_file_with_no_line_breaks() {
     }
     harness.render().unwrap();
     let after = harness.screen_to_string();
+    // A file this large is shown by byte offset until its lines are scanned.
     assert!(
-        harness.status_position() == Some((1, 1)),
-        "Down on the only line ({bytes} bytes) should stay at its start, on line 1 \
+        harness.status_byte() == Some(0),
+        "Down on the only line ({bytes} bytes) should stay at its start, at byte 0 \
          and not at a read-budget boundary part-way along it:\n{after}"
     );
     // And the pane still draws that one logical line as one row.

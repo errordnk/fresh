@@ -2759,9 +2759,12 @@ fn test_session_keeps_a_file_that_fails_on_every_launch() {
         harness.editor_mut().try_restore_workspace().unwrap();
         harness.render().unwrap();
         let screen = harness.screen_to_string();
+        // The warning names the file's full path, longer than the status
+        // bar's message room: read it whole.
+        let message = harness.status_message();
         assert!(
-            screen.contains("Could not open") && screen.contains("It stays in this workspace"),
-            "launch {launch_no} should say so. Screen:\n{screen}"
+            message.contains("Could not open") && message.contains("It stays in this workspace"),
+            "launch {launch_no} should say so. Message: {message:?}\nScreen:\n{screen}"
         );
         assert!(
             !screen.contains("more recovery warning"),

@@ -51,9 +51,10 @@ editor.setStatus("Unified keybinding test ready");
     harness.open_file(&test_file).unwrap();
     harness.render().unwrap();
 
-    // Wait for the plugin to load
+    // Wait for the plugin to load. Its message shares the status bar's
+    // centred messages with "Opened test.txt" and may be elided there.
     harness
-        .wait_for_screen_contains("Unified keybinding test ready")
+        .wait_until(|h| h.status_message().contains("Unified keybinding test ready"))
         .unwrap();
 
     // Open the keybinding editor

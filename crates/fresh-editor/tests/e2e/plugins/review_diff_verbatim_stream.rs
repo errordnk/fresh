@@ -130,9 +130,9 @@ fn review_stream_numbers_rows_from_the_hunk_header() {
     // A context row carries both numbers, a removal the old one alone, an
     // addition the new one alone — five digits wide, counted from the
     // hunk header, nothing to do with the row's position in the buffer.
-    let context = format!("{:>5} {:>5} │  line 10001", 10001, 10001);
-    let removed = format!("{:>5} {:>5} │ -line 10002", 10002, "");
-    let added = format!("{:>5} {:>5} │ +changed 10002", "", 10002);
+    let context = format!("{:>5} {:>5}  line 10001", 10001, 10001);
+    let removed = format!("{:>5} {:>5} -line 10002", 10002, "");
+    let added = format!("{:>5} {:>5} +changed 10002", "", 10002);
     for expected in [&context, &removed, &added] {
         assert!(
             screen.contains(expected.as_str()),
@@ -231,12 +231,12 @@ fn review_stream_note_box_follows_its_line() {
     let top = row_text(&harness, line_y + 1);
     let body = row_text(&harness, line_y + 2);
     assert!(
-        top.trim_start().starts_with("│ ╭─ +4 "),
+        top.trim_start().starts_with("╭─ +4 "),
         "the box's top border should follow the line, unnumbered: `{top}`\n{}",
         harness.screen_to_string()
     );
     assert!(
-        body.trim_start().starts_with("│ │ Needs a docstring"),
+        body.trim_start().starts_with("│ Needs a docstring"),
         "the note text should be inside the box: `{body}`\n{}",
         harness.screen_to_string()
     );

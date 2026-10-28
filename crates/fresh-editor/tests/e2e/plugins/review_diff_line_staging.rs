@@ -79,15 +79,16 @@ fn status_line_number(harness: &EditorTestHarness) -> Option<usize> {
 }
 
 /// The diff-buffer line whose rendered center-panel row contains `needle`, or
-/// `None` if no visible center-panel row does. The center diff panel starts at
-/// a fixed screen row, so the buffer line is `screen_row - CENTER_FIRST_ROW + 1`
+/// `None` if no visible center-panel row does. The center diff panel starts
+/// five rows (toolbar, rules and title) below the content area, so the buffer
+/// line is `screen_row - center_first_row + 1`
 /// (both this and `status_line_number` are read in the same buffer-line space,
 /// which is what lets `move_cursor_onto` converge the caret onto the needle).
-const CENTER_FIRST_ROW: usize = 7;
 fn screen_row_of(harness: &EditorTestHarness, needle: &str) -> Option<usize> {
+    let center_first_row = harness.content_start_row() + 5;
     for (row, line) in harness.screen_to_string().lines().enumerate() {
-        if row >= CENTER_FIRST_ROW && line.contains(needle) {
-            return Some(row - CENTER_FIRST_ROW + 1);
+        if row >= center_first_row && line.contains(needle) {
+            return Some(row - center_first_row + 1);
         }
     }
     None

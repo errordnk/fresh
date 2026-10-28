@@ -1273,11 +1273,13 @@ fn the_code_sample_box_holds_its_whole_listing() {
 
     let (left, right, top) = box_edges(&harness, 0);
     let rows = harness.screen_to_string().lines().count() as u16;
+    // A scrollbar always has a thumb. Its track is not looked for: in the
+    // default theme the track's colour is also the current line's, which the
+    // listing carries across the box.
     for y in top..rows.min(top + 12) {
         for x in (left + 1)..right {
             assert!(
-                !harness.is_scrollbar_thumb_at(x as u16, y)
-                    && !harness.is_scrollbar_track_at(x as u16, y),
+                !harness.is_scrollbar_thumb_at(x as u16, y),
                 "a scrollbar at column {x} of row {y}: the sample's box is \
                  shorter than the sample. Screen:\n{}",
                 harness.screen_to_string()

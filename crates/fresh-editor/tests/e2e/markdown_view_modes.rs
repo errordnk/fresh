@@ -406,8 +406,20 @@ fn pane_rows(h: &EditorTestHarness) -> Vec<PaneRow> {
         })
         .collect();
     // Content rows carry the source pane's gutter: a line number (or, on a
-    // wrapped or filler row, spaces) in its first `gutter_width` columns.
-    let width = h.gutter_width();
+    // wrapped or filler row, spaces) in its first `width` columns. The width
+    // is measured on the first numbered row — right-aligned digits and the
+    // space after them — since the active buffer need not be the source.
+    let width = rows
+        .iter()
+        .find_map(|row| {
+            let start = row.iter().position(|c| *c != ' ')?;
+            let digits = row[start..]
+                .iter()
+                .take_while(|c| c.is_ascii_digit())
+                .count();
+            (digits > 0 && row.get(start + digits) == Some(&' ')).then_some(start + digits + 1)
+        })
+        .unwrap_or(0);
     let gutter = |row: &[char]| -> Option<usize> {
         (width > 0 && row[..width].iter().all(|c| c.is_ascii_digit() || *c == ' ')).then_some(width)
     };
@@ -508,8 +520,10 @@ fn preview_moved(
 fn dual_preview_follows_the_source_scrolled_line_by_line() {
     let (mut h, _tmp) = dual_setup();
     let mut headings = preview_headings(&pane_rows(&h));
-    // The source scrolls until its last page: 51 rows in a 26-row window.
-    for line in 2..=26 {
+    // The source scrolls until its last page: 51 rows in the window.
+    let (first, last) = h.content_area_rows();
+    let last_top = 51 - (last - first + 1) + 1;
+    for line in 2..=last_top {
         h.send_key(KeyCode::Down, KeyModifiers::CONTROL).unwrap();
         h.wait_until(|h| {
             let rows = pane_rows(h);
@@ -532,7 +546,7 @@ fn dual_preview_follows_the_source_scrolled_line_by_line() {
     .unwrap();
 
     // And back up, to the top of both.
-    for line in (1..=25).rev() {
+    for line in (1..last_top).rev() {
         h.send_key(KeyCode::Up, KeyModifiers::CONTROL).unwrap();
         h.wait_until(|h| {
             let rows = pane_rows(h);
@@ -565,7 +579,8 @@ fn dual_source_follows_the_preview_scrolled_line_by_line() {
         .iter()
         .position(|r| r.preview.contains("Intro paragraph"))
         .expect("intro on screen") as u16;
-    h.mouse_click(SYNC_WIDTH * 3 / 4, 2 + intro).unwrap();
+    let intro = h.content_start_row() as u16 + intro;
+    h.mouse_click(SYNC_WIDTH * 3 / 4, intro).unwrap();
     h.wait_until(|h| h.status_line() == Some(3)).unwrap();
 
     let mut source = source_top(&pane_rows(&h)).unwrap();
@@ -658,9 +673,10 @@ fn typing_in_the_dual_preview_edits_the_source() {
         .iter()
         .position(|r| r.preview.contains("Intro paragraph"))
         .expect("intro on screen") as u16;
-    let row = h.screen_row_text(2 + intro);
+    let intro = h.content_start_row() as u16 + intro;
+    let row = h.screen_row_text(intro);
     let column = row[..row.rfind("Intro").unwrap()].chars().count() as u16;
-    h.mouse_click(column, 2 + intro).unwrap();
+    h.mouse_click(column, intro).unwrap();
     h.wait_until(|h| h.status_line() == Some(3)).unwrap();
     h.type_text("EDITED ").unwrap();
     h.wait_until(|h| {

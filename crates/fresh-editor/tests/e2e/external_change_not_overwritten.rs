@@ -378,7 +378,7 @@ fn the_file_change_poll_reports_a_modified_buffers_change_once() {
     change_externally(&files[0], "external\n");
     harness
         .wait_until(|h| {
-            h.get_status_bar()
+            h.status_message()
                 .contains("changed on disk (buffer has unsaved")
         })
         .unwrap();
@@ -416,7 +416,7 @@ fn a_reopened_buffer_is_told_of_a_change_its_predecessor_was_told_of() {
     let before = SystemTime::now() - Duration::from_secs(600);
     let after = SystemTime::now() + Duration::from_secs(600);
     let reported = |h: &EditorTestHarness| {
-        h.get_status_bar()
+        h.status_message()
             .contains("changed on disk (buffer has unsaved")
     };
     // The same change twice: `orig` at `before` becomes `external` at `after`.

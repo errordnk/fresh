@@ -128,9 +128,10 @@ fn quickfix_enter_opens_match_location() {
 
     // The Quickfix panel must stay docked after the jump (closeOnSelect:
     // false) so the user can step through further matches.
+    // With the tab bar hidden, the panel's own header shows it is there.
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("*Quickfix*"),
+        screen.contains("Quickfix:"),
         "Quickfix panel should remain docked after jumping to a match; screen was:\n{screen}"
     );
 }

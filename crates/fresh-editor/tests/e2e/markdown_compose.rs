@@ -2242,7 +2242,8 @@ fn test_compose_mode_link_auto_expose() {
         .wait_until_stable(|h| !h.screen_to_string().contains("](#"))
         .unwrap();
 
-    let link_row: u16 = 4; // row 0=menu, 1=tabs, 2="# Test", 3=blank, 4=link line
+    // "# Test", a blank line, then the link line.
+    let link_row = harness.content_start_row() as u16 + 2;
 
     // ── 1. Cursor on heading — link should be fully concealed ────────────
     harness
@@ -2358,7 +2359,9 @@ End.
 
     harness.open_file(&md_path).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("table_wrap_test.md");
+    // At 60 columns the status bar elides the file name; the heading shows
+    // the file is open.
+    harness.assert_screen_contains("# Table Wrap Test");
 
     // Enable compose mode
     harness
@@ -3613,9 +3616,15 @@ Done.
     // Narrow viewport to force the LSP row to wrap when emphasis revealed.
     // Raw cell: "**Language Server Protocol (LSP)**" = 34 chars
     // At viewport 55, allocated column width will be smaller → cell wraps.
-    let mut harness =
-        EditorTestHarness::with_config_and_working_dir(55, 25, Default::default(), project_root)
-            .unwrap();
+    // Right walks from one row of the table to the next (the cursor kept to
+    // the text).
+    let mut harness = EditorTestHarness::with_config_and_working_dir(
+        55,
+        25,
+        crate::common::harness::config_without_virtual_space(),
+        project_root,
+    )
+    .unwrap();
 
     harness.open_file(&md_path).unwrap();
     harness.render().unwrap();
@@ -4432,8 +4441,8 @@ fn test_toggle_compose_all_affects_all_buffers() {
     // Both should start in source mode (line numbers visible)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("│"),
-        "Source mode should show line number separator: {}",
+        harness.line_number_before("# File Two").is_some(),
+        "Source mode should show line numbers: {}",
         screen
     );
 
@@ -4461,16 +4470,12 @@ fn test_toggle_compose_all_affects_all_buffers() {
 
     // Active buffer (two.md) should be in compose mode (no line numbers)
     let screen = harness.screen_to_string();
-    // In compose mode, the line number column with │ separator is hidden
-    let content_lines: Vec<&str> = screen
-        .lines()
-        .filter(|l| l.contains("File Two") || l.contains("Content two"))
-        .collect();
-    for line in &content_lines {
+    // In compose mode, the line number column is hidden
+    for text in ["File Two", "Content two"] {
         assert!(
-            !line.contains("│"),
+            harness.line_number_before(text).is_none(),
             "Compose mode should hide line numbers, but got: {}",
-            line
+            screen
         );
     }
 
@@ -4482,15 +4487,11 @@ fn test_toggle_compose_all_affects_all_buffers() {
         .unwrap();
 
     let screen = harness.screen_to_string();
-    let content_lines: Vec<&str> = screen
-        .lines()
-        .filter(|l| l.contains("File One") || l.contains("Content one"))
-        .collect();
-    for line in &content_lines {
+    for text in ["File One", "Content one"] {
         assert!(
-            !line.contains("│"),
+            harness.line_number_before(text).is_none(),
             "one.md should also be in compose mode after toggle all ON, but got: {}",
-            line
+            screen
         );
     }
 
@@ -4525,9 +4526,8 @@ fn test_toggle_compose_all_affects_all_buffers() {
 
     // Active buffer (two.md) should be back in source mode (line numbers)
     let screen = harness.screen_to_string();
-    let content_lines: Vec<&str> = screen.lines().filter(|l| l.contains("File Two")).collect();
     assert!(
-        content_lines.iter().any(|l| l.contains("│")),
+        harness.line_number_before("# File Two").is_some(),
         "two.md should be back in source mode with line numbers after toggle all OFF: {}",
         screen
     );
@@ -4540,9 +4540,8 @@ fn test_toggle_compose_all_affects_all_buffers() {
         .unwrap();
 
     let screen = harness.screen_to_string();
-    let content_lines: Vec<&str> = screen.lines().filter(|l| l.contains("File One")).collect();
     assert!(
-        content_lines.iter().any(|l| l.contains("│")),
+        harness.line_number_before("# File One").is_some(),
         "one.md should also be back in source mode after toggle all OFF: {}",
         screen
     );

@@ -794,7 +794,12 @@ fn test_close_tab_with_multiple_tabs_removes_tab_only() {
     let screen_with_split = harness.screen_to_string();
     eprintln!("Screen with split:\n{}", screen_with_split);
 
-    // Second split should have both tabs (inherited from first split when created)
+    // The second split starts with the current file only: open file1 there
+    // too, then file2 again, so the pane has two tabs with file2 active.
+    harness.open_file(&file1).unwrap();
+    harness.open_file(&file2).unwrap();
+    harness.render().unwrap();
+
     // Now close file2 tab in the second split
     harness
         .send_key(KeyCode::Char('w'), KeyModifiers::ALT)

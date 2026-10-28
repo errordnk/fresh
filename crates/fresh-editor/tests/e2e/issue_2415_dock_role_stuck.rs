@@ -40,7 +40,7 @@ fn test_dock_reopens_as_its_own_pane_after_editor_split_closed() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Default::default(),
+        crate::common::harness::config_with_tab_bar(),
         project_dir.clone(),
     )
     .unwrap();

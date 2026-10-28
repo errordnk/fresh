@@ -131,20 +131,22 @@ fn clicking_group_tab_activates_group_in_the_clicked_split() {
     // horiz fires is non-deterministic — we've observed both the *log*
     // group buffer and main.rs landing in the new bottom pane on different
     // platforms. What is stable: whatever buffer the new pane gets, it is
-    // rendered as an editable view with a line-number gutter (the `│`
-    // separator after each line number). Before the split, the lower half
-    // of the screen is just `~` empty-line markers (main.rs is 13 lines
-    // and the pane is 38+ rows tall), so a gutter `│` never appears below
-    // the half-screen mark. The split places a fresh buffer view below the
-    // horizontal separator, so a `│` appearing in the lower half is the
-    // monotonic post-split signal.
+    // rendered as an editable view with a line-number gutter. Before the
+    // split, the lower half of the screen is just `~` empty-line markers
+    // (main.rs is 13 lines and the pane is 38+ rows tall), so a row opening
+    // with a line number never appears below the half-screen mark. The split
+    // places a fresh buffer view below the horizontal separator, so such a
+    // row in the lower half is the monotonic post-split signal.
     let lower_half_start = (height / 2) as usize;
     harness
         .wait_until(|h| {
-            h.screen_to_string()
-                .lines()
-                .enumerate()
-                .any(|(row, line)| row >= lower_half_start && line.contains('│'))
+            h.screen_to_string().lines().enumerate().any(|(row, line)| {
+                row >= lower_half_start
+                    && line
+                        .split_whitespace()
+                        .next()
+                        .is_some_and(|word| word.parse::<usize>().is_ok())
+            })
         })
         .unwrap();
 

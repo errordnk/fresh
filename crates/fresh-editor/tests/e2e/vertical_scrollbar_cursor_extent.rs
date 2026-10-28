@@ -9,6 +9,10 @@ fn config(show_vertical_scrollbar: bool) -> Config {
     config.editor.line_wrap = false;
     config.editor.line_numbers = false;
     config.editor.show_vertical_scrollbar = show_vertical_scrollbar;
+    // The default theme paints the current line in the scrollbar track's
+    // colour; keep the cursor's row plain so the edge column reads as one or
+    // the other.
+    config.editor.highlight_current_line = false;
     config
 }
 
@@ -61,13 +65,9 @@ fn assert_cursor_extent(show_vertical_scrollbar: bool) {
     harness.send_key(KeyCode::End, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
 
-    let screen_width = harness
-        .screen_to_string()
-        .lines()
-        .next()
-        .expect("rendered screen has a first row")
-        .chars()
-        .count() as u16;
+    // In cells: the top row is text now, wide graphemes and all, so its
+    // character count is not the width.
+    let screen_width = harness.terminal_width() as u16;
     let edge = screen_width.saturating_sub(1);
     let last_content_cell = if show_vertical_scrollbar {
         edge.saturating_sub(1)

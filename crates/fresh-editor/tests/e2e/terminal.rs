@@ -62,19 +62,22 @@ macro_rules! harness_with_config_or_return {
     };
 }
 
-/// Locate the 0-based column of `needle` on the (0-based) tab row (row 1).
+/// The tab row: the top screen row, the menu bar being hidden.
+const TAB_ROW: u16 = 0;
+
+/// Locate the 0-based column of `needle` on the tab row.
 fn tab_row_col_of(screen: &str, needle: char) -> Option<u16> {
     screen
         .lines()
-        .nth(1)?
+        .nth(TAB_ROW as usize)?
         .chars()
         .position(|c| c == needle)
         .map(|p| p as u16)
 }
 
-/// Locate the 0-based column where `needle` begins on the tab row (row 1).
+/// Locate the 0-based column where `needle` begins on the tab row.
 fn tab_row_col_of_str(screen: &str, needle: &str) -> Option<u16> {
-    let line = screen.lines().nth(1)?;
+    let line = screen.lines().nth(TAB_ROW as usize)?;
     let byte_idx = line.find(needle)?;
     Some(line[..byte_idx].chars().count() as u16)
 }
@@ -85,7 +88,7 @@ fn tab_row_col_of_str(screen: &str, needle: &str) -> Option<u16> {
 /// never has to know what the spawned shell is called — the title is the
 /// foreground process name and differs per platform and per CI runner.
 fn terminal_tab_name_col(screen: &str) -> Option<u16> {
-    let row: Vec<char> = screen.lines().nth(1)?.chars().collect();
+    let row: Vec<char> = screen.lines().nth(TAB_ROW as usize)?.chars().collect();
     let mut closes = row.iter().enumerate().filter(|(_, c)| **c == '×');
     closes.next()?; // the [No Name] tab's close button
     let close_col = closes.next()?.0; // the terminal tab's
@@ -137,7 +140,7 @@ fn plus_button_menu_grabs_keyboard_from_active_terminal() {
     let plus_col = tab_row_col_of(&screen, '+').unwrap_or_else(|| {
         panic!("expected a '+' new-tab button on the tab row. Screen:\n{screen}")
     });
-    harness.mouse_click(plus_col, 1).unwrap();
+    harness.mouse_click(plus_col, TAB_ROW).unwrap();
     harness.assert_screen_contains("New Terminal");
     harness.assert_screen_contains("New File");
 
@@ -177,7 +180,7 @@ fn tab_context_menu_grabs_keyboard_from_active_terminal() {
     let term_col = tab_row_col_of_str(&screen, "Terminal").unwrap_or_else(|| {
         panic!("expected the '*Terminal 0*' tab on the tab row. Screen:\n{screen}")
     });
-    harness.mouse_right_click(term_col, 1).unwrap();
+    harness.mouse_right_click(term_col, TAB_ROW).unwrap();
     harness.assert_screen_contains("Close Others");
 
     // Esc must dismiss the menu rather than leak into the terminal.
@@ -231,18 +234,18 @@ fn tab_context_menu_click_beats_mouse_capturing_terminal() {
     }
     harness.render().unwrap();
 
-    // Right-click the terminal's own tab (row 1 = tab bar, above the terminal
+    // Right-click the terminal's own tab (the tab bar, above the terminal
     // content) so the terminal stays the focused, live buffer. The tab context
     // menu opens just below, overlapping the terminal's content rows.
     let screen = harness.screen_to_string();
     let term_col = tab_row_col_of_str(&screen, "Terminal").unwrap_or_else(|| {
         panic!("expected the '*Terminal 0*' tab on the tab row. Screen:\n{screen}")
     });
-    harness.mouse_right_click(term_col, 1).unwrap();
+    harness.mouse_right_click(term_col, TAB_ROW).unwrap();
     harness.assert_screen_contains("Close Others");
 
     // The menu's first item is "Close". It renders on a terminal-content row
-    // (row 3: tab bar row 1, menu top border row 2, first item row 3). Locate
+    // (tab bar row 0, menu top border row 1, first item row 2). Locate
     // it on screen and left-click it. The first "Close" on screen is this
     // item (the other entries read "Close Others", "Close to the Right", …).
     let (close_col, close_row) = harness
@@ -451,14 +454,15 @@ fn test_file_menu_disables_save_for_a_terminal_buffer() {
     );
 
     // Baseline: an ordinary buffer with unsaved changes — Save renders like
-    // New File, i.e. enabled.
+    // Open File..., i.e. enabled. (The menu opens with New File selected,
+    // drawn in the selection's colours.)
     harness.type_text("EDITED").unwrap();
     harness.render().unwrap();
     harness
         .send_key(KeyCode::F(10), KeyModifiers::NONE)
         .unwrap();
     harness.render().unwrap();
-    let (_, _, enabled_fg) = menu_item_fg(&harness, "New File");
+    let (_, _, enabled_fg) = menu_item_fg(&harness, "Open File...");
     let (_, _, save_fg) = menu_item_fg(&harness, "Save");
     assert_eq!(
         save_fg,
@@ -477,7 +481,7 @@ fn test_file_menu_disables_save_for_a_terminal_buffer() {
         .send_key(KeyCode::F(10), KeyModifiers::NONE)
         .unwrap();
     harness.render().unwrap();
-    let (_, _, enabled_fg) = menu_item_fg(&harness, "New File");
+    let (_, _, enabled_fg) = menu_item_fg(&harness, "Open File...");
     let (_, _, save_fg) = menu_item_fg(&harness, "Save");
     assert_ne!(
         save_fg,
@@ -747,7 +751,7 @@ fn test_terminal_tab_title_follows_foreground_process() {
         .wait_until(|h| h.get_tab_bar().contains(&expected))
         .unwrap();
 
-    // The tab bar (row 1) now shows the foreground command, not the default.
+    // The tab bar now shows the foreground command, not the default.
     let tab_bar = harness.get_tab_bar();
     assert!(
         tab_bar.contains(&expected),
@@ -5427,7 +5431,8 @@ fn test_terminal_scrollback_rewraps_when_split_shrinks_pane() {
 #[test]
 #[cfg(not(windows))] // Uses Unix shell
 fn test_mouse_maximize_button_resizes_terminal() {
-    let mut harness = harness_or_return!(120, 30);
+    let mut harness =
+        harness_with_config_or_return!(120, 30, crate::common::harness::config_with_tab_bar());
 
     harness.editor_mut().open_terminal();
     harness.render().unwrap();
@@ -5457,7 +5462,7 @@ fn test_mouse_maximize_button_resizes_terminal() {
     let screen = harness.screen_to_string();
     let btn_col = tab_row_col_of(&screen, '□')
         .unwrap_or_else(|| panic!("expected a '□' maximize button on the tab row:\n{screen}"));
-    harness.mouse_click(btn_col, 1).unwrap();
+    harness.mouse_click(btn_col, TAB_ROW).unwrap();
     harness.render().unwrap();
 
     // The grid reflow happens synchronously with the resize, so the very next

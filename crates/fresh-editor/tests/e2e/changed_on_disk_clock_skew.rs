@@ -359,7 +359,7 @@ fn a_same_size_change_is_hashed_once_not_on_every_poll() {
     std::fs::write(&file, "FIRST ORIGINAL\n").unwrap();
     harness
         .wait_until(|h| {
-            h.get_status_bar()
+            h.status_message()
                 .contains("changed on disk (buffer has unsaved")
         })
         .unwrap();

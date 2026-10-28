@@ -909,14 +909,16 @@ fn test_diff_mouse_click_moves_cursor() {
     // The diff view layout (120 width):
     // - Left pane header "OLD (HEAD)" starts around col 0
     // - Right pane header "NEW (Working)" starts around col 60
-    // - Content rows start at row 4 (after menu bar, tab bar, headers)
+    // - Content rows start two rows below the content area (after the
+    //   headers)
     // - Line numbers take ~4 chars, then content
-    // Click on row 5 (line 2 content), column 10 (in left pane content area)
+    // Click on line 2's row, column 10 (in left pane content area)
+    let row = harness.content_start_row() as u16 + 3;
     harness
         .send_mouse(MouseEvent {
             kind: MouseEventKind::Down(MouseButton::Left),
             column: 10,
-            row: 5,
+            row,
             modifiers: KeyModifiers::NONE,
         })
         .unwrap();
@@ -925,7 +927,7 @@ fn test_diff_mouse_click_moves_cursor() {
         .send_mouse(MouseEvent {
             kind: MouseEventKind::Up(MouseButton::Left),
             column: 10,
-            row: 5,
+            row,
             modifiers: KeyModifiers::NONE,
         })
         .unwrap();
@@ -935,7 +937,7 @@ fn test_diff_mouse_click_moves_cursor() {
     let screen = harness.screen_to_string();
     assert!(
         harness.status_line() == Some(2),
-        "Cursor should move to line 2 after clicking row 5, got: {}",
+        "Cursor should move to line 2 after clicking its row, got: {}",
         screen
     );
 }

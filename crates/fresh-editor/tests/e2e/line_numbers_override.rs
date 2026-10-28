@@ -52,10 +52,10 @@ const TOGGLE_PIN: &str = "Toggle Line Numbers (Current Buffer)";
 /// the longer [`TOGGLE_PIN`] that shares its prefix.
 const TOGGLE_GLOBAL: &str = "Toggle Line Numbers";
 
-/// The gutter separator immediately before a line of text. Its presence on the
-/// row holding `body` is the only on-screen evidence of line numbers.
-fn gutter_before(body: &str) -> String {
-    format!("│ {body}")
+/// Whether the gutter draws a line number before the row holding `body` —
+/// the only on-screen evidence of line numbers.
+fn has_gutter(harness: &EditorTestHarness, body: &str) -> bool {
+    harness.line_number_before(body).is_some()
 }
 
 /// A config with the given global `editor.line_numbers` and markdown opening
@@ -219,19 +219,25 @@ fn test_page_view_keeps_per_buffer_line_numbers_across_tab_switch() {
     harness
         .wait_until_stable(|h| !h.screen_to_string().contains("**"))
         .unwrap();
-    harness.assert_screen_not_contains(&gutter_before(TWO_BODY));
+    assert!(
+        !has_gutter(&harness, TWO_BODY),
+        "no line numbers before {}",
+        TWO_BODY
+    );
 
     // Same on one.md, which is where the pin goes.
     switch_tab(&mut harness, KeyCode::PageUp, ONE_BODY);
     harness
         .wait_until_stable(|h| !h.screen_to_string().contains("**"))
         .unwrap();
-    harness.assert_screen_not_contains(&gutter_before(ONE_BODY));
+    assert!(
+        !has_gutter(&harness, ONE_BODY),
+        "no line numbers before {}",
+        ONE_BODY
+    );
 
     pin_line_numbers(&mut harness);
-    harness
-        .wait_for_screen_contains(&gutter_before(ONE_BODY))
-        .unwrap();
+    harness.wait_until(|h| has_gutter(h, ONE_BODY)).unwrap();
 
     // Leave the tab and come back. Returning fires `buffer_activated`, which
     // has the plugin re-apply compose — that must not undo the pin.
@@ -247,7 +253,11 @@ fn test_page_view_keeps_per_buffer_line_numbers_across_tab_switch() {
         .wait_until_stable(|h| !h.screen_to_string().contains("**"))
         .unwrap();
 
-    harness.assert_screen_contains(&gutter_before(ONE_BODY));
+    assert!(
+        has_gutter(&harness, ONE_BODY),
+        "line numbers before {}",
+        ONE_BODY
+    );
     harness.assert_no_plugin_errors();
 }
 
@@ -271,28 +281,44 @@ fn test_source_view_keeps_per_buffer_line_numbers_across_tab_switch() {
 
     // No Page View: both buffers show the gutter from the global default, and
     // the emphasis markers stay literal.
-    harness.assert_screen_contains(&gutter_before(TWO_BODY));
+    assert!(
+        has_gutter(&harness, TWO_BODY),
+        "line numbers before {}",
+        TWO_BODY
+    );
     harness.assert_screen_contains("**strong**");
 
     // Go to one.md and pin its line numbers *off*.
     switch_tab(&mut harness, KeyCode::PageUp, ONE_BODY);
-    harness.assert_screen_contains(&gutter_before(ONE_BODY));
+    assert!(
+        has_gutter(&harness, ONE_BODY),
+        "line numbers before {}",
+        ONE_BODY
+    );
 
     pin_line_numbers(&mut harness);
     harness
-        .wait_until_stable(|h| !h.screen_to_string().contains(&gutter_before(ONE_BODY)))
+        .wait_until_stable(|h| !has_gutter(h, ONE_BODY))
         .unwrap();
 
     // Leave the tab and come back; the pin survives.
     switch_tab(&mut harness, KeyCode::PageDown, TWO_BODY);
-    harness.assert_screen_contains(&gutter_before(TWO_BODY));
+    assert!(
+        has_gutter(&harness, TWO_BODY),
+        "line numbers before {}",
+        TWO_BODY
+    );
 
     switch_tab(&mut harness, KeyCode::PageUp, ONE_BODY);
     type_at_end_of_document(&mut harness);
     harness.wait_for_screen_contains(" **x**").unwrap();
 
     harness.assert_screen_contains(ONE_BODY);
-    harness.assert_screen_not_contains(&gutter_before(ONE_BODY));
+    assert!(
+        !has_gutter(&harness, ONE_BODY),
+        "no line numbers before {}",
+        ONE_BODY
+    );
     harness.assert_no_plugin_errors();
 }
 
@@ -314,20 +340,16 @@ fn test_vi_set_number_beats_a_per_buffer_pin() {
     let (mut harness, _temp, _fixture) = vi_harness(config);
 
     // The gutter is on by default; pin it off for this buffer.
-    harness
-        .wait_for_screen_contains(&gutter_before(PLAIN_BODY))
-        .unwrap();
+    harness.wait_until(|h| has_gutter(h, PLAIN_BODY)).unwrap();
     pin_line_numbers(&mut harness);
     harness
-        .wait_until_stable(|h| !h.screen_to_string().contains(&gutter_before(PLAIN_BODY)))
+        .wait_until_stable(|h| !has_gutter(h, PLAIN_BODY))
         .unwrap();
 
     enable_vi_mode(&mut harness);
     run_ex_command(&mut harness, "set number");
 
-    harness
-        .wait_for_screen_contains(&gutter_before(PLAIN_BODY))
-        .unwrap();
+    harness.wait_until(|h| has_gutter(h, PLAIN_BODY)).unwrap();
     harness.assert_no_plugin_errors();
 }
 
@@ -344,17 +366,19 @@ fn test_vi_set_nonumber_beats_a_per_buffer_pin() {
 
     // The gutter is off globally; pin it on for this buffer.
     harness.wait_for_screen_contains(PLAIN_BODY).unwrap();
-    harness.assert_screen_not_contains(&gutter_before(PLAIN_BODY));
+    assert!(
+        !has_gutter(&harness, PLAIN_BODY),
+        "no line numbers before {}",
+        PLAIN_BODY
+    );
     pin_line_numbers(&mut harness);
-    harness
-        .wait_for_screen_contains(&gutter_before(PLAIN_BODY))
-        .unwrap();
+    harness.wait_until(|h| has_gutter(h, PLAIN_BODY)).unwrap();
 
     enable_vi_mode(&mut harness);
     run_ex_command(&mut harness, "set nonumber");
 
     harness
-        .wait_until_stable(|h| !h.screen_to_string().contains(&gutter_before(PLAIN_BODY)))
+        .wait_until_stable(|h| !has_gutter(h, PLAIN_BODY))
         .unwrap();
     harness.assert_screen_contains(PLAIN_BODY);
     harness.assert_no_plugin_errors();
@@ -385,7 +409,11 @@ fn test_global_toggle_line_numbers_survives_a_tab_switch_while_composing() {
     harness
         .wait_until_stable(|h| !h.screen_to_string().contains("**"))
         .unwrap();
-    harness.assert_screen_not_contains(&gutter_before(TWO_BODY));
+    assert!(
+        !has_gutter(&harness, TWO_BODY),
+        "no line numbers before {}",
+        TWO_BODY
+    );
 
     harness.run_palette_command(TOGGLE_GLOBAL).unwrap();
     harness.wait_for_prompt_closed().unwrap();
@@ -396,9 +424,7 @@ fn test_global_toggle_line_numbers_survives_a_tab_switch_while_composing() {
     harness
         .wait_until_stable(|h| !h.screen_to_string().contains("**"))
         .unwrap();
-    let gutter_after_toggle = harness
-        .screen_to_string()
-        .contains(&gutter_before(TWO_BODY));
+    let gutter_after_toggle = has_gutter(&harness, TWO_BODY);
 
     // Leave the tab and come back. Returning fires `buffer_activated`, where
     // compose re-asserts its default.
@@ -412,9 +438,7 @@ fn test_global_toggle_line_numbers_survives_a_tab_switch_while_composing() {
     harness
         .wait_until_stable(|h| !h.screen_to_string().contains("**"))
         .unwrap();
-    let gutter_after_round_trip = harness
-        .screen_to_string()
-        .contains(&gutter_before(TWO_BODY));
+    let gutter_after_round_trip = has_gutter(&harness, TWO_BODY);
 
     assert_eq!(
         gutter_after_toggle,
@@ -451,7 +475,11 @@ fn test_global_toggle_line_numbers_flips_the_global_setting_from_a_compose_buffe
     harness
         .wait_until_stable(|h| !h.screen_to_string().contains("**"))
         .unwrap();
-    harness.assert_screen_not_contains(&gutter_before(TWO_BODY));
+    assert!(
+        !has_gutter(&harness, TWO_BODY),
+        "no line numbers before {}",
+        TWO_BODY
+    );
 
     // The setting is on, so one press of the global toggle means "off".
     harness.run_palette_command(TOGGLE_GLOBAL).unwrap();
@@ -467,6 +495,10 @@ fn test_global_toggle_line_numbers_flips_the_global_setting_from_a_compose_buffe
         .unwrap();
 
     harness.assert_screen_contains(PLAIN_BODY);
-    harness.assert_screen_not_contains(&gutter_before(PLAIN_BODY));
+    assert!(
+        !has_gutter(&harness, PLAIN_BODY),
+        "no line numbers before {}",
+        PLAIN_BODY
+    );
     harness.assert_no_plugin_errors();
 }

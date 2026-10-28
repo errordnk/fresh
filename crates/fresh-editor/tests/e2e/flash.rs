@@ -556,8 +556,10 @@ fn flash_jumps_across_splits() {
     harness.render().unwrap();
 
     // Sanity: both files visible.
-    harness.wait_for_screen_contains("left.txt").unwrap();
-    harness.wait_for_screen_contains("right.txt").unwrap();
+    harness.wait_for_screen_contains("alpha left side").unwrap();
+    harness
+        .wait_for_screen_contains("alpha right side")
+        .unwrap();
 
     // Cursor is currently in right.txt at byte 0.  After arming flash
     // and typing "alpha", labels are 'a' (right split, distance 0) and

@@ -536,8 +536,21 @@ impl Write for CaptureBuffer {
 
 /// A default config with the tab bar shown (it is hidden by default). For
 /// tests whose subject is the tabs.
-pub fn config_with_tab_bar() -> Config {
+/// The config the harness builds when it is given none: the defaults with
+/// auto-indent, auto-close, auto-surround and animations off. The
+/// `config_with_*` helpers start from it, so a test that only switches a bar
+/// or a feature on keeps the rest of the harness's settled behaviour.
+pub fn test_config() -> Config {
     let mut config = Config::default();
+    config.editor.auto_indent = false;
+    config.editor.auto_close = false;
+    config.editor.auto_surround = false;
+    config.editor.animations = false;
+    config
+}
+
+pub fn config_with_tab_bar() -> Config {
+    let mut config = test_config();
     config.editor.show_tab_bar = true;
     config
 }
@@ -545,7 +558,7 @@ pub fn config_with_tab_bar() -> Config {
 /// A default config with code folding on and the gutter's indicator column
 /// shown, where the fold arrows are drawn (both are off by default).
 pub fn config_with_folding() -> Config {
-    let mut config = Config::default();
+    let mut config = test_config();
     config.editor.code_folding = true;
     config.editor.gutter_indicators = true;
     config
@@ -555,7 +568,7 @@ pub fn config_with_folding() -> Config {
 /// off): Right at the end of a line goes to the next one. For tests of that
 /// classic movement; by default the cursor may go past the end of a line.
 pub fn config_without_virtual_space() -> Config {
-    let mut config = Config::default();
+    let mut config = test_config();
     config.editor.virtual_space = fresh::config::VirtualSpaceMode::Off;
     config
 }
@@ -571,7 +584,7 @@ pub fn config_with_menu_and_tab_bar() -> Config {
 /// A default config whose status bar also shows `elements`, in front of the
 /// right side's `line:col`. For tests of elements the default bar leaves off.
 pub fn config_with_status_elements(elements: &[fresh::config::StatusBarElement]) -> Config {
-    let mut config = Config::default();
+    let mut config = test_config();
     let right = &mut config.editor.status_bar.right;
     for (i, element) in elements.iter().enumerate() {
         right.insert(i, element.clone());
@@ -828,25 +841,15 @@ impl EditorTestHarness {
 
         // Prepare config with test-friendly defaults
         // If no config provided, use defaults; if config provided, respect its settings
-        let config_was_provided = options.config.is_some();
-        let mut config = options.config.unwrap_or_default();
-        // Only override auto_indent/auto_close/animations if no config was
-        // explicitly provided. Animations span multiple render ticks, so
-        // tests that drive the UI via single `render()` calls and then
-        // inspect the screen would see mid-slide frames instead of the
-        // settled result. Tests that want to exercise the animation
-        // layer pass their own Config with `animations: true`.
-        if !config_was_provided {
-            config.editor.auto_indent = false; // Disable for simpler testing
-            config.editor.auto_close = false; // Disable for simpler testing
-                                              // Auto-surround is a distinct behaviour (typing a delimiter over a
-                                              // selection wraps it) and has to be turned off explicitly. It used
-                                              // to be disabled as a side effect of `auto_close = false`, because
-                                              // the surround path resolved its pair through the auto-close
-                                              // table; it no longer does.
-            config.editor.auto_surround = false; // Disable for simpler testing
-            config.editor.animations = false;
-        }
+        // Without an explicit config the harness uses `test_config()`:
+        // auto-indent/close/surround off for simpler typing, and animations
+        // off, because they span multiple render ticks and a test that
+        // renders once would see a mid-slide frame instead of the settled
+        // result. Auto-surround (typing a delimiter over a selection wraps
+        // it) has to be turned off on its own: it no longer resolves its
+        // pair through the auto-close table. Tests that want any of these
+        // pass their own Config.
+        let mut config = options.config.unwrap_or_else(test_config);
         // Always force the prompt line to be visible in tests so layout-
         // sensitive assertions (scrolling, scrollbar invariants, status bar
         // positioning, content_area_rows) stay stable. The user-facing
@@ -2937,6 +2940,11 @@ impl EditorTestHarness {
         self.terminal.size().unwrap().height as usize
     }
 
+    /// Get the terminal width in cells
+    pub fn terminal_width(&self) -> usize {
+        self.terminal.size().unwrap().width as usize
+    }
+
     /// Get a specific row from the screen as a string
     pub fn get_screen_row(&self, row: usize) -> String {
         let screen = self.screen_to_string();
@@ -3068,6 +3076,16 @@ impl EditorTestHarness {
             "status bar: {:?}",
             self.get_status_bar()
         );
+    }
+
+    /// The whole status message the bar is showing. The bar centres it
+    /// between the file name and the cursor position and elides what does not
+    /// fit, so a test after a long message's text reads it here.
+    pub fn status_message(&self) -> String {
+        self.editor
+            .get_status_message()
+            .cloned()
+            .unwrap_or_default()
     }
 
     /// Get the prompt line content

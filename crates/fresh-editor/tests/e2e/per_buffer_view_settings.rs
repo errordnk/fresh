@@ -38,8 +38,10 @@ fn cursor_line_is_highlighted(harness: &EditorTestHarness, needle: &str) -> bool
         .map(|r| r as u16)
         .find(|r| *r != cursor_row && !harness.get_row_text(*r).trim().is_empty())
         .expect("expected a second content row to compare against");
-    // The highlight stays out of the gutter: compare the first text column.
-    let text_col = harness.gutter_width() as u16;
+    // The highlight stays out of the gutter, the cursor sits on the first
+    // text column and the word under it is highlighted on its own: compare a
+    // column past the end of these short lines.
+    let text_col = harness.gutter_width() as u16 + 20;
     harness.get_cell_style(text_col, cursor_row).map(|s| s.bg)
         != harness.get_cell_style(text_col, other_row).map(|s| s.bg)
 }

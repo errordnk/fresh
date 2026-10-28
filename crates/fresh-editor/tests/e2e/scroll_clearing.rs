@@ -423,9 +423,8 @@ fn test_leftover_characters_after_last_line() {
     for row_idx in content_first_row..=content_last_row {
         if row_idx < screen_lines.len() {
             let line = screen_lines[row_idx];
-            // Check if line contains a line number (indicates file content)
-            // Line numbers are at the start of lines, like "   47 │"
-            if line.contains("│") && !line.trim_start().starts_with("│") {
+            // A line number in the gutter marks a row of file content.
+            if harness.row_line_number(line).is_some() {
                 last_content_row = row_idx;
             }
         }
@@ -458,9 +457,9 @@ fn test_leftover_characters_after_last_line() {
                 continue;
             }
 
-            // The row should only contain spaces (and possibly gutter characters)
-            // Any other character is a potential leftover
-            if !ch.is_whitespace() && ch != '│' && ch != '█' {
+            // The row should only contain spaces (and the `~` filler drawn
+            // past the end of the buffer). Any other character is a leftover
+            if !ch.is_whitespace() && ch != '~' && ch != '█' {
                 leftover_issues.push(format!(
                     "Row {}, Col {}: Found '{}' (expected space or gutter)",
                     row_idx, col, ch
@@ -492,7 +491,7 @@ fn test_leftover_characters_after_last_line() {
     for row_idx in content_first_row..=content_last_row {
         if row_idx < screen_lines_after.len() {
             let line = screen_lines_after[row_idx];
-            if line.contains("│") && !line.trim_start().starts_with("│") {
+            if harness.row_line_number(line).is_some() {
                 last_content_row_after = row_idx;
             }
         }
@@ -516,7 +515,7 @@ fn test_leftover_characters_after_last_line() {
                 continue;
             }
 
-            if !ch.is_whitespace() && ch != '│' && ch != '█' {
+            if !ch.is_whitespace() && ch != '~' && ch != '█' {
                 leftover_issues.push(format!(
                     "After scroll - Row {}, Col {}: Found '{}' (expected space or gutter)",
                     row_idx, col, ch

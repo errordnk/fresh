@@ -4015,7 +4015,13 @@ fn test_named_color_swatch_uses_native_ansi_color() {
             let lines: Vec<&str> = screen.lines().collect();
             let Some(row) = lines
                 .iter()
-                .position(|l| l.contains("tab_active_fg") && l.contains("██"))
+                // The list on the left only: the details pane on the right
+                // names the selected `tab_active_fg_modifier`, on whichever
+                // row it reaches.
+                .position(|l| {
+                    let list = l.split('│').next().unwrap_or("");
+                    list.contains("tab_active_fg ") && list.contains("██")
+                })
             else {
                 return false;
             };

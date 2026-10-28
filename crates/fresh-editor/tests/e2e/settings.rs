@@ -816,22 +816,21 @@ fn test_settings_dropdown_cycle() {
         .unwrap();
     harness.render().unwrap();
 
-    // Check initial theme value (should be "dark")
-    let initial_screen = harness.screen_to_string();
-    let has_dark = initial_screen.contains("dark");
-
-    // Press Enter to cycle to next option
+    // Enter opens the dropdown's list on the current theme; Down and Enter
+    // pick the next one.
+    harness
+        .send_key(KeyCode::Enter, KeyModifiers::NONE)
+        .unwrap();
+    harness.render().unwrap();
+    harness.assert_screen_contains("nord-darker");
+    harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     harness
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
     harness.render().unwrap();
 
-    // If it was "dark", it should now be "light" or another theme option
-    // The exact value depends on available themes, but it should change
-    if has_dark {
-        // Should show modified indicator since we changed the value
-        harness.assert_screen_contains("modified");
-    }
+    // Should show modified indicator since we changed the value
+    harness.assert_screen_contains("modified");
 
     // Discard and close
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();

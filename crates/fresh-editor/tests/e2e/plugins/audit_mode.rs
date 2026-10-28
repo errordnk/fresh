@@ -213,7 +213,7 @@ fn test_review_diff_side_by_side_view() {
 }
 
 fn load_config() -> Config {
-    Config::default()
+    crate::common::harness::config_with_tab_bar()
 }
 
 fn start_server(config: Config) {
@@ -226,7 +226,7 @@ fn start_server(config: Config) {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        crate::common::harness::config_with_tab_bar(),
         repo.path.clone(),
     )
     .unwrap();

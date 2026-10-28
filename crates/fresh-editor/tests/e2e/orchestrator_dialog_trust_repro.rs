@@ -289,9 +289,17 @@ fn record_trusted_on_disk(h: &EditorTestHarness, root: &Path) {
 #[test]
 fn worktree_inherits_base_repo_trust_decision() {
     let (_tmp, base, wt) = repo_with_worktree();
-    let mut h =
-        EditorTestHarness::with_config_and_working_dir(WIDTH, HEIGHT, Default::default(), wt)
-            .unwrap();
+    // The trust level is read off its status-bar element (not on the
+    // default bar).
+    let mut h = EditorTestHarness::with_config_and_working_dir(
+        WIDTH,
+        HEIGHT,
+        crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::WorkspaceTrust,
+        ]),
+        wt,
+    )
+    .unwrap();
     // The user already answered the prompt for the base repo.
     record_trusted_on_disk(&h, &base);
 
@@ -340,7 +348,16 @@ fn worktree_of_undecided_repo_still_prompts() {
 /// UI forwards its clicks to this same hit-test, so the two share the fix.
 #[test]
 fn trust_dialog_radio_click_selects_without_accepting() {
-    let mut h = EditorTestHarness::with_temp_project(WIDTH, HEIGHT).unwrap();
+    // The trust level is read off its status-bar element (not on the
+    // default bar).
+    let mut h = EditorTestHarness::with_temp_project_and_config(
+        WIDTH,
+        HEIGHT,
+        crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::WorkspaceTrust,
+        ]),
+    )
+    .unwrap();
     let dir = h.editor().working_dir().to_path_buf();
     fs::write(dir.join("Cargo.toml"), "[package]\nname = \"x\"\n").unwrap();
 

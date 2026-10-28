@@ -27,9 +27,10 @@ fn bar_column(harness: &EditorTestHarness) -> u16 {
     );
 }
 
+/// Content rows only: the status bar below shares the track's colour.
 fn rows_with_bg(harness: &EditorTestHarness, column: u16, want: Color) -> Vec<u16> {
-    let area = harness.buffer().area;
-    (0..area.height)
+    let (first, last) = harness.content_area_rows();
+    (first as u16..=last as u16)
         .filter(|&y| {
             harness
                 .get_cell_style(column, y)

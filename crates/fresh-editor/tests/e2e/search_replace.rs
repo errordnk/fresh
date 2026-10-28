@@ -1916,6 +1916,8 @@ fn test_search_replace_confirmation_dialog_cancel_leaves_files_untouched() {
             s.contains("matches") && s.contains("[v]")
         })
         .unwrap();
+    // Replace All is dropped while the search still runs.
+    wait_for_search_finished(&mut harness);
 
     // Trigger Replace All — expect the confirmation dialog to open. It is
     // a modal dialog, not the prompt line at the bottom of the screen.
@@ -2779,6 +2781,9 @@ fn test_search_replace_next_match_navigation() {
             s.contains("matches") && s.contains("alpha.txt") && s.contains("beta.txt")
         })
         .unwrap();
+    // The search's own "Found N matches" lands when it finishes; navigating
+    // before that has its "Match n/total" overwritten.
+    wait_for_search_finished(&mut harness);
 
     // First match (from the panel via the mode binding).
     harness
@@ -2879,6 +2884,9 @@ fn test_search_replace_nav_highlights_selection() {
         .unwrap();
     harness.type_text("hello").unwrap();
     wait_for_sorted_hello_results(&mut harness);
+    // Navigating before the search finishes has its "Match n/total"
+    // overwritten by the search's own "Found N matches".
+    wait_for_search_finished(&mut harness);
 
     // Screen rows of the match leaf rows (they render "…:<line> - hello…").
     let screen = harness.screen_to_string();

@@ -109,6 +109,9 @@ fn tabs_show_group_and_file(h: &EditorTestHarness) -> bool {
     tabs.contains("PAIR") && tabs.contains("a.txt")
 }
 
+/// The tab bar's screen row: the top row, the menu bar being hidden.
+const TAB_ROW: u16 = 0;
+
 /// The screen column `text` starts at in the tab bar, if it is there.
 fn tab_col(h: &EditorTestHarness, text: &str) -> Option<u16> {
     let tabs = h.get_tab_bar();
@@ -232,14 +235,14 @@ fn the_files_own_tab_switches_away_from_the_group() {
     open_pair(&mut h);
 
     let col = tab_col(&h, "a.txt").unwrap();
-    h.mouse_click(col + 1, 1).unwrap();
-    // One pane, settled: the row has one gutter, not a panel's on each side
-    // (the tab switch slides, and a frame of the slide can show one row).
+    h.mouse_click(col + 1, TAB_ROW).unwrap();
+    // One pane, settled: the row has no divider between two panels (the tab
+    // switch slides, and a frame of the slide can show one row).
     h.wait_until(|h| {
         let one_pane = (0..30)
             .map(|r| h.screen_row_text(r))
             .find(|row| row.contains("row 001"))
-            .is_some_and(|row| row.matches('│').count() == 1);
+            .is_some_and(|row| !row.contains('│'));
         count(h, "row 001") == 1 && one_pane && tabs_show_group_and_file(h)
     })
     .unwrap();
@@ -258,7 +261,7 @@ fn closing_the_files_tab_asks_about_unsaved_changes() {
     let tabs = h.get_tab_bar();
     let name = tabs.find("a.txt").unwrap();
     let close = name + tabs[name..].find('×').unwrap();
-    h.mouse_click(tabs[..close].chars().count() as u16, 1)
+    h.mouse_click(tabs[..close].chars().count() as u16, TAB_ROW)
         .unwrap();
     h.wait_for_screen_contains("Unsaved Changes").unwrap();
 }
@@ -276,7 +279,7 @@ fn closing_the_group_returns_to_its_file() {
 
     // Back to the group's tab, which now has b.txt behind it.
     let col = tab_col(&h, "PAIR").unwrap();
-    h.mouse_click(col + 1, 1).unwrap();
+    h.mouse_click(col + 1, TAB_ROW).unwrap();
     h.wait_until(|h| count(h, "row 001") == 2).unwrap();
 
     run(&mut h, "fpanel: Close");
@@ -349,7 +352,7 @@ fn close_the_files_tab_answering(h: &mut EditorTestHarness, key: char) {
     let tabs = h.get_tab_bar();
     let name = tabs.find("a.txt").unwrap();
     let close = name + tabs[name..].find('×').unwrap();
-    h.mouse_click(tabs[..close].chars().count() as u16, 1)
+    h.mouse_click(tabs[..close].chars().count() as u16, TAB_ROW)
         .unwrap();
     h.wait_for_screen_contains("Unsaved Changes").unwrap();
     h.send_key(KeyCode::Char(key), KeyModifiers::NONE).unwrap();

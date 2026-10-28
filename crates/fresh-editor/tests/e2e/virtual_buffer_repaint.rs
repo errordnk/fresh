@@ -128,8 +128,9 @@ fn a_virtual_buffer_can_opt_out_of_the_current_line_highlight() {
     // caret's row (the first) is painted differently from the row below.
     let mut harness = EditorTestHarness::with_config(60, 12, config.clone()).unwrap();
     create(&mut harness, "first\nsecond\n", None);
-    let lit = harness.get_cell_style(20, 2).map(|s| s.bg);
-    let plain = harness.get_cell_style(20, 3).map(|s| s.bg);
+    let top = harness.content_start_row() as u16;
+    let lit = harness.get_cell_style(20, top).map(|s| s.bg);
+    let plain = harness.get_cell_style(20, top + 1).map(|s| s.bg);
     assert_ne!(
         lit, plain,
         "control: with the setting on and no override, the cursor row should \
@@ -139,8 +140,9 @@ fn a_virtual_buffer_can_opt_out_of_the_current_line_highlight() {
     // Opted out: the two rows paint alike.
     let mut harness = EditorTestHarness::with_config(60, 12, config).unwrap();
     create(&mut harness, "first\nsecond\n", Some(false));
-    let cursor_row = harness.get_cell_style(20, 2).map(|s| s.bg);
-    let other_row = harness.get_cell_style(20, 3).map(|s| s.bg);
+    let top = harness.content_start_row() as u16;
+    let cursor_row = harness.get_cell_style(20, top).map(|s| s.bg);
+    let other_row = harness.get_cell_style(20, top + 1).map(|s| s.bg);
     assert_eq!(
         cursor_row, other_row,
         "highlightCurrentLine: false still lit the cursor row"

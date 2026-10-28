@@ -483,7 +483,12 @@ fn pairing_again_after_a_tab_drag_closes_a_pane_syncs_the_new_pair() {
         let byte = tab_row.rfind(name).expect("the right pane's tab");
         let tab_col = tab_row[..byte].chars().count() as u16;
         harness
-            .mouse_drag(tab_col + 2, 1, left_col + 10, row + 8)
+            .mouse_drag(
+                tab_col + 2,
+                harness.tab_bar_row() as u16,
+                left_col + 10,
+                row + 8,
+            )
             .unwrap();
         // The drop is handled with the events; draw it so the next tab is
         // found where it now is.

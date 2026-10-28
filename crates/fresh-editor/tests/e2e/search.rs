@@ -525,7 +525,13 @@ fn test_search_highlighting_visible_only() {
 /// Test interactive replace wrap-around behavior
 #[test]
 fn test_interactive_replace_wrap_around() {
-    let mut harness = EditorTestHarness::with_temp_project(100, 24).unwrap();
+    // Right walks across line ends to reach the middle of the file.
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        100,
+        24,
+        crate::common::harness::config_without_virtual_space(),
+    )
+    .unwrap();
     let project_dir = harness.project_dir().unwrap();
     let file_path = project_dir.join("test.txt");
 

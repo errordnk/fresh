@@ -1065,7 +1065,14 @@ fn test_edit_scan_edit_line_numbers_stay_exact() {
     let _ = harness.type_text("s");
     // Drive the scan to completion.
     while harness.editor_mut().process_line_scan() {}
-    // Cancel the Go To Line prompt that opens after scan.
+    // Cancel the Go To Line prompt that opens after scan. (Esc with nothing
+    // to dismiss would quit, so the prompt must be there.)
+    harness.render().unwrap();
+    assert!(
+        harness.editor().is_prompting(),
+        "the scan should reopen Go To Line.\nScreen:\n{}",
+        harness.screen_to_string()
+    );
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();
 
     // === Step 4: Verify exact line numbers (status bar shows line:col) ===
@@ -1184,7 +1191,7 @@ fn test_large_file_gutter_indicators_byte_offset_mode() {
 
     fn get_content_lines(screen: &str) -> Vec<&str> {
         let lines: Vec<&str> = screen.lines().collect();
-        let content_start = 2;
+        let content_start = 0; // the menu and tab bars are hidden
         let content_end = lines.len().saturating_sub(2);
         if content_end > content_start {
             lines[content_start..content_end].to_vec()
@@ -1250,6 +1257,8 @@ fn test_large_file_gutter_indicators_byte_offset_mode() {
             editor: fresh::config::EditorConfig {
                 large_file_threshold_bytes: 11 * 1024 * 1024,
                 auto_indent: false,
+                // The change markers are drawn in the indicator column.
+                gutter_indicators: true,
                 ..Default::default()
             },
             ..Default::default()
@@ -1379,7 +1388,7 @@ fn test_large_file_gutter_indicators_after_line_scan() {
     /// Get content lines from screen (skip menu bar, tab bar, and bottom UI)
     fn get_content_lines(screen: &str) -> Vec<&str> {
         let lines: Vec<&str> = screen.lines().collect();
-        let content_start = 2; // after menu bar + tab bar
+        let content_start = 0; // the menu and tab bars are hidden
         let content_end = lines.len().saturating_sub(2); // before status bar + prompt
         if content_end > content_start {
             lines[content_start..content_end].to_vec()
@@ -1452,6 +1461,8 @@ fn test_large_file_gutter_indicators_after_line_scan() {
             editor: fresh::config::EditorConfig {
                 large_file_threshold_bytes: 11 * 1024 * 1024,
                 auto_indent: false,
+                // The change markers are drawn in the indicator column.
+                gutter_indicators: true,
                 ..Default::default()
             },
             ..Default::default()
@@ -1675,7 +1686,7 @@ fn test_large_file_gutter_indicators_viewport_filtering() {
     /// Get content lines from screen (skip menu bar, tab bar, and bottom UI)
     fn get_content_lines(screen: &str) -> Vec<&str> {
         let lines: Vec<&str> = screen.lines().collect();
-        let content_start = 2; // after menu bar + tab bar
+        let content_start = 0; // the menu and tab bars are hidden
         let content_end = lines.len().saturating_sub(2); // before status bar + prompt
         if content_end > content_start {
             lines[content_start..content_end].to_vec()
@@ -1741,6 +1752,8 @@ fn test_large_file_gutter_indicators_viewport_filtering() {
             editor: fresh::config::EditorConfig {
                 large_file_threshold_bytes: 11 * 1024 * 1024,
                 auto_indent: false,
+                // The change markers are drawn in the indicator column.
+                gutter_indicators: true,
                 ..Default::default()
             },
             ..Default::default()
