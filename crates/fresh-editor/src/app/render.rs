@@ -6257,6 +6257,11 @@ impl Editor {
             .get(&active_buf)
             .map(|m| m.read_only)
             .unwrap_or(false);
+        let is_binary = self
+            .active_window()
+            .buffer_metadata
+            .get(&active_buf)
+            .is_some_and(|m| m.binary);
         let is_synthetic_placeholder = self
             .active_window()
             .buffer_metadata
@@ -6315,6 +6320,7 @@ impl Editor {
                     remote_connection: remote_connection.as_deref(),
                     session_name: session_name.as_deref(),
                     read_only: is_read_only,
+                    binary: is_binary,
                     remote_state_override: self.remote_indicator_override.as_ref(),
                     remote_reconnect_error: remote_reconnect_error.as_deref(),
                     remote_connecting,

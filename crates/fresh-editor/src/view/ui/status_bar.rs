@@ -212,6 +212,9 @@ pub struct StatusBarContext<'a> {
     pub remote_connection: Option<&'a str>,
     pub session_name: Option<&'a str>,
     pub read_only: bool,
+    /// The active buffer holds a binary file (`[BIN]` after its name, as on
+    /// its tab).
+    pub binary: bool,
     /// Plugin-supplied override for the `{remote}` indicator. When
     /// `Some`, its state+label are rendered instead of the one
     /// derived from `remote_connection`. Set via the
@@ -425,6 +428,7 @@ impl StatusBarRenderer {
                 } else {
                     ""
                 };
+                let binary_indicator = if ctx.binary { " [BIN]" } else { "" };
                 let read_only_indicator = if ctx.read_only { " [RO]" } else { "" };
                 let remote_disconnected = ctx
                     .remote_connection
@@ -455,7 +459,7 @@ impl StatusBarRenderer {
                     .unwrap_or_default();
                 let display_name = ctx.display_name;
                 let text = format!(
-                    "{session_prefix}{remote_prefix}{display_name}{modified}{read_only_indicator}"
+                    "{session_prefix}{remote_prefix}{display_name}{modified}{binary_indicator}{read_only_indicator}"
                 );
                 if remote_disconnected {
                     disconnected_filename(text)
