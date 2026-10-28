@@ -271,7 +271,11 @@ pub fn gutter_width(buffer: &Buffer) -> usize {
     } else {
         ((gutter_estimate as f64).log10().floor() as usize) + 1
     };
-    1 + digits.max(crate::view::margin::MIN_LINE_NUMBER_DIGITS) + 3
+    // As the margin draws it: the indicator column (when enabled), the
+    // numbers, then a one-space separator.
+    usize::from(crate::config::gutter_indicators_enabled())
+        + digits.max(crate::view::margin::MIN_LINE_NUMBER_DIGITS)
+        + 1
 }
 
 impl Viewport {

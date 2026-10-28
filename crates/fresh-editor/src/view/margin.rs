@@ -167,7 +167,7 @@ impl MarginConfig {
     }
 
     /// Calculate the total width including indicator column and separator
-    /// Format: [indicator (1 char)][line_number (N chars)][separator (3 chars)]
+    /// Format: [indicator (1 char, when enabled)][line_number (N chars)][separator (1 char)]
     pub fn total_width(&self) -> usize {
         if self.enabled {
             // indicator column (when enabled) + line number width + separator
