@@ -1716,13 +1716,13 @@ fn dock_initial_sort_is_lex_stable_not_current_first() {
 fn dock_close_reflows_buffer_to_full_width() {
     // Open dock, then toggle it closed. The active window's buffer
     // must reflow to fill the freed columns on the LEFT — line 1's
-    // gutter (`  1 │`) must move from inside the chrome (col ~32+)
+    // gutter (`1 alpha`) must move from inside the chrome (col ~32+)
     // back to column 0 immediately, without requiring any further
     // keypress / mouse-wheel. With the bug, the chrome stays at its
     // pre-close x-offset and the freed columns render as blank
     // whitespace until the user nudges the editor.
     let (_tmp, root) = setup_project("alphaproj");
-    // A file with multiple lines so the gutter "  1 │" is observable.
+    // A file with multiple lines so the gutter "1 alpha" is observable.
     std::fs::write(root.join("readme.txt"), "alpha\nbeta\ngamma\n").unwrap();
     let mut h =
         EditorTestHarness::with_config_and_working_dir(120, 32, Default::default(), root.clone())
@@ -1733,15 +1733,15 @@ fn dock_close_reflows_buffer_to_full_width() {
         .unwrap();
     open_dock(&mut h);
 
-    // Sanity: with the dock open, line 1's gutter "  1 │" lives in
+    // Sanity: with the dock open, line 1's gutter "1 alpha" lives in
     // the chrome (right of the dock column), so it sits beyond col 30.
     h.wait_until(|h| h.screen_to_string().contains("alpha"))
         .unwrap();
     let with_dock_col = h
         .screen_to_string()
         .lines()
-        .find_map(|l| l.find("  1 │").map(|c| (c, l.to_string())))
-        .expect("`  1 │` gutter on screen with dock open");
+        .find_map(|l| l.find("1 alpha").map(|c| (c, l.to_string())))
+        .expect("`1 alpha` gutter on screen with dock open");
     assert!(
         with_dock_col.0 > 30,
         "with dock open, line-1 gutter should be in chrome (col > 30); got col {}: {:?}",
@@ -1766,8 +1766,8 @@ fn dock_close_reflows_buffer_to_full_width() {
     let after_close_col = h
         .screen_to_string()
         .lines()
-        .find_map(|l| l.find("  1 │").map(|c| (c, l.to_string())))
-        .expect("`  1 │` gutter still on screen after dock close");
+        .find_map(|l| l.find("1 alpha").map(|c| (c, l.to_string())))
+        .expect("`1 alpha` gutter still on screen after dock close");
     assert!(
         after_close_col.0 < 5,
         "after dock close, line-1 gutter should be at the left edge \

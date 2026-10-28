@@ -289,8 +289,8 @@ fn git_log_enter_opens_the_line_under_the_cursor_after_non_ascii() {
     // cursor actually landed.
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 6, Col 1"),
+        harness.status_position() == Some((6, 1)),
         "Enter on the `+{ENTER_TARGET}` row should open notes.txt at line 6 \
-         (`Ln 6, Col 1`), but the cursor landed elsewhere.\nScreen:\n{screen}",
+         (`6:1`), but the cursor landed elsewhere.\nScreen:\n{screen}",
     );
 }

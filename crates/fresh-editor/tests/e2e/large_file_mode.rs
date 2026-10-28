@@ -741,10 +741,10 @@ fn test_byte_offset_gutter_and_scan() {
         "Gutter should show byte offsets for large files without line scan.\nScreen:\n{}",
         screen
     );
-    // Status bar should show "Byte 0" (not "Ln 1")
+    // Status bar should show byte offset 0 (not "1:1")
     assert!(
-        screen.contains("Byte 0"),
-        "Status bar should show 'Byte 0' in byte offset mode.\nScreen:\n{}",
+        harness.status_byte() == Some(0),
+        "Status bar should show byte offset 0 in byte offset mode.\nScreen:\n{}",
         screen
     );
 
@@ -776,7 +776,7 @@ fn test_byte_offset_gutter_and_scan() {
     // Status bar should show the byte position
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains(&format!("Byte {}", target_byte)),
+        harness.status_byte() == Some(target_byte),
         "Should have jumped to byte offset {}.\nScreen:\n{}",
         target_byte,
         screen
@@ -797,10 +797,10 @@ fn test_byte_offset_gutter_and_scan() {
     harness.render().unwrap();
     let screen = harness.screen_to_string();
     // After scan, gutter should have normal line numbers (small values like 501, 502...)
-    // and status bar should show "Ln X" instead of "Byte X"
+    // and status bar should show "line:col" instead of a byte offset
     assert!(
-        screen.contains("Ln "),
-        "After scanning, status bar should show 'Ln' not 'Byte'.\nScreen:\n{}",
+        harness.status_position().is_some(),
+        "After scanning, status bar should show line:col, not a byte offset.\nScreen:\n{}",
         screen
     );
 
@@ -822,7 +822,7 @@ fn test_byte_offset_gutter_and_scan() {
     // Verify we jumped (status bar should show the line)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 500"),
+        harness.status_line() == Some(500),
         "Should have jumped to line 500.\nScreen:\n{}",
         screen
     );
@@ -861,7 +861,7 @@ fn test_palette_line_jump_offers_scan_in_large_file() {
     // Precondition: large-file (byte-offset) mode, cursor at Byte 0.
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Byte 0"),
+        harness.status_byte() == Some(0),
         "Precondition: buffer should be in byte-offset mode.\nScreen:\n{}",
         screen
     );
@@ -911,7 +911,7 @@ fn test_palette_line_jump_offers_scan_in_large_file() {
         .unwrap();
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 1000"),
+        harness.status_line() == Some(1000),
         "After scanning, palette-driven jump should land on line 1000.\nScreen:\n{}",
         screen
     );
@@ -1001,7 +1001,7 @@ fn test_line_scan_progress_updates() {
         .unwrap();
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 500"),
+        harness.status_line() == Some(500),
         "Should have jumped to line 500.\nStatus bar: '{}'",
         status
     );
@@ -1044,11 +1044,11 @@ fn test_edit_scan_edit_line_numbers_stay_exact() {
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
-    // === Step 1: Verify byte offset gutter (status bar shows "Byte 0") ===
+    // === Step 1: Verify byte offset gutter (status bar shows byte offset 0) ===
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Byte 0"),
-        "Before scan, status bar should show 'Byte 0'.\nScreen:\n{}",
+        harness.status_byte() == Some(0),
+        "Before scan, status bar should show byte offset 0.\nScreen:\n{}",
         screen
     );
 
@@ -1073,12 +1073,12 @@ fn test_edit_scan_edit_line_numbers_stay_exact() {
     // Cancel the Go To Line prompt that opens after scan.
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();
 
-    // === Step 4: Verify exact line numbers (status bar shows "Ln") ===
+    // === Step 4: Verify exact line numbers (status bar shows line:col) ===
     harness.render().unwrap();
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln "),
-        "After scan, status bar should show 'Ln' (not 'Byte').\nScreen:\n{}",
+        harness.status_position().is_some(),
+        "After scan, status bar should show line:col (not a byte offset).\nScreen:\n{}",
         screen
     );
 
@@ -1098,7 +1098,7 @@ fn test_edit_scan_edit_line_numbers_stay_exact() {
         .unwrap();
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 500"),
+        harness.status_line() == Some(500),
         "Should have jumped to line 500.\nStatus bar: '{}'",
         status
     );
@@ -1114,7 +1114,7 @@ fn test_edit_scan_edit_line_numbers_stay_exact() {
         .unwrap();
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 50000"),
+        harness.status_line() == Some(50000),
         "Should have jumped to line 50000.\nStatus bar: '{}'",
         status
     );
@@ -1131,10 +1131,10 @@ fn test_edit_scan_edit_line_numbers_stay_exact() {
     );
 
     // === Step 6: Verify line numbers are STILL exact after the edit ===
-    // Status bar should show "Ln" (not "Byte")
+    // Status bar should show line:col (not a byte offset)
     assert!(
-        screen.contains("Ln "),
-        "After post-scan edit, status bar should still show 'Ln'.\nScreen:\n{}",
+        harness.status_position().is_some(),
+        "After post-scan edit, status bar should still show line:col.\nScreen:\n{}",
         screen
     );
 
@@ -1148,7 +1148,7 @@ fn test_edit_scan_edit_line_numbers_stay_exact() {
         .unwrap();
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 99999"),
+        harness.status_line() == Some(99999),
         "Should have jumped to line 99999.\nStatus bar: '{}'",
         status
     );
@@ -1273,7 +1273,7 @@ fn test_large_file_gutter_indicators_byte_offset_mode() {
     // ── Step 1: Verify byte-offset mode ──
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Byte 0"),
+        harness.status_byte() == Some(0),
         "Should be in byte-offset mode (no line scan).\nScreen:\n{}",
         screen
     );
@@ -1322,7 +1322,7 @@ fn test_large_file_gutter_indicators_byte_offset_mode() {
 
     // Still in byte-offset mode
     assert!(
-        screen.contains("Byte 0"),
+        harness.status_byte() == Some(0),
         "Should still be in byte-offset mode.\nScreen:\n{}",
         screen
     );
@@ -1476,7 +1476,7 @@ fn test_large_file_gutter_indicators_after_line_scan() {
     // ── Step 1: Verify byte-offset mode (large file, no line scan yet) ──
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Byte 0"),
+        harness.status_byte() == Some(0),
         "Should be in byte-offset mode before scanning.\nScreen:\n{}",
         screen
     );
@@ -1562,8 +1562,8 @@ fn test_large_file_gutter_indicators_after_line_scan() {
     harness.render().unwrap();
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln "),
-        "After scanning, status bar should show 'Ln' not 'Byte'.\nScreen:\n{}",
+        harness.status_position().is_some(),
+        "After scanning, status bar should show line:col, not a byte offset.\nScreen:\n{}",
         screen
     );
 
@@ -1778,7 +1778,7 @@ fn test_large_file_gutter_indicators_viewport_filtering() {
 
     // Verify line-number mode
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln "))
+        .wait_until(|h| h.status_position().is_some())
         .unwrap();
     eprintln!("[test] line numbers active");
 

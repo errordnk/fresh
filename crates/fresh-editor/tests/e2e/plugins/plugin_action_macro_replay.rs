@@ -145,10 +145,8 @@ fn replay(harness: &mut EditorTestHarness) -> Duration {
     harness.time_source().now() - started
 }
 
-fn cursor_line(harness: &EditorTestHarness) -> Option<u32> {
-    let status = harness.get_status_bar();
-    let rest = status.split("Ln ").nth(1)?;
-    rest.split(',').next()?.trim().parse().ok()
+fn cursor_line(harness: &EditorTestHarness) -> Option<usize> {
+    harness.status_line()
 }
 
 const MOVE_DOWN: &str = r#"function () {
@@ -189,7 +187,7 @@ fn a_plugin_handler_step_replays_once() {
 
 /// Record Alt+Y then `x`, and replay it from after that `x` on line 2.
 /// Returns the buffer and the line the cursor ends on.
-fn record_move_then_type_and_replay(handler: &str) -> (String, Option<u32>) {
+fn record_move_then_type_and_replay(handler: &str) -> (String, Option<usize>) {
     let (mut harness, _tmp) = harness("aaa\nbbb\nccc\nddd\n", handler);
 
     alt(&mut harness, 'r');

@@ -17,22 +17,11 @@ use crate::common::harness::EditorTestHarness;
 use crossterm::event::{KeyCode, KeyModifiers};
 use fresh::config::Config;
 
-/// The `(Ln, Col)` of the status bar.
+/// The `(line, col)` of the status bar.
 fn status_position(harness: &EditorTestHarness) -> (usize, usize) {
-    let status = harness.get_status_bar();
-    let number_after = |label: &str| -> usize {
-        let at = status
-            .find(label)
-            .unwrap_or_else(|| panic!("no {label:?} in status bar: {status:?}"))
-            + label.len();
-        status[at..]
-            .chars()
-            .take_while(|c| c.is_ascii_digit())
-            .collect::<String>()
-            .parse()
-            .unwrap()
-    };
-    (number_after("Ln "), number_after("Col "))
+    harness
+        .status_position()
+        .unwrap_or_else(|| panic!("no line:col in status bar: {:?}", harness.get_status_bar()))
 }
 
 /// The first line number drawn in the gutter: which line the view starts at.

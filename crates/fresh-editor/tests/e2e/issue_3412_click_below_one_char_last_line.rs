@@ -13,15 +13,14 @@
 
 use crate::common::harness::EditorTestHarness;
 
-/// The `Ln N, Col M` readout from the rendered status bar.
+/// The `line:col` readout from the rendered status bar.
 fn line_col(harness: &EditorTestHarness) -> String {
     let status = harness.get_status_bar();
-    let start = status
-        .find("Ln ")
-        .unwrap_or_else(|| panic!("no line/column readout in status bar: {status:?}"));
-    let rest = &status[start..];
-    let end = rest.find("  ").unwrap_or(rest.len());
-    rest[..end].trim().to_string()
+    status
+        .split_whitespace()
+        .last()
+        .unwrap_or_else(|| panic!("no line/column readout in status bar: {status:?}"))
+        .to_string()
 }
 
 /// The screen position where `text` is drawn.
@@ -67,12 +66,7 @@ fn click_below_text_lands_after_one_char_last_line() {
     assert_clicks_below_text(
         "{\n  \"key\": 1\n}",
         "}",
-        &[
-            (0, "Ln 3, Col 1"),
-            (1, "Ln 3, Col 2"),
-            (5, "Ln 3, Col 2"),
-            (30, "Ln 3, Col 2"),
-        ],
+        &[(0, "3:1"), (1, "3:2"), (5, "3:2"), (30, "3:2")],
     );
 }
 
@@ -83,12 +77,7 @@ fn click_below_text_lands_at_end_of_longer_last_line() {
     assert_clicks_below_text(
         "{\n  \"key\": 1\n}}}",
         "}}}",
-        &[
-            (0, "Ln 3, Col 1"),
-            (2, "Ln 3, Col 3"),
-            (3, "Ln 3, Col 4"),
-            (30, "Ln 3, Col 4"),
-        ],
+        &[(0, "3:1"), (2, "3:3"), (3, "3:4"), (30, "3:4")],
     );
 }
 
@@ -106,7 +95,7 @@ fn click_below_text_with_trailing_newline_lands_on_the_empty_last_line() {
     harness.mouse_click(col, row + 4).unwrap();
     assert_eq!(
         line_col(&harness),
-        "Ln 4, Col 1",
+        "4:1",
         "Screen:\n{}",
         harness.screen_to_string()
     );

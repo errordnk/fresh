@@ -72,20 +72,10 @@ fn open_review_diff(harness: &mut EditorTestHarness) {
         .unwrap();
 }
 
-/// Parse the `Ln N` indicator from the status bar (the diff buffer's
-/// 1-indexed cursor line).
+/// The status bar's `line:col` line (the diff buffer's 1-indexed cursor
+/// line).
 fn status_line_number(harness: &EditorTestHarness) -> Option<usize> {
-    let screen = harness.screen_to_string();
-    for line in screen.lines() {
-        if let Some(idx) = line.find("Ln ") {
-            let rest = &line[idx + 3..];
-            let num: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-            if let Ok(n) = num.parse::<usize>() {
-                return Some(n);
-            }
-        }
-    }
-    None
+    harness.status_line()
 }
 
 /// The diff-buffer line whose rendered center-panel row contains `needle`, or

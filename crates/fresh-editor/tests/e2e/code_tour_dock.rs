@@ -233,24 +233,29 @@ fn load_tour(harness: &mut EditorTestHarness, manifest: &str, tab_marker: &str) 
 }
 
 /// Screen rows (within the editor area) whose column 20 carries the step
-/// highlight's background colour — the theme key `ui.tour_step_bg`, which the
-/// harness's high-contrast theme resolves to rgb(0, 25, 55). The
+/// highlight's background colour — the active theme's `ui.tour_step_bg`. The
 /// highlight is painted `extendToLineEnd`, so column 20 is covered for every
 /// fixture file in this module.
 fn highlighted_rows(h: &EditorTestHarness) -> Vec<u16> {
-    (2..30u16)
+    (0..30u16)
         .filter(|row| {
             h.get_cell_style(20, *row)
-                .is_some_and(|s| s.bg == Some(ratatui::style::Color::Rgb(0, 25, 55)))
+                .is_some_and(|s| s.bg == Some(h.editor().theme().tour_step_bg))
         })
         .collect()
 }
 
+/// Whether the tour panel holds focus: the status bar names the read-only
+/// `*Tour: …*` buffer, where the editor split would name the step's file.
+fn tour_panel_focused(screen: &str) -> bool {
+    screen
+        .lines()
+        .any(|row| row.trim_start().starts_with("*Tour:") && row.contains("* [RO]"))
+}
+
 /// Block until the current step's async chain has fully landed, read entirely
 /// off rendered output: a step highlight is painted in the editor AND the
-/// panel holds focus (status bar shows the tour buffer's `[RO]` … `Text`,
-/// where the editor split would show a cursor position and the file's
-/// language) — both in the same frame.
+/// panel holds focus (see [`tour_panel_focused`]) — both in the same frame.
 ///
 /// Panel focus alone is not a sound wait: the panel is focused *twice* per
 /// step — transiently, before `revealStep` opens the step's file (focus →
@@ -269,7 +274,7 @@ fn wait_for_step_settled(harness: &mut EditorTestHarness) {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            !highlighted_rows(h).is_empty() && screen.contains("[RO]") && screen.contains("Text")
+            !highlighted_rows(h).is_empty() && tour_panel_focused(&screen)
         })
         .unwrap();
 }
@@ -1338,10 +1343,10 @@ fn test_step_highlight_bands_are_full_width_on_every_line() {
     // line's end, so a band there proves the full-width fill. Require it
     // on at least three consecutive highlighted rows.
     let banded = |h: &EditorTestHarness| -> Vec<u16> {
-        (2..25u16)
+        (0..25u16)
             .filter(|row| {
                 h.get_cell_style(60, *row)
-                    .is_some_and(|s| s.bg == Some(ratatui::style::Color::Rgb(0, 25, 55)))
+                    .is_some_and(|s| s.bg == Some(h.editor().theme().tour_step_bg))
             })
             .collect()
     };
@@ -1500,7 +1505,7 @@ fn test_blank_line_in_range_keeps_band_under_indent_guides() {
     harness
         .wait_until(|h| {
             h.get_cell_style(x, blank_row)
-                .is_some_and(|s| s.bg == Some(ratatui::style::Color::Rgb(0, 25, 55)))
+                .is_some_and(|s| s.bg == Some(h.editor().theme().tour_step_bg))
         })
         .unwrap();
 }
@@ -1819,7 +1824,7 @@ fn code_tour_showcase() {
     .unwrap();
     h.wait_until(|h| {
         let s = h.screen_to_string();
-        s.contains("[RO]") && s.contains("Text")
+        s.contains("*Tour: Request Pipeline* [RO]")
     })
     .unwrap();
     snap(&mut h, &mut s, Some("Enter"), 200);
@@ -1955,8 +1960,7 @@ fn test_codetour_manifest_loads_and_converts() {
             let s = h.screen_to_string();
             s.contains("*Tour: CT Getting Started*")
                 && s.contains("Welcome aboard")
-                && s.contains("[RO]")
-                && s.contains("Text")
+                && s.contains("*Tour: CT Getting Started* [RO]")
         })
         .unwrap();
 

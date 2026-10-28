@@ -286,7 +286,7 @@ fn ctrl_click_opens_workdir_relative_path_at_line() {
     // Observe rendered output: the file is now open (its line-2 content shows)
     // and the status bar reports the line-2 jump.
     harness.assert_screen_contains("line two TARGET");
-    harness.assert_screen_contains("Ln 2");
+    assert_eq!(harness.status_line(), Some(2));
 }
 
 /// Ctrl+Click resolves a relative path against the terminal's OSC 7 working
@@ -372,7 +372,7 @@ fn ctrl_click_opens_path_in_scrollback_view() {
     harness.render().unwrap();
 
     harness.assert_screen_contains("line two TARGET");
-    harness.assert_screen_contains("Ln 2");
+    assert_eq!(harness.status_line(), Some(2));
 }
 
 /// A Ctrl+Click on text that does *not* resolve to a real file is inert: no
@@ -443,7 +443,7 @@ fn ctrl_click_opens_parenthesized_tool_call_path_in_tui() {
     );
 
     harness.assert_screen_contains("line two TARGET");
-    harness.assert_screen_contains("Ln 2");
+    assert_eq!(harness.status_line(), Some(2));
 }
 
 /// A program that enabled mouse reporting (DECSET 1000/1006 — a "raw mode" TUI
@@ -483,7 +483,7 @@ fn ctrl_click_opens_path_under_mouse_reporting_program() {
     );
 
     harness.assert_screen_contains("line two TARGET");
-    harness.assert_screen_contains("Ln 2");
+    assert_eq!(harness.status_line(), Some(2));
 }
 
 /// Ctrl+Click opens a path even while an alternate-screen program (vim/less/
@@ -520,7 +520,7 @@ fn ctrl_click_opens_path_in_alternate_screen() {
     );
 
     harness.assert_screen_contains("line two TARGET");
-    harness.assert_screen_contains("Ln 2");
+    assert_eq!(harness.status_line(), Some(2));
 }
 
 /// Ctrl+hover underlines a path shown by an alternate-screen program. Before the

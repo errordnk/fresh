@@ -83,7 +83,7 @@ fn assert_typing_lands_on_line_10(harness: &mut EditorTestHarness, scrolled_from
          text. Screen:\n{screen}"
     );
     assert!(
-        screen.contains("Ln 10, Col 4"),
+        harness.status_position() == Some((10, 4)),
         "{scrolled_from}: the status bar should report the cursor still on \
          line 10, one column past the typed text. Screen:\n{screen}"
     );

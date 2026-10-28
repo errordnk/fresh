@@ -531,7 +531,7 @@ fn test_toggle_line_numbers_persists_across_file_changes() {
     // Step 1: Verify line numbers are enabled by default
     let screen_initial = harness.screen_to_string();
     assert!(
-        screen_initial.contains("1 │"),
+        harness.gutter_shows_line(1),
         "Line numbers should be visible by default. Screen:\n{}",
         screen_initial
     );
@@ -542,12 +542,12 @@ fn test_toggle_line_numbers_persists_across_file_changes() {
     // Step 3: Verify line numbers are now hidden
     let screen_after_toggle = harness.screen_to_string();
     assert!(
-        !screen_after_toggle.contains("1 │"),
+        !harness.gutter_shows_line(1),
         "Line numbers should be hidden after toggle. Screen:\n{}",
         screen_after_toggle
     );
     assert!(
-        !screen_after_toggle.contains("2 │"),
+        !harness.gutter_shows_line(2),
         "Line numbers should be hidden after toggle. Screen:\n{}",
         screen_after_toggle
     );
@@ -569,12 +569,12 @@ fn test_toggle_line_numbers_persists_across_file_changes() {
     harness.render().unwrap();
     let screen_after_revert = harness.screen_to_string();
     assert!(
-        !screen_after_revert.contains("1 │"),
+        !harness.gutter_shows_line(1),
         "Line numbers should remain hidden after auto-revert. Screen:\n{}",
         screen_after_revert
     );
     assert!(
-        !screen_after_revert.contains("2 │"),
+        !harness.gutter_shows_line(2),
         "Line numbers should remain hidden after auto-revert. Screen:\n{}",
         screen_after_revert
     );
@@ -591,12 +591,12 @@ fn test_toggle_line_numbers_persists_across_file_changes() {
     // Step 7: Verify line numbers are still disabled after editing
     let screen_after_edit = harness.screen_to_string();
     assert!(
-        !screen_after_edit.contains("1 │"),
+        !harness.gutter_shows_line(1),
         "Line numbers should remain hidden after editing. Screen:\n{}",
         screen_after_edit
     );
     assert!(
-        !screen_after_edit.contains("5 │"),
+        !harness.gutter_shows_line(5),
         "Line numbers should remain hidden after editing. Screen:\n{}",
         screen_after_edit
     );
@@ -610,12 +610,12 @@ fn test_toggle_line_numbers_persists_across_file_changes() {
     // Step 9: Verify line numbers are still disabled after saving
     let screen_after_save = harness.screen_to_string();
     assert!(
-        !screen_after_save.contains("1 │"),
+        !harness.gutter_shows_line(1),
         "Line numbers should remain hidden after save. Screen:\n{}",
         screen_after_save
     );
     assert!(
-        !screen_after_save.contains("5 │"),
+        !harness.gutter_shows_line(5),
         "Line numbers should remain hidden after save. Screen:\n{}",
         screen_after_save
     );

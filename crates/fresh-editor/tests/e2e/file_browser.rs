@@ -279,9 +279,9 @@ fn test_file_browser_open_file_with_line_col() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains("Ln 3") && screen.contains("Col 5") && screen.contains("ABCDE12345")
+            h.status_position() == Some((3, 5)) && screen.contains("ABCDE12345")
         })
-        .expect("Cursor should jump to Ln 3, Col 5 after opening with suffix");
+        .expect("Cursor should jump to 3:5 after opening with suffix");
 }
 
 /// Test navigating into a directory

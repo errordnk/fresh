@@ -376,6 +376,18 @@ fn unicode_encoding_strategy() -> impl Strategy<Value = TestEncoding> {
     ])
 }
 
+/// A default config whose status bar shows the encoding (the default bar
+/// does not).
+fn encoding_config() -> fresh::config::Config {
+    crate::common::harness::config_with_status_elements(&[
+        fresh::config::StatusBarElement::Encoding,
+    ])
+}
+
+fn encoding_harness(width: u16, height: u16) -> EditorTestHarness {
+    EditorTestHarness::with_config(width, height, encoding_config()).unwrap()
+}
+
 // ============================================================================
 // Property-Based Tests
 // ============================================================================
@@ -392,7 +404,7 @@ proptest! {
         let temp_dir = TempDir::new().unwrap();
         let file_path = create_encoded_file(&temp_dir, "test.txt", encoding, &text);
 
-        let mut harness = EditorTestHarness::new(120, 30).unwrap();
+        let mut harness = encoding_harness(120, 30);
         harness.open_file(&file_path).unwrap();
         harness.render().unwrap();
 
@@ -421,7 +433,7 @@ proptest! {
         let file_path = create_encoded_file(&temp_dir, "test.txt", encoding, &text);
         let original_bytes = std::fs::read(&file_path).unwrap();
 
-        let mut harness = EditorTestHarness::new(120, 30).unwrap();
+        let mut harness = encoding_harness(120, 30);
         harness.open_file(&file_path).unwrap();
         harness.render().unwrap();
 
@@ -452,7 +464,7 @@ proptest! {
         let temp_dir = TempDir::new().unwrap();
         let file_path = create_encoded_file(&temp_dir, "test.txt", encoding, &initial_text);
 
-        let mut harness = EditorTestHarness::new(120, 30).unwrap();
+        let mut harness = encoding_harness(120, 30);
         harness.open_file(&file_path).unwrap();
         harness.render().unwrap();
 
@@ -504,7 +516,7 @@ proptest! {
         let temp_dir = TempDir::new().unwrap();
         let file_path = create_encoded_file(&temp_dir, "chinese.txt", encoding, &text);
 
-        let mut harness = EditorTestHarness::new(120, 30).unwrap();
+        let mut harness = encoding_harness(120, 30);
         harness.open_file(&file_path).unwrap();
         harness.render().unwrap();
 
@@ -533,7 +545,7 @@ proptest! {
         let temp_dir = TempDir::new().unwrap();
         let file_path = create_encoded_file(&temp_dir, "latin1.txt", TestEncoding::Latin1, &text);
 
-        let mut harness = EditorTestHarness::new(120, 30).unwrap();
+        let mut harness = encoding_harness(120, 30);
         harness.open_file(&file_path).unwrap();
         harness.render().unwrap();
 
@@ -572,7 +584,7 @@ proptest! {
             if le { "UTF-16 LE" } else { "UTF-16 BE" }
         );
 
-        let mut harness = EditorTestHarness::new(120, 30).unwrap();
+        let mut harness = encoding_harness(120, 30);
         harness.open_file(&file_path).unwrap();
         harness.render().unwrap();
 
@@ -604,7 +616,7 @@ proptest! {
         let file_path = create_encoded_file(&temp_dir, "roundtrip.txt", encoding, &text);
         let original_bytes = std::fs::read(&file_path).unwrap();
 
-        let mut harness = EditorTestHarness::new(120, 30).unwrap();
+        let mut harness = encoding_harness(120, 30);
         harness.open_file(&file_path).unwrap();
         harness.render().unwrap();
 
@@ -638,7 +650,7 @@ proptest! {
         let temp_dir = TempDir::new().unwrap();
         let file_path = create_encoded_file(&temp_dir, "edit_roundtrip.txt", encoding, &text);
 
-        let mut harness = EditorTestHarness::new(120, 30).unwrap();
+        let mut harness = encoding_harness(120, 30);
         harness.open_file(&file_path).unwrap();
         harness.render().unwrap();
 
@@ -680,7 +692,7 @@ proptest! {
 
         // Reload and verify the added text is present
         drop(harness);
-        let mut harness2 = EditorTestHarness::new(120, 30).unwrap();
+        let mut harness2 = encoding_harness(120, 30);
         harness2.open_file(&file_path).unwrap();
         harness2.render().unwrap();
 
@@ -707,7 +719,7 @@ fn test_detect_encoding_utf8() {
     // Write UTF-8 content (no BOM)
     std::fs::write(&file_path, "Hello, World!\n你好世界\n").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -739,7 +751,7 @@ fn test_utf8_bom_hidden_but_preserved() {
     content.extend_from_slice("Hello\n".as_bytes());
     std::fs::write(&file_path, &content).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -781,7 +793,7 @@ fn test_empty_file_defaults_to_utf8() {
 
     std::fs::write(&file_path, "").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -826,7 +838,7 @@ fn test_binary_with_fake_bom_detected() {
     content.extend_from_slice(&[0x89, 0x50, 0x4E, 0x47]); // PNG magic
     std::fs::write(&file_path, &content).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -851,7 +863,7 @@ fn test_gb18030_chinese_display() {
     ];
     std::fs::write(&file_path, gb18030_bytes).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -897,7 +909,7 @@ fn test_latin1_special_chars_display() {
     ];
     std::fs::write(&file_path, latin1_bytes).unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = encoding_harness(100, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -923,7 +935,7 @@ fn test_encoding_shown_in_status_bar() {
     }
     std::fs::write(&file_path, utf16_bytes).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -948,7 +960,7 @@ fn test_clipboard_preserves_encoded_content() {
     // UTF-8 file with special characters
     std::fs::write(&file_path, "Café résumé\n").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.editor_mut().set_clipboard_for_test("".to_string());
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
@@ -999,7 +1011,7 @@ fn test_large_utf16_file_navigation() {
     }
     std::fs::write(&file_path, &content).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1029,7 +1041,7 @@ fn test_encoding_indicator_click_opens_selector() {
     // Use non-ASCII content to ensure UTF-8 detection (not ASCII)
     std::fs::write(&file_path, "Hello, World! こんにちは").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1056,7 +1068,7 @@ fn test_encoding_indicator_always_visible() {
     let file_path = temp_dir.path().join("test.txt");
     std::fs::write(&file_path, "Hello, World!").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1080,7 +1092,7 @@ fn test_utf16_encoding_indicator_click_and_change() {
     }
     std::fs::write(&file_path, &content).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1156,7 +1168,7 @@ fn test_utf8_to_utf16_encoding_change() {
     let text = "Hello World! こんにちは\nLine 2\n";
     std::fs::write(&file_path, text).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = encoding_harness(80, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1275,7 +1287,7 @@ fn test_windows1250_display_and_selector() {
     ];
     std::fs::write(&polish_file, windows1250_bytes).unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = encoding_harness(100, 24);
     harness.open_file(&polish_file).unwrap();
     harness.render().unwrap();
 
@@ -1291,7 +1303,7 @@ fn test_windows1250_display_and_selector() {
     std::fs::write(&utf8_file, "Hello World!\n").unwrap();
 
     drop(harness);
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = encoding_harness(100, 24);
     harness.open_file(&utf8_file).unwrap();
     harness.render().unwrap();
 
@@ -1335,7 +1347,7 @@ fn test_windows1250_encoding_conversions() {
     // Start with UTF-8 file containing Polish text
     std::fs::write(&file_path, "Zażółć gęślą\n").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = encoding_harness(100, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1370,7 +1382,7 @@ fn test_windows1250_encoding_conversions() {
     // Part 2: Fresh load Windows-1250 from disk → UTF-8 → save
     // Close and reopen to simulate loading from disk
     drop(harness);
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = encoding_harness(100, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1436,7 +1448,7 @@ fn test_windows1250_czech_pangram() {
     ];
     std::fs::write(&file_path, windows1250_bytes).unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = encoding_harness(100, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1513,7 +1525,7 @@ fn test_windows1251_cyrillic_display_and_selector() {
     ];
     std::fs::write(&russian_file, windows1251_bytes).unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = encoding_harness(100, 24);
     harness.open_file(&russian_file).unwrap();
     harness.render().unwrap();
 
@@ -1569,7 +1581,7 @@ fn test_windows1251_encoding_conversions() {
     // Start with UTF-8 file containing Russian text
     std::fs::write(&file_path, "Привет мир\n").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = encoding_harness(100, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1610,7 +1622,7 @@ fn test_windows1251_encoding_conversions() {
 
     // Part 2: Fresh load Windows-1251 from disk → UTF-8 → save
     drop(harness);
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = encoding_harness(100, 24);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -1715,7 +1727,7 @@ fn test_all_encodings_load_and_save_as_utf8() {
         let file_path = temp_dir.path().join(format!("test_{}.txt", i));
         std::fs::write(&file_path, tc.bytes).unwrap();
 
-        let mut harness = EditorTestHarness::new(100, 24).unwrap();
+        let mut harness = encoding_harness(100, 24);
         harness.open_file(&file_path).unwrap();
         harness.render().unwrap();
 
@@ -1817,7 +1829,7 @@ fn test_large_file_gbk_encoding_confirmation_prompt() {
         fresh::config::Config {
             editor: fresh::config::EditorConfig {
                 large_file_threshold_bytes: 500, // Force large file mode
-                ..Default::default()
+                ..encoding_config().editor
             },
             ..Default::default()
         },
@@ -2296,7 +2308,8 @@ fn test_large_file_encoding_selector_sync_no_prompt() {
 /// and can reload a file with a different encoding.
 #[test]
 fn test_reload_with_encoding_command() {
-    let mut harness = EditorTestHarness::with_temp_project(100, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_temp_project_and_config(100, 24, encoding_config()).unwrap();
     let file_path = harness.project_dir().unwrap().join("test_reload.txt");
 
     // Create a file with Latin-1 content (bytes 0xE0-0xFF are valid Latin-1)
@@ -2362,7 +2375,8 @@ fn test_reload_with_encoding_command() {
 /// Test "Reload with Encoding..." from the File menu
 #[test]
 fn test_reload_with_encoding_menu_item() {
-    let mut harness = EditorTestHarness::with_temp_project(100, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_temp_project_and_config(100, 24, encoding_config()).unwrap();
     let file_path = harness.project_dir().unwrap().join("test_menu.txt");
 
     // Create a simple UTF-8 file
@@ -2402,7 +2416,7 @@ fn open_reload_with_encoding_prompt_at_ln4_col3(
             .unwrap();
     }
     harness.render().unwrap();
-    harness.assert_screen_contains("Ln 4, Col 3");
+    harness.assert_status_position(4, 3);
 
     harness
         .send_key(KeyCode::Char('p'), KeyModifiers::CONTROL)
@@ -2483,7 +2497,7 @@ fn test_reload_with_encoding_click_does_not_confirm() {
     // cursor position, then confirm the click did not move it.
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("Ln 4, Col 3");
+    harness.assert_status_position(4, 3);
 
     // Re-open the prompt: keyboard Enter on the (now first) selected
     // suggestion still commits the reload.
@@ -2540,7 +2554,7 @@ fn test_reload_with_encoding_click_on_popup_border_keeps_cursor() {
     // then verify the border-click did not move it.
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("Ln 4, Col 3");
+    harness.assert_status_position(4, 3);
 }
 
 /// Regression for #1660: double-clicking a suggestion in a preview-on-click
@@ -2611,7 +2625,7 @@ fn test_latin1_trailing_accent_not_misdetected_as_utf8() {
     let text = "Hello   é";
     let file_path = create_encoded_file(&temp_dir, "latin1.txt", TestEncoding::Latin1, text);
 
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = encoding_harness(120, 30);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -2646,7 +2660,7 @@ fn test_utf8_cjk_file_larger_than_8kb_displays_correctly() {
     assert!(std::str::from_utf8(&content).is_ok());
     std::fs::write(&file_path, &content).unwrap();
 
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = encoding_harness(120, 30);
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 

@@ -1695,7 +1695,11 @@ fn test_status_bar_hidden_during_suggestions() {
     let file_path = temp_dir.path().join("test.txt");
     std::fs::write(&file_path, "hello world").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    // The default status bar has no palette hint; put it there.
+    let config = crate::common::harness::config_with_status_elements(&[
+        fresh::config::StatusBarElement::Palette,
+    ]);
+    let mut harness = EditorTestHarness::with_config(100, 24, config).unwrap();
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -3195,7 +3199,7 @@ fn test_search_status_bar_line_number_updates_on_f3() {
     harness.render().unwrap();
 
     // Verify we start at line 1
-    harness.assert_screen_contains("Ln 1, Col 1");
+    harness.assert_status_position(1, 1);
 
     // Open search with Ctrl+F
     harness
@@ -3211,19 +3215,19 @@ fn test_search_status_bar_line_number_updates_on_f3() {
     harness.process_async_and_render().unwrap();
 
     // First match is on line 1 — status bar should show Ln 1
-    harness.assert_screen_contains("Ln 1,");
+    assert_eq!(harness.status_line(), Some(1));
 
     // F3 to go to second match (line 3)
     harness.send_key(KeyCode::F(3), KeyModifiers::NONE).unwrap();
     harness.process_async_and_render().unwrap();
 
-    harness.assert_screen_contains("Ln 3,");
+    assert_eq!(harness.status_line(), Some(3));
 
     // F3 to go to third match (line 5)
     harness.send_key(KeyCode::F(3), KeyModifiers::NONE).unwrap();
     harness.process_async_and_render().unwrap();
 
-    harness.assert_screen_contains("Ln 5,");
+    assert_eq!(harness.status_line(), Some(5));
 }
 
 #[test]

@@ -167,10 +167,9 @@ fn test_mouse_click_positions_cursor() {
     let buffer_len = harness.buffer_len();
     assert_eq!(harness.cursor_position(), buffer_len);
 
-    // Click on second line, near the beginning (accounting for line numbers gutter)
-    // Line numbers take about 6 columns, so click at column 10 (in text area)
-    // Row 2 is first line of content (after tabs header)
-    harness.mouse_click(10, 2).unwrap();
+    // Click near the beginning of the first line, past the gutter
+    let (text_x, text_y) = harness.text_origin();
+    harness.mouse_click(text_x + 2, text_y).unwrap();
 
     harness.render().unwrap();
 
@@ -432,9 +431,9 @@ fn test_mouse_click_past_end_of_line() {
     let buffer_len = harness.buffer_len();
     assert_eq!(harness.cursor_position(), buffer_len);
 
-    // Click way past the end of "hello" on the first content line (row 2)
-    // Line numbers take about 6 columns, so click at column 50 (well past "hello" which ends around column 11)
-    harness.mouse_click(50, 2).unwrap();
+    // Click way past the end of "hello" on the first content line
+    let (_, text_y) = harness.text_origin();
+    harness.mouse_click(50, text_y).unwrap();
     harness.render().unwrap();
 
     // Cursor should be at position 5, which is the newline after "hello"
@@ -1297,11 +1296,11 @@ fn test_drag_to_select_multiple_lines() {
 
     let (content_first_row, _) = harness.content_area_rows();
 
-    // Drag from first line to third line
-    // The gutter is ~8 chars, so text starts at column 8-9
-    let start_col = 9;
+    // Drag from first line to third line, starting one column into the text
+    let (text_x, _) = harness.text_origin();
+    let start_col = text_x + 1;
     let start_row = content_first_row as u16;
-    let end_col = 14;
+    let end_col = text_x + 6;
     let end_row = content_first_row as u16 + 2; // Third line
 
     println!(

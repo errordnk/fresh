@@ -37,9 +37,12 @@ fn make_fish_config() -> Config {
             ..Default::default()
         },
     );
+    // The default status bar has no language name; put it there.
     Config {
         languages,
-        ..Default::default()
+        ..crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::Language,
+        ])
     }
 }
 

@@ -121,7 +121,7 @@ fn test_command_palette_execute() {
     harness.render().unwrap();
 
     // Verify line numbers are shown initially (default config)
-    harness.assert_screen_contains("1 │");
+    assert!(harness.gutter_shows_line(1));
 
     // Trigger the command palette
     harness
@@ -138,7 +138,7 @@ fn test_command_palette_execute() {
     harness.render().unwrap();
 
     // Line numbers should now be hidden
-    harness.assert_screen_not_contains("1 │");
+    assert!(!harness.gutter_shows_line(1));
 }
 
 /// Test Quick Open file mode with path:line:col
@@ -173,9 +173,9 @@ fn test_quick_open_file_path_line_col() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains("Ln 3") && screen.contains("Col 5") && screen.contains("ABCDE12345")
+            h.status_position() == Some((3, 5)) && screen.contains("ABCDE12345")
         })
-        .expect("Cursor should jump to Ln 3, Col 5 after Quick Open");
+        .expect("Cursor should jump to 3:5 after Quick Open");
 }
 
 /// Test Quick Open file mode with path:line (no column)
@@ -210,9 +210,9 @@ fn test_quick_open_file_path_line_only() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains("Ln 3") && screen.contains("Col 1") && screen.contains("ABCDE12345")
+            h.status_position() == Some((3, 1)) && screen.contains("ABCDE12345")
         })
-        .expect("Cursor should jump to Ln 3, Col 1 after Quick Open");
+        .expect("Cursor should jump to 3:1 after Quick Open");
 }
 
 /// Helper: write a fixture file with `n` lines of the form `LINEn\n`.
@@ -266,7 +266,7 @@ fn test_quick_open_goto_line_live_preview() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 75 │ LINE75") && !screen.contains("  1 │ LINE1")
+            h.line_number_before("LINE75") == Some(75) && h.line_number_before("LINE1") != Some(1)
         })
         .expect("Viewport should scroll toward line 80 during ':80' preview");
 }
@@ -298,7 +298,7 @@ fn test_quick_open_goto_line_live_preview_updates() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 35 │ LINE35") && !screen.contains("  1 │ LINE1")
+            h.line_number_before("LINE35") == Some(35) && h.line_number_before("LINE1") != Some(1)
         })
         .expect("Viewport should scroll toward line 40");
 
@@ -313,7 +313,8 @@ fn test_quick_open_goto_line_live_preview_updates() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 75 │ LINE75") && !screen.contains(" 35 │ LINE35")
+            h.line_number_before("LINE75") == Some(75)
+                && h.line_number_before("LINE35") != Some(35)
         })
         .expect("Viewport should follow the updated target to line 80");
 }
@@ -346,7 +347,7 @@ fn test_quick_open_goto_line_live_preview_cancel_restores() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 75 │ LINE75") && !screen.contains("  1 │ LINE1")
+            h.line_number_before("LINE75") == Some(75) && h.line_number_before("LINE1") != Some(1)
         })
         .expect("Preview should scroll toward line 80");
 
@@ -357,7 +358,7 @@ fn test_quick_open_goto_line_live_preview_cancel_restores() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains("Ln 1,") && screen.contains("  1 │ LINE1")
+            h.status_line() == Some(1) && h.line_number_before("LINE1") == Some(1)
         })
         .expect("Esc should restore cursor to pre-preview line 1");
 }
@@ -394,7 +395,7 @@ fn test_quick_open_goto_line_live_preview_mouse_click_commits() {
     //     populate the popup during the intermediate `Backspace`, `:`,
     //     `:8` keystrokes.
     // The status bar is hidden while a suggestions popup is visible
-    // (render.rs:143), so we cannot also check "Ln 80," here. Asserting
+    // (render.rs:143), so we cannot also check line 80 there. Asserting
     // the popup label is what guarantees the popup has shrunk to its
     // 1-item goto-line shape — important because since commit 53d5238
     // the popup's outer rect absorbs clicks across its full chrome, so
@@ -410,7 +411,7 @@ fn test_quick_open_goto_line_live_preview_mouse_click_commits() {
     // dump the screen so a fourth failure explains itself.
     // Drain the background Quick Open file scan BEFORE reading click
     // coordinates: on slow CI runners (the strike-4 evidence — Windows,
-    // screen showing the restored pre-preview `Ln 1` after Esc) the
+    // screen showing the restored pre-preview line 1 after Esc) the
     // scan's `files_loaded` delivery lands seconds after Ctrl+P, inside
     // the click window, and its suggestion refresh re-enters
     // `apply_goto_line_preview` between the observed frame and the
@@ -423,7 +424,7 @@ fn test_quick_open_goto_line_live_preview_mouse_click_commits() {
 
     if let Err(e) = harness.wait_until_stable(|h| {
         let s = h.screen_to_string();
-        s.contains(" 78 │ LINE78") && s.contains("Go to line 80")
+        h.line_number_before("LINE78") == Some(78) && s.contains("Go to line 80")
     }) {
         panic!(
             "Goto-line preview wait errored: {e:#}\nscreen:\n{}",
@@ -432,11 +433,11 @@ fn test_quick_open_goto_line_live_preview_mouse_click_commits() {
     }
 
     // Locate the click target by the unique editor-body pattern
-    // "│ LINE78": the `│` gutter separator only appears in the editor
-    // body, never in popup chrome or hint bars. Click in the LINE78 text
-    // (skip past "│ ") so the coordinate is unambiguously over editor
-    // content rather than gutter or popup.
-    let (anchor_col, target_row) = match harness.find_text_on_screen("│ LINE78") {
+    // "78 LINE78": the gutter's line number then the text, which only the
+    // editor body draws, never popup chrome or hint bars. Click in the
+    // LINE78 text (skip past "78 ") so the coordinate is unambiguously over
+    // editor content rather than gutter or popup.
+    let (anchor_col, target_row) = match harness.find_text_on_screen("78 LINE78") {
         Some(hit) => hit,
         None => panic!(
             "LINE78 row vanished between the stable wait and the click — screen:\n{}",
@@ -444,9 +445,8 @@ fn test_quick_open_goto_line_live_preview_mouse_click_commits() {
         ),
     };
     // find_text_on_screen returns the column of the matched substring's
-    // first byte ('│', 1 cell wide). "LINE78" starts 2 columns to the
-    // right of the separator (`│ LINE78`).
-    let click_col = anchor_col + 2;
+    // first byte. "LINE78" starts 3 columns to its right (`78 LINE78`).
+    let click_col = anchor_col + 3;
     if let Err(e) = harness.mouse_click(click_col, target_row) {
         panic!(
             "mouse_click({click_col},{target_row}) errored: {e:#}\nscreen:\n{}",
@@ -484,18 +484,19 @@ fn test_quick_open_goto_line_live_preview_mouse_click_commits() {
     // already decided: if the click did not land where this test intends —
     // absorbed by the suggestion popup's outer rect, or a row off — the
     // status bar will say so on its first frame and no later frame will
-    // change it. Waiting on "Ln 78," in that case is a wait for a state that
+    // change it. Waiting on line 78 in that case is a wait for a state that
     // can no longer arrive, i.e. a 180 s nextest timeout with no failed
     // assertion to point at (CONTRIBUTING Code §16); this way the same
     // failure names the line the cursor actually ended on.
     harness
-        .wait_until(|h| h.screen_to_string().contains(", Col "))
+        .wait_until(|h| h.status_position().is_some())
         .expect("Status bar should be visible once the prompt closes");
-    let screen = harness.screen_to_string();
-    assert!(
-        screen.contains("Ln 78,"),
+    assert_eq!(
+        harness.status_line(),
+        Some(78),
         "Cursor should stay on the clicked line 78 — pre-preview snapshot must be \
-         dropped on editor click; screen:\n{screen}"
+         dropped on editor click; screen:\n{}",
+        harness.screen_to_string()
     );
 }
 
@@ -528,7 +529,7 @@ fn test_quick_open_goto_line_live_preview_buffer_edit_invalidates() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 45 │ LINE45") && !screen.contains("  1 │ LINE1")
+            h.line_number_before("LINE45") == Some(45) && h.line_number_before("LINE1") != Some(1)
         })
         .expect("Preview should scroll toward line 50");
 
@@ -555,7 +556,7 @@ fn test_quick_open_goto_line_live_preview_buffer_edit_invalidates() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 51 │ LINE50") && !screen.contains("  1 │ PREFIX")
+            h.line_number_before("LINE50") == Some(51) && h.line_number_before("PREFIX") != Some(1)
         })
         .expect(
             "Esc must not restore the stale pre-preview snapshot after an external edit \
@@ -590,7 +591,7 @@ fn test_quick_open_goto_line_live_preview_restores_when_prefix_changes() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 75 │ LINE75") && !screen.contains("  1 │ LINE1")
+            h.line_number_before("LINE75") == Some(75) && h.line_number_before("LINE1") != Some(1)
         })
         .expect("Preview should scroll toward line 80");
 
@@ -609,7 +610,7 @@ fn test_quick_open_goto_line_live_preview_restores_when_prefix_changes() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains("  1 │ LINE1") && !screen.contains(" 75 │ LINE75")
+            h.line_number_before("LINE1") == Some(1) && h.line_number_before("LINE75") != Some(75)
         })
         .expect(
             "Switching providers should restore the pre-preview viewport — line 1 visible, \
@@ -654,7 +655,7 @@ fn test_quick_open_goto_line_live_preview_centers_target() {
             let screen = h.screen_to_string();
             // A line below the target (LINE55) is visible → the viewport is
             // centered around line 50, not bottom-pinned.
-            screen.contains(" 55 │ LINE55")
+            h.line_number_before("LINE55") == Some(55)
         })
         .expect(
             "Quick Open ':50' preview should center line 50 in the viewport so lines \
@@ -687,7 +688,7 @@ fn test_goto_line_prompt_live_preview_centers_target() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 55 │ LINE55")
+            h.line_number_before("LINE55") == Some(55)
         })
         .expect(
             "Goto Line prompt '50' preview should center line 50 so lines below it \
@@ -726,7 +727,7 @@ fn test_goto_line_prompt_live_preview() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 75 │ LINE75") && !screen.contains("  1 │ LINE1")
+            h.line_number_before("LINE75") == Some(75) && h.line_number_before("LINE1") != Some(1)
         })
         .expect("Goto Line prompt should live-preview the jump toward line 80");
 }
@@ -754,7 +755,7 @@ fn test_goto_line_prompt_live_preview_updates() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 35 │ LINE35") && !screen.contains("  1 │ LINE1")
+            h.line_number_before("LINE35") == Some(35) && h.line_number_before("LINE1") != Some(1)
         })
         .expect("Preview should scroll toward line 40");
 
@@ -768,7 +769,8 @@ fn test_goto_line_prompt_live_preview_updates() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 75 │ LINE75") && !screen.contains(" 35 │ LINE35")
+            h.line_number_before("LINE75") == Some(75)
+                && h.line_number_before("LINE35") != Some(35)
         })
         .expect("Preview should follow the updated target to line 80");
 }
@@ -796,7 +798,7 @@ fn test_goto_line_prompt_live_preview_cancel_restores() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains(" 75 │ LINE75") && !screen.contains("  1 │ LINE1")
+            h.line_number_before("LINE75") == Some(75) && h.line_number_before("LINE1") != Some(1)
         })
         .expect("Preview should scroll toward line 80");
 
@@ -805,7 +807,7 @@ fn test_goto_line_prompt_live_preview_cancel_restores() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            screen.contains("Ln 1,") && screen.contains("  1 │ LINE1")
+            h.status_line() == Some(1) && h.line_number_before("LINE1") == Some(1)
         })
         .expect("Esc should restore cursor to pre-preview line 1");
 }
@@ -835,7 +837,7 @@ fn test_goto_line_prompt_live_preview_confirm_keeps_jump() {
         .unwrap();
 
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 80,"))
+        .wait_until(|h| h.status_line() == Some(80))
         .expect("Enter should confirm the preview and leave the cursor on line 80");
 }
 
@@ -858,7 +860,7 @@ fn test_goto_line_prompt_relative_negative_offset() {
     harness.render().unwrap();
 
     // Verify we start at line 1
-    harness.assert_screen_contains("Ln 1");
+    assert_eq!(harness.status_line(), Some(1));
 
     // Open the Goto Line prompt (Ctrl+G) and type -5 to go 5 lines up
     harness
@@ -870,7 +872,7 @@ fn test_goto_line_prompt_relative_negative_offset() {
         .unwrap();
 
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 1,"))
+        .wait_until(|h| h.status_line() == Some(1))
         .expect("-5 should jump to line 1 (clamped from -5)");
 }
 
@@ -893,7 +895,7 @@ fn test_goto_line_prompt_relative_positive_offset() {
     harness.render().unwrap();
 
     // Verify we start at line 1
-    harness.assert_screen_contains("Ln 1");
+    assert_eq!(harness.status_line(), Some(1));
 
     // Open the Goto Line prompt (Ctrl+G) and type +20 to jump 20 lines down
     harness
@@ -905,7 +907,7 @@ fn test_goto_line_prompt_relative_positive_offset() {
         .unwrap();
 
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 21,"))
+        .wait_until(|h| h.status_line() == Some(21))
         .expect("+20 should jump to line 21 (relative to cursor)");
 }
 
@@ -935,7 +937,7 @@ fn test_goto_line_prompt_signed_input_is_relative_without_setting() {
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 10,"))
+        .wait_until(|h| h.status_line() == Some(10))
         .expect("Absolute `10` should jump to line 10 even without relative_line_numbers");
 
     // `+5` from line 10 should land on line 15.
@@ -947,7 +949,7 @@ fn test_goto_line_prompt_signed_input_is_relative_without_setting() {
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 15,"))
+        .wait_until(|h| h.status_line() == Some(15))
         .expect("`+5` should be a relative jump regardless of the setting");
 
     // `-3` from line 15 should land on line 12.
@@ -959,7 +961,7 @@ fn test_goto_line_prompt_signed_input_is_relative_without_setting() {
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 12,"))
+        .wait_until(|h| h.status_line() == Some(12))
         .expect("`-3` should be a relative jump regardless of the setting");
 }
 
@@ -980,7 +982,7 @@ fn test_goto_line_prompt_unsigned_input_is_absolute_with_relative_setting() {
 
     harness.open_file(&jump_path).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("Ln 1");
+    assert_eq!(harness.status_line(), Some(1));
 
     // Even with relative line numbers shown in the gutter, typing `25` (no
     // sign) means absolute line 25 — not "25 lines down from the cursor".
@@ -993,7 +995,7 @@ fn test_goto_line_prompt_unsigned_input_is_absolute_with_relative_setting() {
         .unwrap();
 
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 25,"))
+        .wait_until(|h| h.status_line() == Some(25))
         .expect("Unsigned `25` should jump to absolute line 25 regardless of the setting");
 }
 

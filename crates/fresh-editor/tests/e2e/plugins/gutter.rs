@@ -10,13 +10,13 @@ use ratatui::style::Color;
 // Test Helpers
 // =============================================================================
 
-/// Get content lines from screen (skip menu bar, tab bar, and bottom UI elements)
-/// Content lines start at row 2 (after menu bar and tab bar) and end before status bar
+/// Get content lines from screen (skip the bottom UI elements)
+/// Content lines start at row 0 (the menu bar and the tab bar are hidden) and
+/// end before the status bar
 fn get_content_lines(screen: &str) -> Vec<&str> {
     let lines: Vec<&str> = screen.lines().collect();
-    // Skip: row 0 (menu bar), row 1 (tab bar)
     // Skip: last 2 rows (status bar, prompt line)
-    let content_start = 2;
+    let content_start = 0;
     let content_end = lines.len().saturating_sub(2);
 
     if content_end > content_start {
@@ -67,6 +67,14 @@ fn get_indicator_lines(screen: &str, symbol: &str) -> Vec<usize> {
         }
     }
     lines_with_indicator
+}
+
+/// A default config with the gutter's indicator column shown (it is off by
+/// default); these tests are about what it draws.
+fn indicator_config() -> Config {
+    let mut config = Config::default();
+    config.editor.gutter_indicators = true;
+    config
 }
 
 /// Wait for a gutter indicator to appear on any line
@@ -174,7 +182,7 @@ fn start_server(config: Config) {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -228,7 +236,7 @@ fn start_server(config: Config) {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -257,7 +265,7 @@ fn test_git_gutter_updates_after_save() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -390,7 +398,7 @@ fn start_server(config: Config) {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -438,7 +446,7 @@ fn start_server(config: Config) {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -492,7 +500,7 @@ fn start_server(config: Config) {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -547,7 +555,7 @@ fn start_server(config: Config) {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -587,7 +595,7 @@ fn test_git_gutter_untracked_file() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -627,7 +635,7 @@ fn test_buffer_modified_shows_on_edit() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -671,7 +679,7 @@ fn test_buffer_modified_clears_after_save() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -746,7 +754,7 @@ fn start_server(config: Config) {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -816,7 +824,7 @@ fn start_server(config: Config) {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -892,7 +900,7 @@ line 5: unchanged
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1022,7 +1030,7 @@ fn test_unsaved_changes_get_indicators() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1098,7 +1106,7 @@ fn test_buffer_modified_clears_after_undo_on_same_line() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1163,7 +1171,7 @@ fn test_buffer_modified_single_line_in_multi_line_file() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1230,7 +1238,7 @@ fn test_buffer_modified_newline_insert_only_marks_affected_lines() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1292,7 +1300,7 @@ fn test_buffer_modified_clears_after_manual_delete_restores_content() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1359,7 +1367,7 @@ fn test_buffer_modified_clears_after_paste_restores_content() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1441,7 +1449,7 @@ fn test_indicator_line_shifting() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1563,7 +1571,7 @@ fn test_git_gutter_marks_off_screen_hunks_on_scrollbar() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1619,7 +1627,7 @@ fn test_git_gutter_scrollbar_marks_appear_after_save() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();
@@ -1681,7 +1689,7 @@ fn test_git_gutter_refreshes_after_external_git_checkout() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Config::default(),
+        indicator_config(),
         repo.path.clone(),
     )
     .unwrap();

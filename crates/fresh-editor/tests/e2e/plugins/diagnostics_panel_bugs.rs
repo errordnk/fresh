@@ -199,7 +199,7 @@ fn test_diagnostics_panel_jump_to_correct_line() {
     harness.render().unwrap();
 
     // Verify cursor moved away
-    harness.assert_screen_contains("Ln 21");
+    assert_eq!(harness.status_line(), Some(21));
 
     // Open diagnostics panel
     open_diagnostics_panel(&mut harness);
@@ -250,8 +250,8 @@ fn test_diagnostics_panel_jump_to_correct_line() {
     // The status bar should show Ln 1 (1-indexed display for LSP line 0).
     // BUG: The status bar shows "Jumped to test.rs:1" but the cursor stays at Ln 21.
     assert!(
-        after_jump.contains("Ln 1,"),
-        "After jumping to LSP line 0, the status bar should show 'Ln 1'. \
+        harness.status_line() == Some(1),
+        "After jumping to LSP line 0, the status bar should show line 1. \
          The cursor did not actually move to the diagnostic location even though \
          the 'Jumped to' message appeared.\nScreen:\n{}",
         after_jump

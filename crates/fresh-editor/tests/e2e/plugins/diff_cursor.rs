@@ -898,11 +898,11 @@ fn test_diff_mouse_click_moves_cursor() {
 
     open_side_by_side_diff(&mut harness);
 
-    // Verify initial cursor position (should be Ln 1, Col 1)
+    // Verify initial cursor position (should be 1:1)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 1,") && screen.contains("Col 1"),
-        "Initial cursor should be at Ln 1, Col 1, got: {}",
+        harness.status_position() == Some((1, 1)),
+        "Initial cursor should be at 1:1, got: {}",
         screen
     );
 
@@ -934,8 +934,8 @@ fn test_diff_mouse_click_moves_cursor() {
     // Cursor should have moved to line 2
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 2,"),
-        "Cursor should move to Ln 2 after clicking row 5, got: {}",
+        harness.status_line() == Some(2),
+        "Cursor should move to line 2 after clicking row 5, got: {}",
         screen
     );
 }
@@ -990,10 +990,10 @@ fn test_diff_keyboard_scroll_to_cursor() {
     let screen = harness.screen_to_string();
     // Cursor should be at a high line number (50+ due to trailing newlines in alignment)
     assert!(
-        screen.contains("Ln 50")
-            || screen.contains("Ln 49")
-            || screen.contains("Ln 51")
-            || screen.contains("Ln 52"),
+        harness.status_line() == Some(50)
+            || harness.status_line() == Some(49)
+            || harness.status_line() == Some(51)
+            || harness.status_line() == Some(52),
         "Cursor should be near end of file after Ctrl+End, got: {}",
         screen
     );
@@ -1491,7 +1491,7 @@ fn test_diff_cursor_wrap_right_to_next_line() {
     // Verify we're at line 1 (row 1 = source line 0 = "first" = Ln 1)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 1,") || screen.contains("Ln 1 "),
+        harness.status_line() == Some(1) || harness.status_line() == Some(1),
         "Should be on line 1, got: {}",
         screen
     );
@@ -1504,14 +1504,14 @@ fn test_diff_cursor_wrap_right_to_next_line() {
 
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 2,") || screen.contains("Ln 2 "),
+        harness.status_line() == Some(2) || harness.status_line() == Some(2),
         "Should be on line 2 after wrapping, got: {}",
         screen
     );
 
     // Should be at column 1 (start of line)
     assert!(
-        screen.contains("Col 1") || screen.contains(", Col 1"),
+        harness.status_position().map(|(_, col)| col) == Some(1),
         "Should be at column 1 after wrapping, got: {}",
         screen
     );
@@ -1558,7 +1558,7 @@ fn test_diff_cursor_wrap_left_to_prev_line() {
     // Note: After hunk header at row 0, line 1 is at row 1, line 2 is at row 2
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 2,") || screen.contains("Ln 2 "),
+        harness.status_line() == Some(2) || harness.status_line() == Some(2),
         "Should be on line 2, got: {}",
         screen
     );
@@ -1569,7 +1569,7 @@ fn test_diff_cursor_wrap_left_to_prev_line() {
 
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 1,") || screen.contains("Ln 1 "),
+        harness.status_line() == Some(1) || harness.status_line() == Some(1),
         "Should be on line 1 after wrapping, got: {}",
         screen
     );
@@ -1578,7 +1578,7 @@ fn test_diff_cursor_wrap_left_to_prev_line() {
     // In side-by-side diff, default focused pane is 0 (OLD/left)
     // Line 1 in OLD pane is "first" (5 chars), end of line is Col 6 (1-indexed, after last char)
     assert!(
-        screen.contains("Col 6"),
+        harness.status_position().map(|(_, col)| col) == Some(6),
         "Should be at end of OLD pane line (col 6 for 'first'), got: {}",
         screen
     );
@@ -1619,7 +1619,7 @@ fn test_diff_cursor_word_wrap_at_boundaries() {
     // Verify we're at line 1 (row 1 = source line 0 = Ln 1)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 1,") || screen.contains("Ln 1 "),
+        harness.status_line() == Some(1) || harness.status_line() == Some(1),
         "Should be on line 1, got: {}",
         screen
     );
@@ -1632,7 +1632,7 @@ fn test_diff_cursor_word_wrap_at_boundaries() {
 
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 2,") || screen.contains("Ln 2 "),
+        harness.status_line() == Some(2) || harness.status_line() == Some(2),
         "Ctrl+Right at end should go to line 2, got: {}",
         screen
     );
@@ -1649,7 +1649,7 @@ fn test_diff_cursor_word_wrap_at_boundaries() {
 
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 1,") || screen.contains("Ln 1 "),
+        harness.status_line() == Some(1) || harness.status_line() == Some(1),
         "Ctrl+Left at start should go to line 1, got: {}",
         screen
     );
@@ -1706,7 +1706,7 @@ fn test_diff_horizontal_scroll_keeps_cursor_visible() {
     // Check we're on the right line by looking at the status bar
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 4,") || screen.contains("Ln 4 "),
+        harness.status_line() == Some(4) || harness.status_line() == Some(4),
         "Should be on line 4 (the long line). Screen:\n{}",
         screen
     );
@@ -1722,7 +1722,7 @@ fn test_diff_horizontal_scroll_keeps_cursor_visible() {
     // Verify we're still on line 4 after pressing Home
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 4,") || screen.contains("Ln 4 "),
+        harness.status_line() == Some(4) || harness.status_line() == Some(4),
         "After Home, should still be on line 4. Screen:\n{}",
         screen
     );
@@ -1747,7 +1747,7 @@ fn test_diff_horizontal_scroll_keeps_cursor_visible() {
     // Verify we're still on line 4
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 4,"),
+        harness.status_line() == Some(4),
         "After 40 right moves, should still be on line 4. Screen:\n{}",
         screen
     );

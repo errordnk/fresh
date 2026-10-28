@@ -2,10 +2,19 @@ use crate::common::harness::EditorTestHarness;
 use crossterm::event::{KeyCode, KeyModifiers};
 use std::time::Duration;
 
+/// A harness with the menu bar and the tab bar shown, as the menu tests
+/// expect (both are hidden by default).
+fn menu_harness(width: u16, height: u16) -> EditorTestHarness {
+    let mut config = fresh::config::Config::default();
+    config.editor.show_menu_bar = true;
+    config.editor.show_tab_bar = true;
+    EditorTestHarness::with_config(width, height, config).unwrap()
+}
+
 /// Test that Alt+F opens the File menu
 #[test]
 fn test_alt_f_opens_file_menu() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Menu dropdown should not be visible initially
@@ -26,7 +35,7 @@ fn test_alt_f_opens_file_menu() {
 /// Test that Alt+E opens the Edit menu
 #[test]
 fn test_alt_e_opens_edit_menu() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Press Alt+E to open Edit menu
@@ -44,7 +53,7 @@ fn test_alt_e_opens_edit_menu() {
 /// Test that Alt+V opens the View menu
 #[test]
 fn test_alt_v_opens_view_menu() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Press Alt+V to open View menu
@@ -61,7 +70,7 @@ fn test_alt_v_opens_view_menu() {
 /// Test that Alt+H opens the Help menu
 #[test]
 fn test_alt_h_opens_help_menu() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Press Alt+H to open Help menu
@@ -79,7 +88,7 @@ fn test_alt_h_opens_help_menu() {
 #[test]
 #[ignore = "F10 keybinding needs investigation - works in real editor but not in test harness"]
 fn test_f10_activates_menu_bar() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Press F10 to activate menu bar
@@ -99,7 +108,7 @@ fn test_f10_activates_menu_bar() {
 /// Test that Escape closes an open menu
 #[test]
 fn test_escape_closes_menu() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Open a menu first
@@ -120,7 +129,7 @@ fn test_escape_closes_menu() {
 /// Test menu navigation with arrow keys
 #[test]
 fn test_menu_left_right_navigation() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Open File menu
@@ -152,7 +161,7 @@ fn test_menu_left_right_navigation() {
 /// Test that menu renders with underlined mnemonic character
 #[test]
 fn test_menu_mnemonic_underline_rendering() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // The menu bar should show underlined characters for Alt+letter shortcuts
@@ -166,7 +175,7 @@ fn test_menu_mnemonic_underline_rendering() {
 /// Test that clicking on File menu opens it
 #[test]
 fn test_mouse_click_opens_file_menu() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Menu should not be open initially
@@ -185,7 +194,7 @@ fn test_mouse_click_opens_file_menu() {
 /// Test that clicking on Edit menu opens it
 #[test]
 fn test_mouse_click_opens_edit_menu() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Click on "Edit" in menu bar (around column 8-11)
@@ -200,7 +209,7 @@ fn test_mouse_click_opens_edit_menu() {
 /// Test that clicking on open menu closes it
 #[test]
 fn test_mouse_click_toggles_menu() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
 
     // Delay to avoid double-click detection (use config value * 2 for safety margin)
     let double_click_delay =
@@ -235,7 +244,7 @@ fn test_mouse_click_toggles_menu() {
 /// pre-migration code did.
 #[test]
 fn test_mouse_click_toggles_menu_across_a_repaint() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     let double_click_delay =
         std::time::Duration::from_millis(harness.config().editor.double_click_time_ms * 2);
     harness.render().unwrap();
@@ -252,7 +261,7 @@ fn test_mouse_click_toggles_menu_across_a_repaint() {
 /// Test that clicking outside menu labels closes menu
 #[test]
 fn test_mouse_click_empty_area_closes_menu() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
 
     // Delay to avoid double-click detection (use config value * 2 for safety margin)
     let double_click_delay =
@@ -279,7 +288,7 @@ fn test_mouse_click_empty_area_closes_menu() {
 /// Test that clicking on a menu item executes its action
 #[test]
 fn test_mouse_click_menu_item_executes_action() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Open Help menu via Alt+H
@@ -311,7 +320,7 @@ fn test_mouse_click_menu_item_executes_action() {
 /// Test clicking on Edit menu's Undo item
 #[test]
 fn test_mouse_click_undo_menu_item() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
 
     // Delay to avoid double-click detection (use config value * 2 for safety margin)
     let double_click_delay =
@@ -346,7 +355,7 @@ fn test_mouse_click_undo_menu_item() {
 /// Issue #291: Closing file explorer does not clear the check mark
 #[test]
 fn test_view_menu_file_explorer_checkbox_syncs_on_close() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = menu_harness(100, 30);
     harness.render().unwrap();
 
     // Initially file explorer is not open, checkbox should be unchecked
@@ -417,7 +426,7 @@ fn test_view_menu_file_explorer_checkbox_syncs_on_close() {
 /// Tests Line Numbers, Word Wrap, etc.
 #[test]
 fn test_view_menu_other_checkboxes_sync() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = menu_harness(100, 30);
     harness.render().unwrap();
 
     // Check initial state of Line Numbers (default is ON)
@@ -459,7 +468,7 @@ fn test_view_menu_other_checkboxes_sync() {
 /// Test that the "Copy with Formatting" submenu expands with dynamically generated theme options
 #[test]
 fn test_copy_with_formatting_submenu_shows_themes() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = menu_harness(100, 30);
     harness.render().unwrap();
 
     // Open Edit menu
@@ -525,7 +534,7 @@ fn test_copy_with_formatting_submenu_shows_themes() {
 /// Test that pressing Enter on a "Copy with Formatting" submenu option activates the copy action
 #[test]
 fn test_copy_with_formatting_submenu_activates_on_enter() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = menu_harness(100, 30);
     harness.render().unwrap();
 
     // First, insert some text and select it so the copy action can work
@@ -611,7 +620,7 @@ fn test_copy_with_formatting_submenu_activates_on_enter() {
 /// with the parent item instead of the item itself).
 #[test]
 fn test_submenu_first_item_aligns_with_parent_item() {
-    let mut harness = EditorTestHarness::new(120, 40).unwrap();
+    let mut harness = menu_harness(120, 40);
     harness.render().unwrap();
 
     // Open the View menu, which contains the static "Terminal" submenu.
@@ -645,7 +654,7 @@ fn test_submenu_first_item_aligns_with_parent_item() {
 /// Test that Cut and Copy menu items are disabled when there's no selection
 #[test]
 fn test_cut_copy_disabled_without_selection() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = menu_harness(100, 30);
     harness.render().unwrap();
 
     // No text, no selection - Cut and Copy should be disabled
@@ -693,7 +702,7 @@ fn test_cut_copy_disabled_without_selection() {
 /// 7. Press Esc - menu closes but bar stays visible
 #[test]
 fn test_toggle_menu_bar_visibility_and_auto_show() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Step 1: Menu bar should be visible initially (default)
@@ -775,7 +784,7 @@ fn test_toggle_menu_bar_visibility_and_auto_show() {
 /// because the hardcoded `row == 0` check for menu bar intercepts the clicks.
 #[test]
 fn test_tab_click_works_with_menu_bar_hidden() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     // Create two buffers so we have 2 tabs
@@ -862,7 +871,7 @@ fn test_tab_click_works_with_menu_bar_hidden() {
 /// Issue #832: Tab selection via mouse click doesn't work with hidden menu bar
 #[test]
 fn test_tab_selection_click_works_with_menu_bar_hidden() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
 
     // Create temp files to have distinguishable tabs
     let temp_dir = tempfile::TempDir::new().unwrap();
@@ -932,7 +941,7 @@ fn test_tab_selection_click_works_with_menu_bar_hidden() {
 /// Pressing Left from Help menu should skip the hidden Explorer menu and go to LSP menu.
 #[test]
 fn test_menu_arrow_navigation_skips_hidden_menus() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = menu_harness(100, 30);
     harness.render().unwrap();
 
     // Verify file explorer is not focused (Explorer menu should be hidden)
@@ -967,7 +976,7 @@ fn test_menu_arrow_navigation_skips_hidden_menus() {
 /// interactive variant.
 #[test]
 fn test_edit_menu_replace_invokes_basic_replace() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = menu_harness(100, 30);
     harness.type_text("hello world").unwrap();
     harness.render().unwrap();
 
@@ -997,7 +1006,7 @@ fn test_edit_menu_replace_invokes_basic_replace() {
 /// route to the `query_replace` action (Ctrl+Alt+R, interactive prompt).
 #[test]
 fn test_edit_menu_query_replace_invokes_query_replace() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = menu_harness(100, 30);
     harness.type_text("hello world").unwrap();
     harness.render().unwrap();
 
@@ -1044,7 +1053,7 @@ fn test_edit_menu_query_replace_invokes_query_replace() {
 fn hovering_a_menu_label_asks_for_the_frame_it_changed() {
     use crossterm::event::{MouseEvent, MouseEventKind};
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = menu_harness(80, 24);
     harness.render().unwrap();
 
     let moved = |column| MouseEvent {

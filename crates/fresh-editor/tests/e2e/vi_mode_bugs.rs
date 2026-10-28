@@ -1694,14 +1694,14 @@ fn assert_renders(harness: &mut EditorTestHarness, expected: &[&str]) {
 /// Wait for the status line to report the cursor on the given 1-based line.
 fn wait_cursor_line(harness: &mut EditorTestHarness, line: usize) {
     harness
-        .wait_for_screen_contains(&format!("Ln {line},"))
+        .wait_until(|h| h.status_line() == Some(line))
         .unwrap();
 }
 
 /// Wait for the status line to report the given 1-based line and column.
 fn wait_cursor_at(harness: &mut EditorTestHarness, line: usize, col: usize) {
     harness
-        .wait_for_screen_contains(&format!("Ln {line}, Col {col}"))
+        .wait_until(|h| h.status_position() == Some((line, col)))
         .unwrap();
 }
 

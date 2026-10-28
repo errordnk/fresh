@@ -21,6 +21,7 @@ fn harness_in(dir: &TempDir) -> EditorTestHarness {
         120,
         24,
         HarnessOptions::new()
+            .with_config(crate::common::harness::config_with_tab_bar())
             .with_working_dir(dir.path().to_path_buf())
             .without_empty_plugins_dir(),
     )

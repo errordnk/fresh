@@ -27,7 +27,7 @@ fn pos_of_substr(screen: &str, needle: &str) -> Option<(u16, u16)> {
 
 #[test]
 fn plus_button_opens_menu_and_new_file_creates_buffer() {
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(120, 30).unwrap();
     harness.render().unwrap();
 
     // The "+" button is rendered as a trailing tab on the tab row (row 1:
@@ -75,7 +75,7 @@ fn plus_button_opens_menu_and_new_file_creates_buffer() {
 fn plus_button_is_reachable_on_an_overflowing_strip() {
     // A narrow bar with many tabs forces the buffer tabs to overflow.
     let width: u16 = 50;
-    let mut harness = EditorTestHarness::new(width, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(width, 24).unwrap();
     for _ in 0..8 {
         harness.new_buffer().unwrap();
     }
@@ -117,7 +117,7 @@ fn plus_button_menu_near_right_edge_clicks_land_on_drawn_items() {
     // columns in from it.
     let width: u16 = 50;
     const NEW_TAB_MENU_WIDTH: u16 = 18;
-    let mut harness = EditorTestHarness::new(width, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(width, 24).unwrap();
     for _ in 0..8 {
         harness.new_buffer().unwrap();
     }
@@ -160,7 +160,7 @@ fn plus_button_menu_near_right_edge_clicks_land_on_drawn_items() {
 
 #[test]
 fn plus_button_menu_captures_keyboard_and_filters_keys() {
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(120, 30).unwrap();
     harness.render().unwrap();
 
     let screen = harness.screen_to_string();
@@ -176,7 +176,7 @@ fn plus_button_menu_captures_keyboard_and_filters_keys() {
     harness.type_text("ZZZ").unwrap();
     harness.render().unwrap();
     harness.assert_screen_not_contains("ZZZ");
-    harness.assert_screen_contains("Ln 1, Col 1");
+    harness.assert_status_position(1, 1);
     harness.assert_screen_contains("New Terminal");
 
     // Keyboard navigation drives the popup: Down highlights "New File",
@@ -196,7 +196,7 @@ fn plus_button_menu_captures_keyboard_and_filters_keys() {
 
 #[test]
 fn plus_button_menu_dismisses_on_escape() {
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(120, 30).unwrap();
     harness.render().unwrap();
 
     let screen = harness.screen_to_string();
@@ -220,7 +220,7 @@ fn plus_button_menu_dismisses_on_escape() {
 
 #[test]
 fn tab_context_menu_captures_keyboard_and_filters_keys() {
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(120, 30).unwrap();
     harness.render().unwrap();
 
     // Right-click the (only) tab to open its context menu.
@@ -232,7 +232,7 @@ fn tab_context_menu_captures_keyboard_and_filters_keys() {
     // it stays at "Ln 1, Col 1" rather than advancing to "Col 4".
     harness.type_text("QQQ").unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("Ln 1, Col 1");
+    harness.assert_status_position(1, 1);
     harness.assert_screen_contains("Close Others");
 
     // Esc dismisses the menu without taking any action.
@@ -246,7 +246,7 @@ fn tab_context_menu_captures_keyboard_and_filters_keys() {
 
 #[test]
 fn plus_button_menu_dismisses_on_outside_click() {
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(120, 30).unwrap();
     harness.render().unwrap();
 
     let screen = harness.screen_to_string();

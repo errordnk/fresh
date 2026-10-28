@@ -241,7 +241,7 @@ fn test_paste_after_a_drag_scrolls_to_the_cursor() {
 
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 65,"),
+        harness.status_line() == Some(65),
         "the paste leaves the cursor on line 65:\n{screen}"
     );
     assert!(

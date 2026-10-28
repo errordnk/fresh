@@ -569,8 +569,7 @@ fn dual_source_follows_the_preview_scrolled_line_by_line() {
         .position(|r| r.preview.contains("Intro paragraph"))
         .expect("intro on screen") as u16;
     h.mouse_click(SYNC_WIDTH * 3 / 4, 2 + intro).unwrap();
-    h.wait_until(|h| h.screen_to_string().contains("Ln 3"))
-        .unwrap();
+    h.wait_until(|h| h.status_line() == Some(3)).unwrap();
 
     let mut source = source_top(&pane_rows(&h)).unwrap();
     let mut headings = preview_headings(&pane_rows(&h));
@@ -665,8 +664,7 @@ fn typing_in_the_dual_preview_edits_the_source() {
     let row = h.screen_row_text(2 + intro);
     let column = row[..row.rfind("Intro").unwrap()].chars().count() as u16;
     h.mouse_click(column, 2 + intro).unwrap();
-    h.wait_until(|h| h.screen_to_string().contains("Ln 3"))
-        .unwrap();
+    h.wait_until(|h| h.status_line() == Some(3)).unwrap();
     h.type_text("EDITED ").unwrap();
     h.wait_until(|h| {
         let rows = pane_rows(h);

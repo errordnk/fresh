@@ -26,8 +26,8 @@ fn test_delete_forward_does_not_decrement_status_bar_line_number() {
     // Verify we're on line 3
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 3"),
-        "Before delete, status bar should show Ln 3, got: {status}"
+        harness.status_line() == Some(3),
+        "Before delete, status bar should show line 3, got: {status}"
     );
 
     // Press Delete to merge line 4 into line 3
@@ -43,8 +43,8 @@ fn test_delete_forward_does_not_decrement_status_bar_line_number() {
     // Status bar should still show Ln 3 (cursor didn't move to a different line)
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 3"),
-        "After Delete at end of line 3, status bar should still show Ln 3, got: {status}"
+        harness.status_line() == Some(3),
+        "After Delete at end of line 3, status bar should still show line 3, got: {status}"
     );
 }
 
@@ -92,23 +92,23 @@ fn test_relative_line_numbers_show_correct_distances() {
     // and line2 shows relative distance 1
     // We check for the pattern in the gutter area
     assert!(
-        screen.contains(" 2 │ line1") || screen.contains(" 2│ line1"),
+        harness.line_number_before("line1") == Some(2) || screen.contains(" 2│ line1"),
         "Line 1 should show relative distance 2 from cursor on line 3, screen:\n{screen}"
     );
     assert!(
-        screen.contains(" 1 │ line2") || screen.contains(" 1│ line2"),
+        harness.line_number_before("line2") == Some(1) || screen.contains(" 1│ line2"),
         "Line 2 should show relative distance 1 from cursor on line 3, screen:\n{screen}"
     );
     assert!(
-        screen.contains(" 3 │ line3") || screen.contains(" 3│ line3"),
+        harness.line_number_before("line3") == Some(3) || screen.contains(" 3│ line3"),
         "Cursor line (line 3) should show absolute line number 3, screen:\n{screen}"
     );
     assert!(
-        screen.contains(" 1 │ line4") || screen.contains(" 1│ line4"),
+        harness.line_number_before("line4") == Some(1) || screen.contains(" 1│ line4"),
         "Line 4 should show relative distance 1 from cursor on line 3, screen:\n{screen}"
     );
     assert!(
-        screen.contains(" 2 │ line5") || screen.contains(" 2│ line5"),
+        harness.line_number_before("line5") == Some(2) || screen.contains(" 2│ line5"),
         "Line 5 should show relative distance 2 from cursor on line 3, screen:\n{screen}"
     );
 }

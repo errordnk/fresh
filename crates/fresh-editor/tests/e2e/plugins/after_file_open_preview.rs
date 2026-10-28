@@ -70,7 +70,7 @@ fn preview_open_does_not_fire_after_file_open_hook() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Default::default(),
+        crate::common::harness::config_with_tab_bar(),
         project_root.clone(),
     )
     .unwrap();
@@ -144,7 +144,7 @@ fn escalating_a_preview_fires_the_deferred_after_file_open_hook() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         40,
-        Default::default(),
+        crate::common::harness::config_with_tab_bar(),
         project_root.clone(),
     )
     .unwrap();

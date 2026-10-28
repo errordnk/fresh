@@ -150,9 +150,8 @@ fn test_diagnostics_panel_enter_does_not_jump() {
     // but the editor buffer should be the active split)
     harness
         .wait_until(|h| {
-            let screen = h.screen_to_string();
             // Status bar should show file line info, not panel info
-            screen.contains("Ln ")
+            h.status_position().is_some()
         })
         .unwrap();
 

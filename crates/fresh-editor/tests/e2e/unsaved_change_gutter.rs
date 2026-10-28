@@ -16,6 +16,13 @@ fn content(lines: usize) -> String {
         .join("\n")
 }
 
+/// A harness with the gutter's indicator column shown (it is off by default).
+fn indicator_harness() -> EditorTestHarness {
+    let mut config = fresh::config::Config::default();
+    config.editor.gutter_indicators = true;
+    EditorTestHarness::with_config(80, 24, config).unwrap()
+}
+
 /// Screen rows whose indicator column carries the unsaved-change bar.
 fn barred_rows(harness: &EditorTestHarness) -> Vec<usize> {
     let (first, last) = harness.content_area_rows();
@@ -39,7 +46,7 @@ fn barred_rows(harness: &EditorTestHarness) -> Vec<usize> {
 /// set for the same edit.
 #[test]
 fn inserting_lines_marks_only_the_inserted_lines() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = indicator_harness();
     harness.load_buffer_from_text(&content(400)).unwrap();
     harness.render().unwrap();
     assert!(
@@ -82,7 +89,7 @@ fn inserting_lines_marks_only_the_inserted_lines() {
 /// Editing within a single line marks that line only.
 #[test]
 fn editing_one_line_marks_one_line() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = indicator_harness();
     harness.load_buffer_from_text(&content(400)).unwrap();
     harness.render().unwrap();
 

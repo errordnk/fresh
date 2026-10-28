@@ -67,7 +67,7 @@ fn ctrl_j_inserts_a_newline_in_a_buffer() {
 
     let screen = harness.screen_to_string();
     assert!(
-        !screen.contains("onetwo") && screen.contains("Ln 2, Col 1"),
+        !screen.contains("onetwo") && harness.status_position() == Some((2, 1)),
         "Ctrl+J must split the line at the cursor:\n{screen}"
     );
     harness.assert_screen_contains("two");
@@ -85,7 +85,7 @@ fn ctrl_j_confirms_a_prompt() {
     send_bytes(&mut harness, b"\n");
 
     harness.wait_for_prompt_closed().unwrap();
-    harness.assert_screen_contains("Ln 3, Col 1");
+    harness.assert_status_position(3, 1);
 }
 
 /// The buffer's only line once the keys have run: `X` alone means Select
@@ -125,7 +125,7 @@ fn a_noop_ctrl_j_does_nothing() {
 
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("onetwo") && screen.contains("Ln 1, Col 4"),
+        screen.contains("onetwo") && harness.status_position() == Some((1, 4)),
         "a noop Ctrl+J must leave the line whole:\n{screen}"
     );
 }
@@ -183,5 +183,5 @@ fn a_modes_ctrl_j_does_not_stop_it_confirming_a_prompt() {
         !harness.editor().is_prompting(),
         "Ctrl+J must confirm the prompt, the buffer's mode notwithstanding"
     );
-    harness.assert_screen_contains("Ln 3, Col 1");
+    harness.assert_status_position(3, 1);
 }

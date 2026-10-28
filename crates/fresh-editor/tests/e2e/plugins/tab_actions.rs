@@ -1,6 +1,5 @@
 //! E2E tests for tab actions plugin
 
-use crate::common::harness::layout;
 use crate::common::harness::{copy_plugin, copy_plugin_lib, EditorTestHarness};
 use crossterm::event::{KeyCode, KeyModifiers};
 
@@ -15,7 +14,12 @@ fn tab_actions_harness() -> (EditorTestHarness, tempfile::TempDir) {
     copy_plugin_lib(&plugins_dir);
 
     let mut harness =
-        EditorTestHarness::with_config_and_working_dir(80, 24, Default::default(), project_root)
+        EditorTestHarness::with_config_and_working_dir(
+            80,
+            24,
+            crate::common::harness::config_with_tab_bar(),
+            project_root,
+        )
             .unwrap();
 
     harness.render().unwrap();
@@ -24,7 +28,7 @@ fn tab_actions_harness() -> (EditorTestHarness, tempfile::TempDir) {
 }
 
 fn tab_bar(harness: &EditorTestHarness) -> String {
-    harness.screen_row_text(layout::TAB_BAR_ROW as u16)
+    harness.get_tab_bar()
 }
 
 /// Open the command palette, type a command, submit it, and wait for the

@@ -61,19 +61,14 @@ fn toggle_plugin_setting(h: &mut EditorTestHarness, category: &str, steps: usize
         .unwrap();
 }
 
-/// Column reported by the status bar ("Ln 1, Col 7" → 7).
+/// Column reported by the status bar ("1:7" → 7).
 fn status_col(h: &EditorTestHarness) -> usize {
-    let screen = h.screen_to_string();
-    let marker = "Col ";
-    let idx = screen
-        .find(marker)
-        .unwrap_or_else(|| panic!("status bar has no column readout. Screen:\n{screen}"));
-    screen[idx + marker.len()..]
-        .chars()
-        .take_while(|c| c.is_ascii_digit())
-        .collect::<String>()
-        .parse()
-        .unwrap_or_else(|_| panic!("unparsable column readout. Screen:\n{screen}"))
+    h.status_position().map(|(_, col)| col).unwrap_or_else(|| {
+        panic!(
+            "status bar has no column readout. Screen:\n{}",
+            h.screen_to_string()
+        )
+    })
 }
 
 /// vi_mode: turning `arrowKeys` off must stop Left/Right driving the

@@ -46,7 +46,12 @@ const EDITOR_CLICK_ROW: u16 = 15;
 /// in the tree. Each file's content is its own name, which also makes
 /// editor content assertions unambiguous.
 fn setup_with_explorer(filenames: &[&str]) -> EditorTestHarness {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project = harness.project_dir().unwrap();
     for name in filenames {
         fs::write(project.join(name), format!("{name}\n")).unwrap();
@@ -292,7 +297,12 @@ fn reclicking_already_permanent_file_does_not_demote() {
 
 #[test]
 fn config_disabled_falls_back_to_permanent_open() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project = harness.project_dir().unwrap();
     fs::write(project.join("alpha.txt"), "alpha.txt\n").unwrap();
 
@@ -417,7 +427,12 @@ fn keyboard_navigation_previews_selected_file() {
 /// tabs.
 #[test]
 fn keyboard_navigation_skips_preview_when_disabled() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project = harness.project_dir().unwrap();
     fs::write(project.join("alpha.txt"), "alpha.txt\n").unwrap();
     fs::write(project.join("beta.txt"), "beta.txt\n").unwrap();
@@ -461,7 +476,12 @@ fn keyboard_navigation_skips_preview_when_disabled() {
 /// stringification).
 #[test]
 fn buffer_navigation_shortcut_works_from_file_explorer() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project = harness.project_dir().unwrap();
     fs::write(project.join("alpha.txt"), "ALPHA_FILE_BODY\n").unwrap();
     fs::write(project.join("beta.txt"), "BETA_FILE_BODY\n").unwrap();

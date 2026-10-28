@@ -3004,7 +3004,7 @@ fn test_line_numbers_config_applied_to_new_buffers() {
     // Verify initial state has line numbers (default is true)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("1 │"),
+        harness.gutter_shows_line(1),
         "Initial buffer should show line numbers by default"
     );
 
@@ -3053,7 +3053,7 @@ fn test_line_numbers_config_applied_to_new_buffers() {
     // The new buffer should NOT show line numbers
     let screen = harness.screen_to_string();
     assert!(
-        !screen.contains("1 │") && !screen.contains("2 │"),
+        !harness.gutter_shows_line(1) && !harness.gutter_shows_line(2),
         "New buffer should not show line numbers when config.editor.line_numbers=false. Screen:\n{}",
         screen
     );

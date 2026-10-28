@@ -244,7 +244,7 @@ fn the_console_mouse_reaches_a_daemon_session() {
         // A click on the "0" of "line 07" puts the cursor there.
         gpm.click(col + 5, row);
         wait_for(&mut client, "a GPM click did not move the cursor", |s| {
-            s.contents().contains("Ln 7, Col 6")
+            s.contents().lines().any(|l| l.trim_end().ends_with(" 7:6"))
         });
 
         // The wheel scrolls the buffer.
@@ -265,7 +265,7 @@ fn the_console_mouse_reaches_a_daemon_session() {
         // The selection is not drawn as text, so wait for the release to
         // land before typing: the cursor sits at the drag's end.
         wait_for(&mut client, "the GPM drag did not reach the editor", |s| {
-            s.contents().contains("Ln 20, Col 6")
+            s.contents().lines().any(|l| l.trim_end().ends_with(" 20:6"))
         });
         client.send(b"X").unwrap();
         wait_for(&mut client, "the GPM drag did not select", |s| {

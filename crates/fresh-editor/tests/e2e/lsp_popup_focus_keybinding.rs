@@ -125,7 +125,7 @@ fn arrows_drive_buffer_when_popup_is_unfocused() {
     // The status bar reports "Ln 1, Col 1"; we use that as the
     // pre-condition observable.
     assert!(
-        harness.screen_to_string().contains("Ln 1"),
+        harness.status_line() == Some(1),
         "precondition: cursor should be on line 1; screen:\n{}",
         harness.screen_to_string()
     );
@@ -138,7 +138,7 @@ fn arrows_drive_buffer_when_popup_is_unfocused() {
 
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 2"),
+        harness.status_line() == Some(2),
         "Down arrow must move the buffer cursor to line 2 when the popup is unfocused; \
          screen:\n{screen}",
     );

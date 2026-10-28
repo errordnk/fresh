@@ -85,7 +85,7 @@ fn real_key_after_bare_modifier_still_reveals_the_cursor() {
 
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("line 0001") && screen.contains("Ln 1, Col 2"),
+        screen.contains("line 0001") && harness.status_position() == Some((1, 2)),
         "moving the cursor should scroll it back into view. Screen:\n{screen}"
     );
 }

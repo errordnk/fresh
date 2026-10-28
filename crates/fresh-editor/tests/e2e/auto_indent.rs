@@ -196,15 +196,15 @@ fn test_plain_text_enter_on_blank_last_line_does_not_indent() {
     harness
         .send_key(KeyCode::End, KeyModifiers::CONTROL)
         .unwrap();
-    harness.assert_screen_contains("Ln 5, Col 1");
+    harness.assert_status_position(5, 1);
 
     harness
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
-    harness.assert_screen_contains("Ln 6, Col 1");
+    harness.assert_status_position(6, 1);
 
     harness.type_text("x").unwrap();
-    harness.assert_screen_contains("Ln 6, Col 2");
+    harness.assert_status_position(6, 2);
     // Not `assert_buffer_content`: the harness's shadow string does not
     // model auto-indent.
     assert_eq!(
@@ -217,17 +217,17 @@ fn test_plain_text_enter_on_blank_last_line_does_not_indent() {
     harness.send_key(KeyCode::Up, KeyModifiers::NONE).unwrap();
     harness.send_key(KeyCode::Up, KeyModifiers::NONE).unwrap();
     harness.send_key(KeyCode::End, KeyModifiers::NONE).unwrap();
-    harness.assert_screen_contains("Ln 4, Col 14");
+    harness.assert_status_position(4, 14);
     harness
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
-    harness.assert_screen_contains("Ln 5, Col 9");
+    harness.assert_status_position(5, 9);
     harness
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
-    harness.assert_screen_contains("Ln 6, Col 9");
+    harness.assert_status_position(6, 9);
     harness.type_text("y").unwrap();
-    harness.assert_screen_contains("Ln 6, Col 10");
+    harness.assert_status_position(6, 10);
     assert_eq!(
         harness.get_buffer_content().unwrap(),
         "    line1\n    line2\n        line3\n        line4\n        \n        y\n\nx"

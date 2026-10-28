@@ -27,7 +27,7 @@ fn a_resize_caps_the_names_in_the_frame_it_arrives_in() {
     let dir = tempfile::TempDir::new().unwrap();
     let path = dir.path().join(format!("{LONG}.rs"));
     fs::write(&path, "x\n").unwrap();
-    let mut h = EditorTestHarness::new(160, 20).unwrap();
+    let mut h = EditorTestHarness::with_tab_bar(160, 20).unwrap();
     h.open_file(&path).unwrap();
     h.render().unwrap();
     assert!(!capped(&h), "whole: {}", tab_row(&h));
@@ -51,7 +51,7 @@ fn a_resize_caps_the_names_in_the_frame_it_arrives_in() {
 #[test]
 fn a_tab_that_does_not_fit_caps_the_names_in_the_frame_it_opens_in() {
     let dir = tempfile::TempDir::new().unwrap();
-    let mut h = EditorTestHarness::new(120, 20).unwrap();
+    let mut h = EditorTestHarness::with_tab_bar(120, 20).unwrap();
     let first = dir.path().join(format!("{LONG}_0.rs"));
     fs::write(&first, "x\n").unwrap();
     h.open_file(&first).unwrap();
@@ -76,7 +76,7 @@ fn a_tab_that_does_not_fit_caps_the_names_in_the_frame_it_opens_in() {
 #[test]
 fn the_first_frame_of_a_narrow_strip_caps_its_names() {
     let dir = tempfile::TempDir::new().unwrap();
-    let mut h = EditorTestHarness::new(80, 20).unwrap();
+    let mut h = EditorTestHarness::with_tab_bar(80, 20).unwrap();
     for i in 0..3 {
         let p = dir.path().join(format!("{LONG}_{i}.rs"));
         fs::write(&p, "x\n").unwrap();

@@ -726,8 +726,8 @@ fn batched_vertical_movement_across_scroll_preserves_column() {
          status: {status}"
     );
     assert!(
-        status.contains("Ln 1, Col 1"),
-        "expected the cursor back at Ln 1, Col 1 after the round trip, got: {status}"
+        harness.status_position() == Some((1, 1)),
+        "expected the cursor back at 1:1 after the round trip, got: {status}"
     );
 }
 

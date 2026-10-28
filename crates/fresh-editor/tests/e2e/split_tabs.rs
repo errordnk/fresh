@@ -13,7 +13,7 @@ fn test_initial_split_has_buffer_in_tabs() {
     let file_path = temp_dir.path().join("test.txt");
     std::fs::write(&file_path, "Hello").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -24,7 +24,7 @@ fn test_initial_split_has_buffer_in_tabs() {
 /// Test that the initial scratch buffer is in tabs when editor starts
 #[test]
 fn test_initial_scratch_buffer_in_tabs() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
     harness.render().unwrap();
 
     // The initial scratch buffer should show in tabs as "[No Name]" or similar
@@ -44,7 +44,7 @@ fn test_open_file_adds_to_split_tabs() {
     std::fs::write(&file1, "Content 1").unwrap();
     std::fs::write(&file2, "Content 2").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open first file
     harness.open_file(&file1).unwrap();
@@ -67,7 +67,7 @@ fn test_new_split_has_buffer_in_tabs() {
     let file_path = temp_dir.path().join("test.txt");
     std::fs::write(&file_path, "Hello").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -106,7 +106,7 @@ fn test_splits_have_independent_tabs() {
     std::fs::write(&file1, "Content 1").unwrap();
     std::fs::write(&file2, "Content 2").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 30).unwrap();
 
     // Open first file
     harness.open_file(&file1).unwrap();
@@ -159,7 +159,7 @@ fn test_buffer_cycling_within_split() {
     std::fs::write(&file2, "Content 2").unwrap();
     std::fs::write(&file3, "Content 3").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open all three files in the same split
     harness.open_file(&file1).unwrap();
@@ -204,7 +204,7 @@ fn test_tab_bar_in_split_area() {
     let file_path = temp_dir.path().join("test.txt");
     std::fs::write(&file_path, "Hello world").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -225,7 +225,7 @@ fn test_close_buffer_removes_from_tabs() {
     std::fs::write(&file1, "Content 1").unwrap();
     std::fs::write(&file2, "Content 2").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open both files
     harness.open_file(&file1).unwrap();
@@ -296,7 +296,7 @@ fn test_git_log_split_tabs() {
         .expect("Failed to git commit");
 
     // Create harness with the repo as working directory
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 30).unwrap();
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -335,7 +335,7 @@ fn test_debug_split_tabs_rendering() {
     std::fs::write(&file1, "Alpha content").unwrap();
     std::fs::write(&file2, "Beta content").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 30).unwrap();
 
     // Open first file
     harness.open_file(&file1).unwrap();
@@ -386,7 +386,7 @@ fn test_close_split_preserves_tabs_and_focus() {
     std::fs::write(&file1, "").unwrap();
     std::fs::write(&file2, "").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 30).unwrap();
 
     // Step 1: Open first file and type some text
     harness.open_file(&file1).unwrap();
@@ -484,7 +484,7 @@ fn test_close_tab_keeps_buffer_in_other_split() {
     let file1 = temp_dir.path().join("shared.txt");
     std::fs::write(&file1, "Shared content").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 30).unwrap();
 
     // Open file in first split
     harness.open_file(&file1).unwrap();
@@ -541,7 +541,7 @@ fn test_close_tab_closes_buffer_when_last_viewport() {
     std::fs::write(&file1, "Content 1").unwrap();
     std::fs::write(&file2, "Content 2").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open both files in same split
     harness.open_file(&file1).unwrap();
@@ -579,7 +579,7 @@ fn test_close_tab_prompts_for_modified_buffer() {
     std::fs::write(&file1, "Content 1").unwrap();
     std::fs::write(&file2, "Content 2").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open both files
     harness.open_file(&file1).unwrap();
@@ -624,7 +624,7 @@ fn test_close_tab_transfers_focus_to_remaining_tab() {
     std::fs::write(&file1, "First file content").unwrap();
     std::fs::write(&file2, "Second file content").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open both files
     harness.open_file(&file1).unwrap();
@@ -681,7 +681,7 @@ fn test_close_last_tab_in_split_closes_split() {
     let file1 = temp_dir.path().join("shared.txt");
     std::fs::write(&file1, "Shared content").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 30).unwrap();
 
     // Open file in first split
     harness.open_file(&file1).unwrap();
@@ -765,7 +765,7 @@ fn test_close_tab_with_multiple_tabs_removes_tab_only() {
     std::fs::write(&file1, "Content 1").unwrap();
     std::fs::write(&file2, "Content 2").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 30).unwrap();
 
     // Open both files in the same split
     harness.open_file(&file1).unwrap();

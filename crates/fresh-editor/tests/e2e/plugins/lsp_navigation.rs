@@ -262,10 +262,10 @@ fn test_lsp_navigation_jumps_to_precise_column() -> anyhow::Result<()> {
     // status bar must show that column — the cursor lands on the name, not at
     // column 1 (the start of the declaration line). Observing the rendered
     // column proves the precise-column jump.
-    harness.wait_until(|h| h.screen_to_string().contains("Col 3"))?;
+    harness.wait_until(|h| h.status_position().map(|(_, col)| col) == Some(3))?;
     assert!(
-        harness.screen_to_string().contains("Col 3"),
-        "Enter should jump to the symbol name's column (Col 3). Screen:\n{}",
+        harness.status_position().map(|(_, col)| col) == Some(3),
+        "Enter should jump to the symbol name's column (3). Screen:\n{}",
         harness.screen_to_string()
     );
 
@@ -282,7 +282,7 @@ fn test_lsp_navigation_cancel_restores_cursor() -> anyhow::Result<()> {
     // Move to a known starting position: line 3 (`    return true;`).
     harness.send_key(KeyCode::Down, KeyModifiers::NONE)?;
     harness.send_key(KeyCode::Down, KeyModifiers::NONE)?;
-    harness.wait_until(|h| h.screen_to_string().contains("Ln 3, Col 1"))?;
+    harness.wait_until(|h| h.status_position() == Some((3, 1)))?;
 
     open_symbol_navigation(&mut harness)?;
 
@@ -294,10 +294,10 @@ fn test_lsp_navigation_cancel_restores_cursor() -> anyhow::Result<()> {
 
     // Cancel — the cursor (and status bar) must return to the start position.
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE)?;
-    harness.wait_until(|h| h.screen_to_string().contains("Ln 3, Col 1"))?;
+    harness.wait_until(|h| h.status_position() == Some((3, 1)))?;
     assert!(
-        harness.screen_to_string().contains("Ln 3, Col 1"),
-        "Esc should restore the original cursor position (Ln 3, Col 1). Screen:\n{}",
+        harness.status_position() == Some((3, 1)),
+        "Esc should restore the original cursor position (3:1). Screen:\n{}",
         harness.screen_to_string()
     );
 

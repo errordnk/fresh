@@ -73,7 +73,7 @@ fn typing_below_a_conceal_that_spans_a_line_break_keeps_the_editor_alive() {
     // Walk the cursor into the second line — the concealed newline joins the
     // two into one drawn row, so `Down` would step over it.
     for _ in 0..8 {
-        if harness.screen_to_string().contains("Ln 2,") {
+        if harness.status_line() == Some(2) {
             break;
         }
         harness
@@ -83,7 +83,7 @@ fn typing_below_a_conceal_that_spans_a_line_break_keeps_the_editor_alive() {
     }
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 2,"),
+        harness.status_line() == Some(2),
         "precondition: the cursor must reach the concealed line.\nScreen:\n{screen}"
     );
 

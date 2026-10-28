@@ -26,15 +26,14 @@ fn feed(harness: &mut EditorTestHarness, parser: &mut InputParser, bytes: &[u8])
     }
 }
 
-/// The "Ln <n>, Col <n>" readout from the status bar, as rendered.
+/// The `line:col` readout from the status bar, as rendered.
 fn line_col(harness: &EditorTestHarness) -> String {
     let status = harness.get_status_bar();
-    let start = status
-        .find("Ln ")
-        .unwrap_or_else(|| panic!("no line/column readout in status bar: {status:?}"));
-    let rest = &status[start..];
-    let end = rest.find("  ").unwrap_or(rest.len());
-    rest[..end].trim().to_string()
+    status
+        .split_whitespace()
+        .last()
+        .unwrap_or_else(|| panic!("no line/column readout in status bar: {status:?}"))
+        .to_string()
 }
 
 /// One Down keypress — press then release, as the terminal sends it — must
@@ -48,22 +47,22 @@ fn arrow_key_release_does_not_move_the_cursor_again() {
     harness.render().unwrap();
     let mut parser = InputParser::new();
 
-    assert_eq!(line_col(&harness), "Ln 1, Col 1");
+    assert_eq!(line_col(&harness), "1:1");
 
     // Down: press (legacy form, unchanged by the flag) then release.
     feed(&mut harness, &mut parser, b"\x1b[B");
-    assert_eq!(line_col(&harness), "Ln 2, Col 1", "press should move once");
+    assert_eq!(line_col(&harness), "2:1", "press should move once");
     feed(&mut harness, &mut parser, b"\x1b[1;1:3B");
     assert_eq!(
         line_col(&harness),
-        "Ln 2, Col 1",
+        "2:1",
         "release must not move the cursor a second time"
     );
 
     // Right, in the same shape.
     feed(&mut harness, &mut parser, b"\x1b[C");
     feed(&mut harness, &mut parser, b"\x1b[1;1:3C");
-    assert_eq!(line_col(&harness), "Ln 2, Col 2");
+    assert_eq!(line_col(&harness), "2:2");
 }
 
 /// Auto-repeat while a key is held is a keystroke and must still move the
@@ -83,7 +82,7 @@ fn arrow_key_repeat_still_moves_the_cursor() {
     feed(&mut harness, &mut parser, b"\x1b[1;1:2B");
     feed(&mut harness, &mut parser, b"\x1b[1;1:3B");
 
-    assert_eq!(line_col(&harness), "Ln 4, Col 1");
+    assert_eq!(line_col(&harness), "4:1");
 }
 
 /// The same duplication hit the `CSI <n> ~` editing keys, where it destroyed

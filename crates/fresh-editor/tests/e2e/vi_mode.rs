@@ -311,7 +311,7 @@ fn test_vi_vim_compat_operator_motions_default_enabled() {
     enable_vi_mode(&mut harness);
 
     send_vi_operator_motion(&mut harness, 'd', 'W');
-    wait_for_rendered_lines_in_order(&mut harness, &["1 │ three", "2 │ second"]);
+    wait_for_rendered_lines_in_order(&mut harness, &["1 three", "2 second"]);
 }
 
 #[test]
@@ -556,7 +556,9 @@ fn test_vi_vim_compat_word_motion_stops_before_trailing_eof_whitespace() {
     enable_vi_mode(&mut harness);
 
     send_vi_key(&mut harness, 'W');
-    harness.wait_for_screen_contains("Ln 1, Col 3").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 3)))
+        .unwrap();
 }
 
 #[test]
@@ -572,10 +574,14 @@ fn test_vi_vim_compat_word_motion_moves_to_end_of_trailing_whitespace() {
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
-    harness.wait_for_screen_contains("Ln 1, Col 4").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 4)))
+        .unwrap();
 
     send_vi_key(&mut harness, 'W');
-    harness.wait_for_screen_contains("Ln 1, Col 6").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 6)))
+        .unwrap();
 }
 
 #[test]
@@ -591,10 +597,14 @@ fn test_vi_vim_compat_word_motion_moves_to_end_of_trailing_whitespace_with_crlf(
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
-    harness.wait_for_screen_contains("Ln 1, Col 4").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 4)))
+        .unwrap();
 
     send_vi_key(&mut harness, 'W');
-    harness.wait_for_screen_contains("Ln 1, Col 6").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 6)))
+        .unwrap();
 }
 
 #[test]
@@ -624,11 +634,15 @@ fn test_vi_vim_compat_operator_word_motion_deletes_trailing_whitespace() {
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
-    harness.wait_for_screen_contains("Ln 1, Col 4").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 4)))
+        .unwrap();
 
     send_vi_operator_motion(&mut harness, 'd', 'W');
     harness.assert_buffer_content("foo\n");
-    harness.wait_for_screen_contains("Ln 1, Col 3").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 3)))
+        .unwrap();
 }
 
 #[test]
@@ -644,11 +658,15 @@ fn test_vi_vim_compat_operator_word_motion_deletes_trailing_whitespace_with_crlf
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
-    harness.wait_for_screen_contains("Ln 1, Col 4").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 4)))
+        .unwrap();
 
     send_vi_operator_motion(&mut harness, 'd', 'W');
     harness.assert_buffer_content("foo\r\n");
-    harness.wait_for_screen_contains("Ln 1, Col 3").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 3)))
+        .unwrap();
 }
 
 #[test]
@@ -663,10 +681,14 @@ fn test_vi_vim_compat_word_end_advances_from_current_word_end() {
 
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
-    harness.wait_for_screen_contains("Ln 1, Col 3").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 3)))
+        .unwrap();
 
     send_vi_key(&mut harness, 'E');
-    harness.wait_for_screen_contains("Ln 1, Col 7").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 7)))
+        .unwrap();
 }
 
 #[test]
@@ -723,13 +745,17 @@ fn test_vi_vim_compat_search_count_does_not_leak_to_next_motion() {
 
     send_vi_key(&mut harness, '3');
     send_vi_key(&mut harness, '*');
-    harness.wait_for_screen_contains("Ln 1, Col 19").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 19)))
+        .unwrap();
 
     send_vi_key(&mut harness, 'j');
     // The count must not leak into `j`: the cursor moves down exactly one line
     // (to line 2, not line 4). The column clamps to the last char of the shorter
     // line "one" (Col 3, like Vim) rather than resting one past it.
-    harness.wait_for_screen_contains("Ln 2, Col 3").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((2, 3)))
+        .unwrap();
 }
 
 #[test]
@@ -743,7 +769,9 @@ fn test_vi_vim_compat_search_backward_wraps_from_first_match() {
     enable_vi_mode(&mut harness);
 
     send_vi_key(&mut harness, '#');
-    harness.wait_for_screen_contains("Ln 1, Col 9").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 9)))
+        .unwrap();
 }
 
 #[test]
@@ -757,10 +785,14 @@ fn test_vi_vim_compat_search_backward_skips_prefix_match_at_buffer_start() {
     enable_vi_mode(&mut harness);
 
     send_vi_key(&mut harness, 'w');
-    harness.wait_for_screen_contains("Ln 1, Col 8").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 8)))
+        .unwrap();
 
     send_vi_key(&mut harness, '#');
-    harness.wait_for_screen_contains("Ln 1, Col 8").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 8)))
+        .unwrap();
 }
 
 #[test]
@@ -776,10 +808,14 @@ fn test_vi_vim_compat_star_on_space_uses_next_word_on_line() {
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
-    harness.wait_for_screen_contains("Ln 1, Col 4").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 4)))
+        .unwrap();
 
     send_vi_key(&mut harness, '*');
-    harness.wait_for_screen_contains("Ln 1, Col 5").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 5)))
+        .unwrap();
 }
 
 #[test]
@@ -793,7 +829,9 @@ fn test_vi_vim_compat_star_on_leading_indent_uses_next_word_on_line() {
     enable_vi_mode(&mut harness);
 
     send_vi_key(&mut harness, '*');
-    harness.wait_for_screen_contains("Ln 1, Col 4").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 4)))
+        .unwrap();
 }
 
 #[test]
@@ -809,10 +847,14 @@ fn test_vi_vim_compat_hash_on_space_uses_next_word_on_line() {
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
     send_vi_key(&mut harness, 'l');
-    harness.wait_for_screen_contains("Ln 1, Col 4").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 4)))
+        .unwrap();
 
     send_vi_key(&mut harness, '#');
-    harness.wait_for_screen_contains("Ln 1, Col 13").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 13)))
+        .unwrap();
 }
 
 #[test]
@@ -826,10 +868,14 @@ fn test_vi_vim_compat_star_hash_fall_back_to_non_blank_string() {
     enable_vi_mode(&mut harness);
 
     send_vi_key(&mut harness, '*');
-    harness.wait_for_screen_contains("Ln 1, Col 3").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 3)))
+        .unwrap();
 
     send_vi_key(&mut harness, '#');
-    harness.wait_for_screen_contains("Ln 1, Col 1").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 1)))
+        .unwrap();
 }
 
 #[test]
@@ -962,13 +1008,19 @@ fn test_vi_vim_compat_word_search_repeats_with_n_and_shift_n() {
     enable_vi_mode(&mut harness);
 
     send_vi_key(&mut harness, '*');
-    harness.wait_for_screen_contains("Ln 1, Col 5").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 5)))
+        .unwrap();
 
     send_vi_key(&mut harness, 'n');
-    harness.wait_for_screen_contains("Ln 1, Col 9").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 9)))
+        .unwrap();
 
     send_vi_key(&mut harness, 'N');
-    harness.wait_for_screen_contains("Ln 1, Col 5").unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some((1, 5)))
+        .unwrap();
 }
 
 // =============================================================================

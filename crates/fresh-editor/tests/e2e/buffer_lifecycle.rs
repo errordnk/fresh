@@ -501,7 +501,7 @@ fn test_undo_after_save_modified_status() {
 /// Test that tabs show the X close button
 #[test]
 fn test_tabs_show_close_button() {
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 24).unwrap();
 
     // Render
     harness.render().unwrap();
@@ -519,7 +519,7 @@ fn test_tabs_show_close_button() {
 fn test_click_tab_close_button() {
     use crate::common::harness::layout;
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 24).unwrap();
 
     // Create two temp files
     let temp_dir = tempfile::TempDir::new().unwrap();
@@ -584,7 +584,7 @@ fn test_click_tab_close_button() {
 fn test_middle_click_tab_name_closes_tab() {
     use crate::common::harness::layout;
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 24).unwrap();
 
     let temp_dir = tempfile::TempDir::new().unwrap();
     let file1_path = temp_dir.path().join("first.txt");
@@ -633,7 +633,7 @@ fn test_middle_click_tab_name_closes_tab() {
 fn test_middle_click_tab_close_button_closes_tab() {
     use crate::common::harness::layout;
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 24).unwrap();
 
     let temp_dir = tempfile::TempDir::new().unwrap();
     let file1_path = temp_dir.path().join("first.txt");
@@ -675,7 +675,7 @@ fn test_middle_click_tab_close_button_closes_tab() {
 fn test_middle_click_modified_tab_name_prompts() {
     use crate::common::harness::layout;
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 24).unwrap();
 
     let temp_dir = tempfile::TempDir::new().unwrap();
     let file_path = temp_dir.path().join("dirty.txt");
@@ -708,7 +708,7 @@ fn test_middle_click_modified_tab_name_prompts() {
 fn test_click_tab_close_button_modified_buffer() {
     use crate::common::harness::layout;
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 24).unwrap();
 
     // Create a second buffer
     harness.new_buffer().unwrap();
@@ -755,7 +755,7 @@ fn test_click_tab_close_button_modified_buffer() {
 fn test_click_tab_close_modified_discard() {
     use crate::common::harness::layout;
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 24).unwrap();
 
     // Create a second buffer
     harness.new_buffer().unwrap();
@@ -804,7 +804,7 @@ fn test_click_tab_close_modified_discard() {
 fn test_click_tab_close_modified_cancel() {
     use crate::common::harness::layout;
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 24).unwrap();
 
     // Create a second buffer
     harness.new_buffer().unwrap();
@@ -1050,15 +1050,15 @@ fn isolated_project_harness(config: Config) -> EditorTestHarness {
     .unwrap()
 }
 
-/// Row that the tab bar is rendered on (just below the menu bar).
-const TAB_BAR_ROW: u16 = 1;
+/// Row that the tab bar is rendered on (the top row: the menu bar is hidden).
+const TAB_BAR_ROW: u16 = 0;
 
 /// Default: closing the last buffer auto-opens the file explorer and
 /// auto-creates a fresh `[No Name]` tab. This is the baseline the two
 /// new config flags below opt out of (issue #1753).
 #[test]
 fn test_close_last_buffer_default_opens_explorer_and_empty_tab() {
-    let mut harness = isolated_project_harness(Config::default());
+    let mut harness = isolated_project_harness(crate::common::harness::config_with_tab_bar());
     let project_root = harness.project_dir().unwrap();
     let file = project_root.join("only.txt");
     std::fs::write(&file, "only content").unwrap();
@@ -1087,7 +1087,7 @@ fn test_close_last_buffer_default_opens_explorer_and_empty_tab() {
 /// buffer still appears because that toggle is independent.
 #[test]
 fn test_close_last_buffer_does_not_open_explorer_when_disabled() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.file_explorer.auto_open_on_last_buffer_close = false;
     let mut harness = isolated_project_harness(config);
     let project_root = harness.project_dir().unwrap();
@@ -1115,7 +1115,7 @@ fn test_close_last_buffer_does_not_open_explorer_when_disabled() {
 /// semantic wait point.
 #[test]
 fn test_close_last_buffer_hides_empty_tab_when_disabled() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.auto_create_empty_buffer_on_last_buffer_close = false;
     let mut harness = isolated_project_harness(config);
     let project_root = harness.project_dir().unwrap();
@@ -1145,7 +1145,7 @@ fn test_close_last_buffer_hides_empty_tab_when_disabled() {
 /// `[No Name]` tab. This is the workflow requested in issue #1753.
 #[test]
 fn test_close_last_buffer_blank_workspace_when_both_disabled() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.file_explorer.auto_open_on_last_buffer_close = false;
     config.editor.auto_create_empty_buffer_on_last_buffer_close = false;
     let mut harness = isolated_project_harness(config);
@@ -1270,7 +1270,12 @@ fn assert_only_left_pane(harness: &EditorTestHarness, expected_tabs: &[&str], go
 /// pane's tabs and active buffer as they were.
 #[test]
 fn test_confirmed_close_collapses_split_on_discard() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 20).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        20,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     split_with_sole_modified_tab(&mut harness, None, |h| type_in_new_buffer(h, "right draft"));
 
     close_modified_tab_answering(&mut harness, 'd');
@@ -1282,7 +1287,12 @@ fn test_confirmed_close_collapses_split_on_discard() {
 /// buffer must not take over the emptied pane, nor be lost.
 #[test]
 fn test_confirmed_close_collapses_split_on_discard_beside_unnamed_buffer() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 20).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        20,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     split_with_sole_modified_tab(&mut harness, Some("left draft"), |h| {
         type_in_new_buffer(h, "right draft")
     });
@@ -1295,7 +1305,12 @@ fn test_confirmed_close_collapses_split_on_discard_beside_unnamed_buffer() {
 /// Save on a file-backed buffer writes it, then closes its split.
 #[test]
 fn test_confirmed_close_collapses_split_on_save() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 20).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        20,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let mut right = std::path::PathBuf::new();
     split_with_sole_modified_tab(&mut harness, None, |h| {
         right = h.project_dir().unwrap().join("right.txt");
@@ -1318,7 +1333,12 @@ fn test_confirmed_close_collapses_split_on_save() {
 /// pane, which would keep the emptied split open.
 #[test]
 fn test_confirmed_close_collapses_split_on_save_from_inactive_pane() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 20).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        20,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let mut right = std::path::PathBuf::new();
     split_with_sole_modified_tab(&mut harness, None, |h| {
         right = h.project_dir().unwrap().join("right.txt");
@@ -1356,7 +1376,12 @@ fn test_confirmed_close_collapses_split_on_save_from_inactive_pane() {
 /// its split.
 #[test]
 fn test_confirmed_close_collapses_split_on_save_as() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 20).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        20,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let root =
         split_with_sole_modified_tab(&mut harness, None, |h| type_in_new_buffer(h, "right draft"));
 
@@ -1376,7 +1401,12 @@ fn test_confirmed_close_collapses_split_on_save_as() {
 /// Cancel keeps the split and its modified tab.
 #[test]
 fn test_confirmed_close_collapses_split_not_on_cancel() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 20).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        20,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     split_with_sole_modified_tab(&mut harness, None, |h| type_in_new_buffer(h, "right draft"));
 
     close_modified_tab_answering(&mut harness, 'c');

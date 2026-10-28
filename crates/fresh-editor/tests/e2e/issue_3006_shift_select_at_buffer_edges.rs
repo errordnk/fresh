@@ -83,7 +83,7 @@ fn shift_up_on_first_line_selects_to_buffer_start() {
     }
     harness.render().unwrap();
     assert!(
-        harness.get_status_bar().contains("Ln 1, Col 11"),
+        harness.status_position() == Some((1, 11)),
         "precondition: cursor on line 1 column 11, status bar says: {}",
         harness.get_status_bar()
     );
@@ -104,7 +104,7 @@ fn shift_up_on_first_line_selects_to_buffer_start() {
         harness.screen_to_string()
     );
     assert!(
-        harness.get_status_bar().contains("Ln 1, Col 1"),
+        harness.status_position() == Some((1, 1)),
         "Shift+Up on the first line should move the cursor to column 1, status bar says: {}",
         harness.get_status_bar()
     );
@@ -129,7 +129,7 @@ fn shift_down_on_last_line_selects_to_buffer_end() {
     }
     harness.render().unwrap();
     assert!(
-        harness.get_status_bar().contains("Ln 4, Col 11"),
+        harness.status_position() == Some((4, 11)),
         "precondition: cursor on line 4 column 11, status bar says: {}",
         harness.get_status_bar()
     );
@@ -152,9 +152,7 @@ fn shift_down_on_last_line_selects_to_buffer_end() {
         harness.screen_to_string()
     );
     assert!(
-        harness
-            .get_status_bar()
-            .contains(&format!("Ln 4, Col {}", LINE4.len() + 1)),
+        harness.status_position() == Some((4, LINE4.len() + 1)),
         "Shift+Down on the last line should move the cursor past the last character, \
          status bar says: {}",
         harness.get_status_bar()
@@ -197,7 +195,7 @@ fn shift_up_extends_existing_selection_to_buffer_start_then_stops() {
         harness.screen_to_string()
     );
     assert!(
-        harness.get_status_bar().contains("Ln 1, Col 1"),
+        harness.status_position() == Some((1, 1)),
         "status bar says: {}",
         harness.get_status_bar()
     );

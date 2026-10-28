@@ -78,23 +78,35 @@ fn test_line_numbers_current_buffer_scopes_to_buffer() {
     harness.render().unwrap();
 
     // b.txt is active and shows the line-number gutter.
-    harness.assert_screen_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_some(),
+        "line numbers before delta"
+    );
 
     run_command(&mut harness, "Toggle Line Numbers (Current Buffer)");
 
     // b.txt now renders without a gutter, but its content is still shown.
-    harness.assert_screen_not_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_none(),
+        "no line numbers before delta"
+    );
     harness.assert_screen_contains("delta");
 
     // a.txt is untouched: switching to it still shows the gutter.
     harness.open_file(&dir.join("a.txt")).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("│ alpha");
+    assert!(
+        harness.line_number_before("alpha").is_some(),
+        "line numbers before alpha"
+    );
 
     // Returning to b.txt keeps its per-buffer override.
     harness.open_file(&dir.join("b.txt")).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_not_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_none(),
+        "no line numbers before delta"
+    );
     harness.assert_screen_contains("delta");
 }
 
@@ -118,11 +130,17 @@ fn test_line_numbers_current_buffer_persists_across_restart() {
         .unwrap();
         harness.open_file(&file).unwrap();
         harness.render().unwrap();
-        harness.assert_screen_contains("│ alpha");
+        assert!(
+            harness.line_number_before("alpha").is_some(),
+            "line numbers before alpha"
+        );
 
         harness.editor_mut().toggle_line_numbers_current_buffer();
         harness.render().unwrap();
-        harness.assert_screen_not_contains("│ alpha");
+        assert!(
+            harness.line_number_before("alpha").is_none(),
+            "no line numbers before alpha"
+        );
 
         harness.editor_mut().save_workspace().unwrap();
     }
@@ -141,7 +159,10 @@ fn test_line_numbers_current_buffer_persists_across_restart() {
         harness.render().unwrap();
 
         harness.assert_screen_contains("alpha");
-        harness.assert_screen_not_contains("│ alpha");
+        assert!(
+            harness.line_number_before("alpha").is_none(),
+            "no line numbers before alpha"
+        );
     }
 }
 
@@ -549,7 +570,10 @@ fn test_global_line_numbers_toggle_reaches_every_open_document() {
     harness.render().unwrap();
 
     // Control: a fresh start already agrees with the config.
-    harness.assert_screen_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_some(),
+        "line numbers before delta"
+    );
     assert!(
         view_menu_screen(&mut harness).contains("☑ Line Numbers"),
         "the View menu should start out agreeing with `editor.line_numbers`"
@@ -557,14 +581,20 @@ fn test_global_line_numbers_toggle_reaches_every_open_document() {
 
     run_command(&mut harness, "Toggle Line Numbers");
 
-    harness.assert_screen_not_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_none(),
+        "no line numbers before delta"
+    );
     harness.assert_screen_contains("delta");
 
     // The document that was not current is the regression.
     harness.open_file(&dir.join("a.txt")).unwrap();
     harness.render().unwrap();
     harness.assert_screen_contains("alpha");
-    harness.assert_screen_not_contains("│ alpha");
+    assert!(
+        harness.line_number_before("alpha").is_none(),
+        "no line numbers before alpha"
+    );
 
     let screen = view_menu_screen(&mut harness);
     assert!(
@@ -627,7 +657,10 @@ fn test_global_line_numbers_toggle_keeps_another_documents_pin() {
 
     // Pin a.txt's gutter off, against a global default of on.
     run_command(&mut harness, "Toggle Line Numbers (Current Buffer)");
-    harness.assert_screen_not_contains("│ alpha");
+    assert!(
+        harness.line_number_before("alpha").is_none(),
+        "no line numbers before alpha"
+    );
 
     // Neither pass may write a.txt's flag, since it is pinned.
     harness.open_file(&dir.join("b.txt")).unwrap();
@@ -635,12 +668,18 @@ fn test_global_line_numbers_toggle_keeps_another_documents_pin() {
     run_command(&mut harness, "Toggle Line Numbers");
     run_command(&mut harness, "Toggle Line Numbers");
 
-    harness.assert_screen_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_some(),
+        "line numbers before delta"
+    );
 
     harness.open_file(&dir.join("a.txt")).unwrap();
     harness.render().unwrap();
     harness.assert_screen_contains("alpha");
-    harness.assert_screen_not_contains("│ alpha");
+    assert!(
+        harness.line_number_before("alpha").is_none(),
+        "no line numbers before alpha"
+    );
 }
 
 /// A Settings save writes the same editor-wide keys, so it owes the open
@@ -670,7 +709,10 @@ fn test_settings_save_reaches_every_open_document() {
     harness.open_file(&project_dir.join("a.txt")).unwrap();
     harness.open_file(&project_dir.join("b.txt")).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_some(),
+        "line numbers before delta"
+    );
 
     harness.editor_mut().open_settings();
     harness.render().unwrap();
@@ -708,14 +750,20 @@ fn test_settings_save_reaches_every_open_document() {
         "the save should have put `editor.line_numbers` false in the live config"
     );
 
-    harness.assert_screen_not_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_none(),
+        "no line numbers before delta"
+    );
     harness.assert_screen_contains("delta");
 
     // The document that was not current is the regression.
     harness.open_file(&project_dir.join("a.txt")).unwrap();
     harness.render().unwrap();
     harness.assert_screen_contains("alpha");
-    harness.assert_screen_not_contains("│ alpha");
+    assert!(
+        harness.line_number_before("alpha").is_none(),
+        "no line numbers before alpha"
+    );
 
     let screen = view_menu_screen(&mut harness);
     assert!(
@@ -744,7 +792,10 @@ fn test_global_line_numbers_toggle_skips_a_virtual_buffer_view() {
 
     harness.open_file(&dir.join("a.txt")).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_not_contains("│ alpha");
+    assert!(
+        harness.line_number_before("alpha").is_none(),
+        "no line numbers before alpha"
+    );
     let doc = harness.editor().active_buffer();
 
     // Stand in for a plugin panel: gutter off by assignment, no override.
@@ -812,7 +863,10 @@ fn test_reload_config_reaches_every_open_document() {
     harness.render().unwrap();
 
     // Both documents start with the gutter the default config asks for.
-    harness.assert_screen_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_some(),
+        "line numbers before delta"
+    );
 
     // Turn it off in the project config layer on disk, then reload.
     let config_dir = project_dir.join(".fresh");
@@ -831,14 +885,20 @@ fn test_reload_config_reaches_every_open_document() {
     );
 
     // b.txt, the current document, drops its gutter.
-    harness.assert_screen_not_contains("│ delta");
+    assert!(
+        harness.line_number_before("delta").is_none(),
+        "no line numbers before delta"
+    );
     harness.assert_screen_contains("delta");
 
     // a.txt must follow too, and the View menu must agree while it is current.
     harness.open_file(&project_dir.join("a.txt")).unwrap();
     harness.render().unwrap();
     harness.assert_screen_contains("alpha");
-    harness.assert_screen_not_contains("│ alpha");
+    assert!(
+        harness.line_number_before("alpha").is_none(),
+        "no line numbers before alpha"
+    );
 
     let screen = view_menu_screen(&mut harness);
     assert!(

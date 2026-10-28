@@ -55,7 +55,7 @@ fn test_commit_editmsg_reopens_at_start_after_regeneration() {
         harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
         harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
         harness.render().unwrap();
-        harness.assert_screen_contains("Ln 3,");
+        assert_eq!(harness.status_line(), Some(3));
         harness.editor_mut().save_workspace().unwrap();
     }
 
@@ -67,7 +67,7 @@ fn test_commit_editmsg_reopens_at_start_after_regeneration() {
         harness.open_file(&msg).unwrap();
         harness.render().unwrap();
         assert!(
-            harness.get_status_bar().contains("Ln 1,"),
+            harness.status_line() == Some(1),
             "a regenerated .git/COMMIT_EDITMSG must open at line 1, status bar was: {:?}\nScreen:\n{}",
             harness.get_status_bar(),
             harness.screen_to_string()
@@ -147,7 +147,7 @@ fn test_restore_ignores_poisoned_git_file_state_in_workspace() {
         harness.render().unwrap();
         harness.assert_screen_contains("COMMIT_EDITMSG");
         assert!(
-            harness.get_status_bar().contains("Ln 1,"),
+            harness.status_line() == Some(1),
             "restore must not apply persisted cursor state to a .git-internal file, \
              status bar was: {:?}\nScreen:\n{}",
             harness.get_status_bar(),

@@ -570,17 +570,9 @@ fn test_bug4_hunk_navigation_n_does_not_move_cursor() {
     harness.send_key(KeyCode::Home, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
 
-    // Helper to extract the line number from the status bar ("Ln X, Col Y")
+    // Helper to extract the line number from the status bar ("line:col")
     fn extract_ln(screen: &str) -> Option<usize> {
-        screen.lines().find_map(|l| {
-            if let Some(idx) = l.find("Ln ") {
-                let rest = &l[idx + 3..];
-                let num_str: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-                num_str.parse().ok()
-            } else {
-                None
-            }
-        })
+        crate::common::harness::status_position_in(screen).map(|(line, _)| line)
     }
 
     let screen_at_home = harness.screen_to_string();
@@ -690,15 +682,7 @@ fn test_set_buffer_cursor_updates_status_bar_for_panel_buffer() {
     harness.render().unwrap();
 
     fn extract_ln(screen: &str) -> Option<usize> {
-        screen.lines().find_map(|l| {
-            if let Some(idx) = l.find("Ln ") {
-                let rest = &l[idx + 3..];
-                let num_str: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-                num_str.parse().ok()
-            } else {
-                None
-            }
-        })
+        crate::common::harness::status_position_in(screen).map(|(line, _)| line)
     }
 
     let screen_at_home = harness.screen_to_string();
@@ -1721,8 +1705,8 @@ fn test_issue2_side_by_side_next_hunk_updates_status_bar() {
     // Pre-check: the status bar starts at Ln 1.
     let initial = harness.screen_to_string();
     assert!(
-        initial.contains("Ln 1, Col 1"),
-        "ISSUE-2 pre-check: status bar should read 'Ln 1, Col 1' on \
+        harness.status_position() == Some((1, 1)),
+        "ISSUE-2 pre-check: status bar should read '1:1' on \
          entry to side-by-side. Screen:\n{}",
         initial
     );
@@ -1738,19 +1722,7 @@ fn test_issue2_side_by_side_next_hunk_updates_status_bar() {
 
     // Semantic wait: the status bar should report a line other than 1.
     harness
-        .wait_until(|h| {
-            let screen = h.screen_to_string();
-            screen.lines().any(|line| {
-                if let Some(idx) = line.find("Ln ") {
-                    let rest = &line[idx + 3..];
-                    let num: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-                    if let Ok(n) = num.parse::<u32>() {
-                        return n > 1;
-                    }
-                }
-                false
-            })
-        })
+        .wait_until(|h| h.status_line().is_some_and(|line| line > 1))
         .unwrap();
 }
 

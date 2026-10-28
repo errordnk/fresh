@@ -171,7 +171,7 @@ fn go_to_byte_offset_inside_a_character_puts_the_caret_after_it() {
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("Byte 8");
+    assert_eq!(harness.status_byte(), Some(8));
 
     harness.type_text("x").unwrap();
     harness

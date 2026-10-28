@@ -102,7 +102,7 @@ fn up_cancels_a_selection_anchored_on_the_first_line() {
         harness.screen_to_string()
     );
     assert!(
-        harness.get_status_bar().contains("Ln 1, Col 1"),
+        harness.status_position() == Some((1, 1)),
         "Up should land on the selection's top edge, status bar says: {}",
         harness.get_status_bar()
     );
@@ -206,7 +206,7 @@ fn up_on_the_first_line_moves_to_its_start() {
     }
     harness.render().unwrap();
     assert!(
-        harness.get_status_bar().contains("Ln 1, Col 11"),
+        harness.status_position() == Some((1, 11)),
         "precondition: cursor on line 1 column 11, status bar says: {}",
         harness.get_status_bar()
     );
@@ -215,7 +215,7 @@ fn up_on_the_first_line_moves_to_its_start() {
     harness.render().unwrap();
 
     assert!(
-        harness.get_status_bar().contains("Ln 1, Col 1"),
+        harness.status_position() == Some((1, 1)),
         "Up on the first line should move to its start, status bar says: {}",
         harness.get_status_bar()
     );
@@ -233,7 +233,7 @@ fn down_on_the_last_line_moves_to_its_end() {
     }
     harness.render().unwrap();
     assert!(
-        harness.get_status_bar().contains("Ln 4, Col 1"),
+        harness.status_position() == Some((4, 1)),
         "precondition: cursor at the start of the last line, status bar says: {}",
         harness.get_status_bar()
     );
@@ -241,10 +241,10 @@ fn down_on_the_last_line_moves_to_its_end() {
     harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
 
-    let at_end = format!("Ln 4, Col {}", LINE4.chars().count() + 1);
+    let at_end = (4, LINE4.chars().count() + 1);
     assert!(
-        harness.get_status_bar().contains(&at_end),
-        "Down on the last line should rest at its end ({at_end}), status bar says: {}",
+        harness.status_position() == Some(at_end),
+        "Down on the last line should rest at its end ({at_end:?}), status bar says: {}",
         harness.get_status_bar()
     );
 
@@ -252,7 +252,7 @@ fn down_on_the_last_line_moves_to_its_end() {
     harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
     assert!(
-        harness.get_status_bar().contains(&at_end),
+        harness.status_position() == Some(at_end),
         "a second Down should stay put, status bar says: {}",
         harness.get_status_bar()
     );

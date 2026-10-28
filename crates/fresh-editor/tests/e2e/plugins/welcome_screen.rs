@@ -19,11 +19,14 @@ use fresh::config::{Config, PluginConfig};
 use fresh::model::event::BufferId;
 use std::fs;
 
-const TAB_BAR_ROW: u16 = 1;
+/// The welcome page is a tab: the tests show the tab bar (hidden by default),
+/// which sits on the top row.
+const TAB_BAR_ROW: u16 = 0;
 
 /// A harness rooted in a scratch directory holding the real plugin, under
 /// the caller's config.
-fn harness_with_welcome_config(config: Config) -> (EditorTestHarness, tempfile::TempDir) {
+fn harness_with_welcome_config(mut config: Config) -> (EditorTestHarness, tempfile::TempDir) {
+    config.editor.show_tab_bar = true;
     let temp = tempfile::TempDir::new().expect("tempdir");
     let working_dir = temp.path().join("work");
     fs::create_dir_all(&working_dir).unwrap();
@@ -161,20 +164,10 @@ fn caret_position(harness: &mut EditorTestHarness) -> (u16, u16) {
 /// cursor's *screen* position it does not move when the pane scrolls. A
 /// test asking whether a key moved the caret should not also be a test
 /// of whether an async repaint happened to re-anchor the view.
-fn caret_readout(harness: &EditorTestHarness) -> String {
-    let screen = harness.screen_to_string();
-    let status = screen
-        .lines()
-        .rev()
-        .find(|l| l.contains("Ln "))
-        .expect("the status bar shows the caret's line");
-    let at = status.find("Ln ").expect("checked above");
-    status[at..]
-        .split("  ")
-        .next()
-        .unwrap_or_default()
-        .trim()
-        .to_string()
+fn caret_readout(harness: &EditorTestHarness) -> (usize, usize) {
+    harness
+        .status_position()
+        .expect("the status bar shows the caret's line")
 }
 
 /// Scroll the page until `needle` is on screen.

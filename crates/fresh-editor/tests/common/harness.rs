@@ -23,21 +23,26 @@ use crossterm::event::{KeyCode, KeyModifiers, MouseButton, MouseEvent, MouseEven
 
 /// Terminal layout constants
 /// The editor uses a fixed layout with reserved rows for UI elements
+/// Screen rows of the default layout: the menu bar and the tab bar are
+/// hidden (F12 / F11 show them), so the text starts on the top row, and the
+/// status bar and prompt line take the bottom two. A test that shows a bar
+/// asks the harness (`content_area_rows`, `get_tab_bar`, `get_menu_bar`),
+/// which follows what the window actually draws.
 pub mod layout {
-    /// Menu bar is always at row 0
+    /// The menu bar, when shown, is at row 0
     pub const MENU_BAR_ROW: usize = 0;
 
-    /// Tab bar is at row 1 (within the main content area)
-    pub const TAB_BAR_ROW: usize = 1;
+    /// The tab bar, when shown without the menu bar, is at row 0
+    pub const TAB_BAR_ROW: usize = 0;
 
-    /// Content starts at row 2 (after menu bar and tab bar)
-    pub const CONTENT_START_ROW: usize = 2;
+    /// Content starts at row 0 (no menu bar, no tab bar)
+    pub const CONTENT_START_ROW: usize = 0;
 
     /// Number of rows reserved at the bottom (status bar + prompt line)
     pub const BOTTOM_RESERVED_ROWS: usize = 2;
 
-    /// Total reserved rows (menu bar at top, status bar + prompt at bottom)
-    pub const TOTAL_RESERVED_ROWS: usize = 4;
+    /// Total reserved rows (status bar + prompt at bottom)
+    pub const TOTAL_RESERVED_ROWS: usize = 2;
 
     /// Get the status bar row for a given terminal height
     #[inline]
@@ -529,6 +534,34 @@ impl Write for CaptureBuffer {
     }
 }
 
+/// A default config with the tab bar shown (it is hidden by default). For
+/// tests whose subject is the tabs.
+pub fn config_with_tab_bar() -> Config {
+    let mut config = Config::default();
+    config.editor.show_tab_bar = true;
+    config
+}
+
+/// A default config whose status bar also shows `elements`, in front of the
+/// right side's `line:col`. For tests of elements the default bar leaves off.
+pub fn config_with_status_elements(elements: &[fresh::config::StatusBarElement]) -> Config {
+    let mut config = Config::default();
+    let right = &mut config.editor.status_bar.right;
+    for (i, element) in elements.iter().enumerate() {
+        right.insert(i, element.clone());
+    }
+    config
+}
+
+/// The `line:col` cursor readout on a rendered screen: the last row whose
+/// final word is `line:col` (the status bar sits above the prompt line).
+pub fn status_position_in(screen: &str) -> Option<(usize, usize)> {
+    screen.lines().rev().find_map(|row| {
+        let (line, col) = row.split_whitespace().last()?.split_once(':')?;
+        Some((line.parse().ok()?, col.parse().ok()?))
+    })
+}
+
 /// Strip OSC 8 hyperlink escape sequences from a string.
 ///
 /// Removes both `ESC ] 8 ; params ; url BEL` sequences and the
@@ -966,6 +999,11 @@ impl EditorTestHarness {
     /// Create with custom config.
     pub fn with_config(width: u16, height: u16, config: Config) -> anyhow::Result<Self> {
         Self::create(width, height, HarnessOptions::new().with_config(config))
+    }
+
+    /// Create a harness with the tab bar shown (see [`config_with_tab_bar`]).
+    pub fn with_tab_bar(width: u16, height: u16) -> anyhow::Result<Self> {
+        Self::with_config(width, height, config_with_tab_bar())
     }
 
     /// Create harness with an isolated temporary project directory.
@@ -2780,7 +2818,7 @@ impl EditorTestHarness {
         // Get the buffer to read cell content
         let theme_inactive_cursor = self.editor.theme().inactive_cursor;
         let buffer = self.terminal.backend().buffer();
-        let content_start = layout::CONTENT_START_ROW as u16;
+        let content_start = self.content_start_row() as u16;
         let content_end = buffer
             .area
             .height
@@ -2863,7 +2901,7 @@ impl EditorTestHarness {
     /// This accounts for menu bar, tab bar, status bar, and prompt line
     pub fn content_area_rows(&self) -> (usize, usize) {
         let terminal_height = self.terminal.size().unwrap().height as usize;
-        let content_first_row = layout::CONTENT_START_ROW;
+        let content_first_row = self.content_start_row();
         let content_last_row = layout::content_end_row(terminal_height).saturating_sub(1);
         (content_first_row, content_last_row)
     }
@@ -2888,14 +2926,93 @@ impl EditorTestHarness {
         self.get_screen_row(layout::MENU_BAR_ROW)
     }
 
+    /// The screen row of the (first split's) tab bar: below the menu bar
+    /// when that is shown.
+    pub fn tab_bar_row(&self) -> usize {
+        usize::from(self.editor.active_window().menu_bar_visible)
+    }
+
+    /// The first screen row of text: below whichever of the menu bar and
+    /// the tab bar the window shows.
+    pub fn content_start_row(&self) -> usize {
+        let window = self.editor.active_window();
+        usize::from(window.menu_bar_visible) + usize::from(window.tab_bar_visible)
+    }
+
+    /// The screen cell of the active buffer's first text column on its first
+    /// row: right of the gutter, below the bars. Assumes a single split.
+    pub fn text_origin(&self) -> (u16, u16) {
+        let gutter = self.editor.active_state().margins.left_total_width() as u16;
+        (gutter, self.content_start_row() as u16)
+    }
+
     /// Get the tab bar row content
     pub fn get_tab_bar(&self) -> String {
-        self.get_screen_row(layout::TAB_BAR_ROW)
+        self.get_screen_row(self.tab_bar_row())
     }
 
     /// Get the status bar row content
     pub fn get_status_bar(&self) -> String {
         self.get_screen_row(layout::status_bar_row(self.terminal_height()))
+    }
+
+    /// The cursor position the status bar shows as `line:col` at its right
+    /// end (both 1-based), or `None` when the bar does not end with one.
+    pub fn status_position(&self) -> Option<(usize, usize)> {
+        let bar = self.get_status_bar();
+        let last = bar.split_whitespace().last()?;
+        let (line, col) = last.split_once(':')?;
+        Some((line.parse().ok()?, col.parse().ok()?))
+    }
+
+    /// The byte offset the status bar shows in place of `line:col` while a
+    /// large file's line count is still unknown.
+    pub fn status_byte(&self) -> Option<usize> {
+        self.get_status_bar()
+            .split_whitespace()
+            .last()?
+            .parse()
+            .ok()
+    }
+
+    /// The line number the gutter draws on the first row showing `text`, or
+    /// `None` when that row has no number before it (line numbers off) or no
+    /// row shows `text`.
+    pub fn line_number_before(&self, text: &str) -> Option<usize> {
+        let screen = self.screen_to_string();
+        let row = screen.lines().find(|row| row.contains(text))?;
+        let before = &row[..row.find(text)?];
+        before.split_whitespace().last()?.parse().ok()
+    }
+
+    /// Whether the active buffer's gutter draws line number `n` on any text
+    /// row. Assumes a single split.
+    pub fn gutter_shows_line(&self, n: usize) -> bool {
+        let gutter = self.editor.active_state().margins.left_total_width();
+        if gutter == 0 {
+            return false;
+        }
+        let (first, last) = self.content_area_rows();
+        let want = n.to_string();
+        (first..=last).any(|row| {
+            let text: String = self.get_screen_row(row).chars().take(gutter).collect();
+            text.trim() == want
+        })
+    }
+
+    /// The cursor line the status bar shows (1-based).
+    pub fn status_line(&self) -> Option<usize> {
+        self.status_position().map(|(line, _)| line)
+    }
+
+    /// Assert the status bar shows the cursor at `line:col` (both 1-based).
+    pub fn assert_status_position(&self, line: usize, col: usize) {
+        assert_eq!(
+            self.status_position(),
+            Some((line, col)),
+            "status bar: {:?}",
+            self.get_status_bar()
+        );
     }
 
     /// Get the prompt line content

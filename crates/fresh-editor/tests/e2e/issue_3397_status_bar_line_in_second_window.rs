@@ -14,18 +14,11 @@
 use crate::common::harness::EditorTestHarness;
 use crossterm::event::{KeyCode, KeyModifiers};
 
-/// The `N` of the status bar's `Ln N, Col M`.
+/// The `line` of the status bar's `line:col`.
 fn status_line(harness: &EditorTestHarness) -> usize {
-    let status = harness.get_status_bar();
-    let rest = &status[status
-        .find("Ln ")
-        .unwrap_or_else(|| panic!("no Ln in status bar: {status:?}"))
-        + 3..];
-    rest.chars()
-        .take_while(|c| c.is_ascii_digit())
-        .collect::<String>()
-        .parse()
-        .unwrap()
+    harness
+        .status_line()
+        .unwrap_or_else(|| panic!("no line:col in status bar: {:?}", harness.get_status_bar()))
 }
 
 /// The gutter line number drawn on the terminal cursor's row.

@@ -582,7 +582,13 @@ fn test_multi_cursor_status_bar_indicator() {
     // default status bar, the trailing Messages element is
     // ellipsis-truncated at 80 cols. The widening keeps the
     // assertions below readable.
-    let mut harness = EditorTestHarness::new(120, 24).unwrap();
+    // The cursor count is not on the default bar; put it there.
+    let mut config = fresh::config::Config::default();
+    config.editor.status_bar.right = vec![
+        fresh::config::StatusBarElement::CursorCount,
+        fresh::config::StatusBarElement::CursorCompact,
+    ];
+    let mut harness = EditorTestHarness::with_config(120, 24, config).unwrap();
 
     // Create three lines
     harness.type_text("Line 1\nLine 2\nLine 3").unwrap();
@@ -2241,7 +2247,7 @@ fn test_type_over_auto_closed_paren_with_multiple_cursors() {
         .send_key(KeyCode::Down, KeyModifiers::CONTROL | KeyModifiers::ALT)
         .unwrap();
     // Guard against the test passing vacuously with a single cursor.
-    harness.assert_screen_contains("2 cursors");
+    assert_eq!(harness.cursor_count(), 2);
 
     // `(` auto-closes at both cursors.
     harness.type_text(".open(").unwrap();
@@ -2295,11 +2301,11 @@ fn test_type_over_auto_closed_paren_when_earlier_cursor_inserts() {
         if a_first {
             harness.send_key(KeyCode::Left, KeyModifiers::NONE).unwrap();
         }
-        harness.assert_screen_contains("Ln 1, Col 3");
+        harness.assert_status_position(1, 3);
         harness
             .send_key(KeyCode::Down, KeyModifiers::CONTROL | KeyModifiers::ALT)
             .unwrap();
-        harness.assert_screen_contains("2 cursors");
+        assert_eq!(harness.cursor_count(), 2);
 
         // One cursor inserts the `)`, the other steps over its own. The
         // buffer looks the same on master (only the stepping cursor's
@@ -2337,23 +2343,24 @@ fn test_plain_click_collapses_multiple_cursors() {
     harness
         .send_key(KeyCode::Down, KeyModifiers::CONTROL | KeyModifiers::ALT)
         .unwrap();
-    harness.assert_screen_contains("2 cursors");
+    assert_eq!(harness.cursor_count(), 2);
 
     // Shift-click extends the primary's selection and keeps both cursors.
     let (col, row) = harness.find_text_on_screen("foo baz").unwrap();
     harness.mouse_shift_click(col + 3, row).unwrap();
-    harness.assert_screen_contains("2 cursors");
-    harness.assert_screen_contains("Ln 2, Col 4");
+    assert_eq!(harness.cursor_count(), 2);
+    harness.assert_status_position(2, 4);
 
     // A plain click elsewhere collapses to one cursor, at the click.
     let (col, row) = harness.find_text_on_screen("foo qux").unwrap();
     harness.mouse_click(col + 3, row).unwrap();
-    let screen = harness.screen_to_string();
-    assert!(
-        !screen.contains("cursors"),
-        "expected a single cursor after a plain click, got:\n{screen}"
+    assert_eq!(
+        harness.cursor_count(),
+        1,
+        "expected a single cursor after a plain click, got:\n{}",
+        harness.screen_to_string()
     );
-    harness.assert_screen_contains("Ln 3, Col 4");
+    harness.assert_status_position(3, 4);
 
     // Which is what makes the next keystroke land in exactly one place.
     harness.type_text("Z").unwrap();
@@ -2366,7 +2373,7 @@ fn test_plain_click_collapses_multiple_cursors() {
     harness
         .send_key(KeyCode::Down, KeyModifiers::CONTROL | KeyModifiers::ALT)
         .unwrap();
-    harness.assert_screen_contains("2 cursors");
+    assert_eq!(harness.cursor_count(), 2);
 }
 
 /// The status bar's line number must follow the primary cursor when cursors
@@ -2383,27 +2390,27 @@ fn test_status_bar_line_follows_added_and_removed_cursors() {
     // ≥100 columns so the status bar has room for "N cursors".
     let mut harness = EditorTestHarness::new(100, 24).unwrap();
     harness.load_buffer_from_text("abcd\nabcd\nabcd\n").unwrap();
-    harness.assert_screen_contains("Ln 1, Col 1");
+    harness.assert_status_position(1, 1);
 
     // Each added cursor becomes the primary: the bar must report its line
     // before any real cursor movement.
     harness
         .send_key(KeyCode::Down, KeyModifiers::CONTROL | KeyModifiers::ALT)
         .unwrap();
-    harness.assert_screen_contains("2 cursors");
-    harness.assert_screen_contains("Ln 2, Col 1");
+    assert_eq!(harness.cursor_count(), 2);
+    harness.assert_status_position(2, 1);
 
     harness
         .send_key(KeyCode::Down, KeyModifiers::CONTROL | KeyModifiers::ALT)
         .unwrap();
-    harness.assert_screen_contains("3 cursors");
-    harness.assert_screen_contains("Ln 3, Col 1");
+    assert_eq!(harness.cursor_count(), 3);
+    harness.assert_status_position(3, 1);
 
     // A real move still tracks.
     harness
         .send_key(KeyCode::Right, KeyModifiers::NONE)
         .unwrap();
-    harness.assert_screen_contains("Ln 3, Col 2");
+    harness.assert_status_position(3, 2);
 
     // A multi-cursor edit goes through the bulk path, which writes cursor
     // positions directly: Enter at all three cursors puts the primary (the
@@ -2413,16 +2420,17 @@ fn test_status_bar_line_follows_added_and_removed_cursors() {
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
     harness.assert_buffer_content("abcd\n\nabcd\n\nabcd\n\n");
-    harness.assert_screen_contains("3 cursors");
-    harness.assert_screen_contains("Ln 6, Col 1");
+    assert_eq!(harness.cursor_count(), 3);
+    harness.assert_status_position(6, 1);
 
     // Collapsing back to one cursor hands the primary role to the original
     // cursor, which is on line 2 now.
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();
-    let screen = harness.screen_to_string();
-    assert!(
-        !screen.contains("cursors"),
-        "expected a single cursor after Esc, got:\n{screen}"
+    assert_eq!(
+        harness.cursor_count(),
+        1,
+        "expected a single cursor after Esc, got:\n{}",
+        harness.screen_to_string()
     );
-    harness.assert_screen_contains("Ln 2, Col 1");
+    harness.assert_status_position(2, 1);
 }

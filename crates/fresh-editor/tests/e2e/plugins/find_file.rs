@@ -139,7 +139,7 @@ fn test_quick_open_goto_line_execute() {
     harness.render().unwrap();
 
     // Verify we start at line 1
-    harness.assert_screen_contains("Ln 1");
+    assert_eq!(harness.status_line(), Some(1));
 
     // Open Quick Open
     harness
@@ -167,9 +167,7 @@ fn test_quick_open_goto_line_execute() {
         .unwrap();
 
     // Verify cursor is now at line 15
-    harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 15"))
-        .unwrap();
+    harness.wait_until(|h| h.status_line() == Some(15)).unwrap();
 
     // Also verify the content of line 15 is visible
     harness.assert_screen_contains("Line number 15");
@@ -261,7 +259,7 @@ fn test_quick_open_goto_line_relative_negative_offset() {
     harness.render().unwrap();
 
     // Verify we start at line 1
-    harness.assert_screen_contains("Ln 1");
+    assert_eq!(harness.status_line(), Some(1));
 
     // Open Quick Open and type :-5 for relative line
     harness
@@ -284,7 +282,7 @@ fn test_quick_open_goto_line_relative_negative_offset() {
         .unwrap();
 
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 1,"))
+        .wait_until(|h| h.status_line() == Some(1))
         .expect(":-5 should jump to line 1 (clamped from -5)");
 }
 
@@ -310,7 +308,7 @@ fn test_quick_open_goto_line_relative_positive_offset() {
     harness.render().unwrap();
 
     // Verify we start at line 1
-    harness.assert_screen_contains("Ln 1");
+    assert_eq!(harness.status_line(), Some(1));
 
     // Open Quick Open and type :+20 for relative line
     harness
@@ -333,7 +331,7 @@ fn test_quick_open_goto_line_relative_positive_offset() {
         .unwrap();
 
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 21,"))
+        .wait_until(|h| h.status_line() == Some(21))
         .expect(":+20 should jump to line 21 (relative to cursor)");
 }
 
@@ -365,9 +363,7 @@ fn test_quick_open_goto_line_signed_is_relative_without_setting() {
     harness
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
-    harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 10,"))
-        .unwrap();
+    harness.wait_until(|h| h.status_line() == Some(10)).unwrap();
 
     harness
         .send_key(KeyCode::Char('p'), KeyModifiers::CONTROL)
@@ -380,7 +376,7 @@ fn test_quick_open_goto_line_signed_is_relative_without_setting() {
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 15,"))
+        .wait_until(|h| h.status_line() == Some(15))
         .expect("`:+5` should jump 5 lines forward regardless of the setting");
 
     harness
@@ -394,7 +390,7 @@ fn test_quick_open_goto_line_signed_is_relative_without_setting() {
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
     harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 12,"))
+        .wait_until(|h| h.status_line() == Some(12))
         .expect("`:-3` should jump 3 lines backward regardless of the setting");
 }
 

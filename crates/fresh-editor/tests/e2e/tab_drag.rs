@@ -57,7 +57,7 @@ fn setup_multi_file_harness() -> (EditorTestHarness, TempDir, Vec<std::path::Pat
         })
         .collect();
 
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 30).unwrap();
     for file in &files {
         harness.open_file(file).unwrap();
     }
@@ -472,7 +472,7 @@ fn test_drag_last_tab_closes_split() {
     std::fs::write(&file1, "Content 1").unwrap();
     std::fs::write(&file2, "Content 2").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(100, 30).unwrap();
     harness.open_file(&file1).unwrap();
     harness.render().unwrap();
 
@@ -1051,7 +1051,7 @@ fn test_drag_tab_to_new_split_keeps_page_view() {
     let other = temp_dir.path().join("other.txt");
     std::fs::write(&other, "elsewhere\n").unwrap();
 
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(120, 30).unwrap();
     harness.open_file(&other).unwrap();
     harness.open_file(&doc).unwrap();
     harness.render().unwrap();

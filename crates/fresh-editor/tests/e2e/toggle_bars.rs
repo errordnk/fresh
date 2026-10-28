@@ -4,36 +4,28 @@ use fresh::config::Config;
 use fresh::config_io::DirectoryContext;
 use tempfile::TempDir;
 
-/// Test that the tab bar is visible by default
+/// Test that the tab bar is hidden by default (F11 shows it)
 #[test]
-fn test_tab_bar_visible_by_default() {
+fn test_tab_bar_hidden_by_default() {
     let mut harness = EditorTestHarness::new(80, 24).unwrap();
     harness.render().unwrap();
 
-    // Tab bar should be visible at row 1 (after menu bar)
-    // Check that tab bar area shows the default buffer name "[No Name]"
-    let tab_bar_row = harness.get_tab_bar();
-    assert!(
-        tab_bar_row.contains("[No Name]") || tab_bar_row.contains("untitled"),
-        "Tab bar should show buffer name at row {}. Got: {}",
-        layout::TAB_BAR_ROW,
-        tab_bar_row
-    );
+    assert!(!harness.editor().active_window().tab_bar_visible);
+    harness.assert_screen_not_contains("[No Name] ×");
 }
 
-/// Test that the menu bar is visible by default
+/// Test that the menu bar is hidden by default (F12 shows it)
 #[test]
-fn test_menu_bar_visible_by_default() {
+fn test_menu_bar_hidden_by_default() {
     let mut harness = EditorTestHarness::new(80, 24).unwrap();
     harness.render().unwrap();
 
-    // Menu bar should be visible at row 0
-    let menu_bar_row = harness.get_menu_bar();
+    let row0 = harness.get_screen_row(layout::MENU_BAR_ROW);
     assert!(
-        menu_bar_row.contains("File") && menu_bar_row.contains("Edit"),
-        "Menu bar should show File and Edit menus at row {}. Got: {}",
+        !(row0.contains("File") && row0.contains("Edit")),
+        "Menu bar should be hidden by default. Got row {}: {}",
         layout::MENU_BAR_ROW,
-        menu_bar_row
+        row0
     );
 }
 
@@ -48,8 +40,8 @@ fn test_toggle_tab_bar_via_command_palette() {
     let mut harness = EditorTestHarness::new(120, 24).unwrap();
     harness.render().unwrap();
 
-    // Verify tab bar is visible initially (shows "[No Name]" for new buffer)
-    harness.assert_screen_contains("[No Name]");
+    // The tab bar is hidden initially
+    assert!(!harness.editor().active_window().tab_bar_visible);
 
     // Open command palette
     harness
@@ -68,8 +60,9 @@ fn test_toggle_tab_bar_via_command_palette() {
         .unwrap();
     harness.render().unwrap();
 
-    // Tab bar should now be hidden - the status message should appear
-    harness.assert_screen_contains("Tab bar hidden");
+    // Tab bar should now be shown, with the new buffer's tab
+    harness.assert_screen_contains("Tab bar shown");
+    harness.assert_screen_contains("[No Name]");
 
     // Toggle back - open command palette again
     harness
@@ -84,8 +77,9 @@ fn test_toggle_tab_bar_via_command_palette() {
         .unwrap();
     harness.render().unwrap();
 
-    // Tab bar should be visible again
-    harness.assert_screen_contains("Tab bar shown");
+    // Tab bar should be hidden again
+    harness.assert_screen_contains("Tab bar hidden");
+    assert!(!harness.editor().active_window().tab_bar_visible);
 }
 
 /// Test that toggling menu bar via command palette hides and shows it
@@ -99,11 +93,11 @@ fn test_toggle_menu_bar_via_command_palette() {
     let mut harness = EditorTestHarness::new(120, 24).unwrap();
     harness.render().unwrap();
 
-    // Verify menu bar is visible initially
-    let menu_bar = harness.get_menu_bar();
+    // The menu bar is hidden initially
+    let row0 = harness.get_screen_row(layout::MENU_BAR_ROW);
     assert!(
-        menu_bar.contains("File"),
-        "Menu bar should be visible initially"
+        !row0.contains("File"),
+        "Menu bar should be hidden initially"
     );
 
     // Open command palette
@@ -122,14 +116,12 @@ fn test_toggle_menu_bar_via_command_palette() {
         .unwrap();
     harness.render().unwrap();
 
-    // Menu bar should now be hidden
-    harness.assert_screen_contains("Menu bar hidden");
-
-    // The row that was menu bar should no longer contain "File"
-    let menu_bar = harness.get_screen_row(layout::MENU_BAR_ROW);
+    // Menu bar should now be shown
+    harness.assert_screen_contains("Menu bar shown");
+    let menu_bar = harness.get_menu_bar();
     assert!(
-        !menu_bar.contains("File"),
-        "Menu bar should be hidden after toggle"
+        menu_bar.contains("File"),
+        "Menu bar should be shown after toggle"
     );
 
     // Toggle back
@@ -145,14 +137,15 @@ fn test_toggle_menu_bar_via_command_palette() {
         .unwrap();
     harness.render().unwrap();
 
-    // Menu bar should be visible again
-    harness.assert_screen_contains("Menu bar shown");
+    // Menu bar should be hidden again
+    harness.assert_screen_contains("Menu bar hidden");
 }
 
 /// Test that config option show_tab_bar: false hides tab bar on startup
 #[test]
 fn test_config_show_tab_bar_false() {
     let mut config = Config::default();
+    config.editor.show_menu_bar = true;
     config.editor.show_tab_bar = false;
 
     let mut harness = EditorTestHarness::with_config(80, 24, config).unwrap();
@@ -238,27 +231,7 @@ fn test_tab_bar_toggle_with_multiple_buffers() {
         .unwrap();
     harness.render().unwrap();
 
-    // Both files should be in tab bar
-    harness.assert_screen_contains("file1.txt");
-    harness.assert_screen_contains("file2.txt");
-
-    // Hide tab bar
-    harness
-        .send_key(KeyCode::Char('p'), KeyModifiers::CONTROL)
-        .unwrap();
-    harness.render().unwrap();
-    harness.type_text("Toggle Tab Bar").unwrap();
-    harness.render().unwrap();
-    harness
-        .send_key(KeyCode::Enter, KeyModifiers::NONE)
-        .unwrap();
-    harness.render().unwrap();
-
-    // Tab bar should be hidden
-    harness.assert_screen_contains("Tab bar hidden");
-    assert!(!harness.editor().active_window().tab_bar_visible);
-
-    // Show tab bar again
+    // Show the tab bar (hidden by default)
     harness
         .send_key(KeyCode::Char('p'), KeyModifiers::CONTROL)
         .unwrap();
@@ -273,6 +246,27 @@ fn test_tab_bar_toggle_with_multiple_buffers() {
     // Tab bar should be visible with both files
     harness.assert_screen_contains("Tab bar shown");
     assert!(harness.editor().active_window().tab_bar_visible);
+    let tab_bar = harness.get_tab_bar();
+    assert!(
+        tab_bar.contains("file1.txt") && tab_bar.contains("file2.txt"),
+        "both files should be in the tab bar. Got: {tab_bar}"
+    );
+
+    // Hide tab bar again
+    harness
+        .send_key(KeyCode::Char('p'), KeyModifiers::CONTROL)
+        .unwrap();
+    harness.render().unwrap();
+    harness.type_text("Toggle Tab Bar").unwrap();
+    harness.render().unwrap();
+    harness
+        .send_key(KeyCode::Enter, KeyModifiers::NONE)
+        .unwrap();
+    harness.render().unwrap();
+
+    // Tab bar should be hidden
+    harness.assert_screen_contains("Tab bar hidden");
+    assert!(!harness.editor().active_window().tab_bar_visible);
 }
 
 /// Test that status bar is visible by default
@@ -281,10 +275,10 @@ fn test_status_bar_visible_by_default() {
     let mut harness = EditorTestHarness::new(80, 24).unwrap();
     harness.render().unwrap();
 
-    // Status bar should show cursor position info (Ln/Col) at the expected row
+    // Status bar should show cursor position info (line:col) at the expected row
     let status_bar = harness.get_status_bar();
     assert!(
-        status_bar.contains("Ln") && status_bar.contains("Col"),
+        harness.status_position().is_some(),
         "Status bar should show cursor position. Got: {}",
         status_bar
     );
@@ -304,7 +298,7 @@ fn test_toggle_status_bar_via_command_palette() {
     // Status bar should be visible initially
     let status_bar = harness.get_status_bar();
     assert!(
-        status_bar.contains("Ln"),
+        harness.status_position().is_some(),
         "Status bar should be visible initially. Got: {}",
         status_bar
     );
@@ -328,7 +322,7 @@ fn test_toggle_status_bar_via_command_palette() {
     // Status bar row should no longer show cursor position info
     let status_bar = harness.get_status_bar();
     assert!(
-        !status_bar.contains("Ln"),
+        harness.status_position().is_none(),
         "Status bar should be hidden after toggle. Got: {}",
         status_bar
     );
@@ -362,7 +356,7 @@ fn test_config_show_status_bar_false() {
     // The status bar row should not show cursor position info
     let status_bar_row = harness.get_screen_row(layout::status_bar_row(24));
     assert!(
-        !status_bar_row.contains("Ln"),
+        harness.status_position().is_none(),
         "Status bar should be hidden when show_status_bar is false. Got: {}",
         status_bar_row
     );
@@ -386,7 +380,7 @@ fn test_all_bars_hidden() {
     // Status bar row should not contain cursor position info
     let status_bar_row = harness.get_screen_row(layout::status_bar_row(24));
     assert!(
-        !status_bar_row.contains("Ln"),
+        harness.status_position().is_none(),
         "Status bar should be hidden. Got: {}",
         status_bar_row
     );
@@ -547,14 +541,14 @@ fn test_toggle_menu_bar_persists_to_global_config() {
         .unwrap();
         harness.render().unwrap();
 
-        // Sanity: the global default is "show menu bar" = true.
-        assert!(harness.editor().config().editor.show_menu_bar);
+        // Sanity: the global default is "show menu bar" = false.
+        assert!(!harness.editor().config().editor.show_menu_bar);
 
         harness.editor_mut().toggle_menu_bar();
 
         // After toggling, the runtime config must reflect the new value.
         assert!(
-            !harness.editor().config().editor.show_menu_bar,
+            harness.editor().config().editor.show_menu_bar,
             "toggle_menu_bar should update show_menu_bar in the global config"
         );
     }
@@ -566,7 +560,7 @@ fn test_toggle_menu_bar_persists_to_global_config() {
     std::fs::create_dir(&other_project).unwrap();
     let loaded = Config::load_with_layers(&dir_context, &other_project);
     assert!(
-        !loaded.editor.show_menu_bar,
+        loaded.editor.show_menu_bar,
         "Toggle should persist to user config so unrelated workspaces inherit it"
     );
 }
@@ -590,7 +584,11 @@ fn test_workspace_override_does_not_shadow_global_show_menu_bar() {
             80,
             24,
             HarnessOptions::new()
-                .with_config(Config::default())
+                .with_config({
+                    let mut c = Config::default();
+                    c.editor.show_menu_bar = true;
+                    c
+                })
                 .with_working_dir(project_dir.clone())
                 .with_shared_dir_context(dir_context.clone())
                 .without_empty_plugins_dir(),

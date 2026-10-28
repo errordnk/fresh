@@ -14,15 +14,14 @@ use crossterm::event::{KeyModifiers, MouseButton, MouseEvent, MouseEventKind};
 
 const CONTENT: &str = "a {\n  b\n}\nzzz\nx\nyy\n";
 
-/// The `Ln N, Col M` readout from the rendered status bar.
+/// The `line:col` readout from the rendered status bar.
 fn line_col(harness: &EditorTestHarness) -> String {
     let status = harness.get_status_bar();
-    let start = status
-        .find("Ln ")
-        .unwrap_or_else(|| panic!("no line/column readout in status bar: {status:?}"));
-    let rest = &status[start..];
-    let end = rest.find("  ").unwrap_or(rest.len());
-    rest[..end].trim().to_string()
+    status
+        .split_whitespace()
+        .last()
+        .unwrap_or_else(|| panic!("no line/column readout in status bar: {status:?}"))
+        .to_string()
 }
 
 /// The screen row on which `text` is drawn.
@@ -53,7 +52,7 @@ fn test_click_past_end_of_one_char_line_goes_after_the_char() {
         harness.mouse_click(60, first_row + line - 1).unwrap();
         assert_eq!(
             line_col(&harness),
-            format!("Ln {line}, Col {col}"),
+            format!("{line}:{col}"),
             "click past the end of line {line}. Screen:\n{}",
             harness.screen_to_string()
         );
@@ -94,7 +93,7 @@ fn test_drag_ending_past_end_of_one_char_line_goes_after_the_char() {
 
     assert_eq!(
         line_col(&harness),
-        "Ln 3, Col 2",
+        "3:2",
         "drag ended past the end of `}}`. Screen:\n{}",
         harness.screen_to_string()
     );

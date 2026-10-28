@@ -912,7 +912,7 @@ fn issue_1939_render_survives_stale_active_buffer_pointer() {
     harness.render().unwrap();
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("a.txt") && screen.contains("Ln 1, Col 1"),
+        screen.contains("a.txt") && harness.status_position() == Some((1, 1)),
         "fallback should land on the other live buffer and the status bar \
          should still render; screen was:\n{screen}"
     );

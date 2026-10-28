@@ -450,14 +450,10 @@ fn test_arrow_down_at_eof_stays_on_the_last_line() {
 
     let (x0, y0) = harness.find_text_on_screen("xyz").expect("line visible");
 
-    harness
-        .send_key(KeyCode::Down, KeyModifiers::NONE)
-        .unwrap();
+    harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     harness.send_key(KeyCode::End, KeyModifiers::NONE).unwrap();
     for _ in 0..3 {
-        harness
-            .send_key(KeyCode::Down, KeyModifiers::NONE)
-            .unwrap();
+        harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     }
     harness.render().unwrap();
     assert_eq!(
@@ -655,8 +651,8 @@ fn test_status_bar_reports_virtual_column() {
     harness.send_key(KeyCode::End, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
     assert!(
-        harness.get_status_bar().contains("Ln 1, Col 3"),
-        "baseline: cursor at real content end reads Col 3, got: {}",
+        harness.status_position() == Some((1, 3)),
+        "baseline: cursor at real content end reads column 3, got: {}",
         harness.get_status_bar()
     );
 
@@ -669,7 +665,7 @@ fn test_status_bar_reports_virtual_column() {
     harness.render().unwrap();
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 1, Col 6"),
+        harness.status_position() == Some((1, 6)),
         "status bar tracks the virtual column, got: {status}"
     );
 }
@@ -710,7 +706,7 @@ fn test_status_bar_clamps_when_off() {
     harness.render().unwrap();
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 2, Col 1"),
+        harness.status_position() == Some((2, 1)),
         "off: Right at EOL wraps to line 2, got: {status}"
     );
 }
@@ -763,7 +759,7 @@ fn test_backspace_in_virtual_space_steps_back_with_multiple_cursors() {
     harness
         .send_key(KeyCode::Down, KeyModifiers::CONTROL | KeyModifiers::ALT)
         .unwrap();
-    harness.assert_screen_contains("2 cursors");
+    assert_eq!(harness.cursor_count(), 2);
 
     // Two columns out past the end of the line.
     for _ in 0..2 {

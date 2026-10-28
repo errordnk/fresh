@@ -153,7 +153,7 @@ fn test_absolute_select_line_1_to_3() {
     // Verify status bar shows we're at line 3 (end of selection)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 3,"),
+        harness.status_line() == Some(3),
         "Status bar should show line 3. Screen:\n{}",
         screen
     );
@@ -183,9 +183,7 @@ fn test_absolute_select_line_4_to_2() {
     harness
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
-    harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 4,"))
-        .unwrap();
+    harness.wait_until(|h| h.status_line() == Some(4)).unwrap();
 
     // Execute select_to_line with target line 2
     execute_select_to_line(&mut harness, "2");
@@ -193,7 +191,7 @@ fn test_absolute_select_line_4_to_2() {
     // Verify status bar shows we're at line 2 (end of reverse selection)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 2,"),
+        harness.status_line() == Some(2),
         "Status bar should show line 2. Screen:\n{}",
         screen
     );
@@ -226,9 +224,7 @@ fn test_relative_select_from_line_4_minus_2() {
     harness
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
-    harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 4,"))
-        .unwrap();
+    harness.wait_until(|h| h.status_line() == Some(4)).unwrap();
 
     // Execute select_to_line with relative target -2
     execute_select_to_line(&mut harness, "-2");
@@ -236,7 +232,7 @@ fn test_relative_select_from_line_4_minus_2() {
     // Verify status bar shows we're at line 2 (line 4 + -2 = 2)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 2,"),
+        harness.status_line() == Some(2),
         "Status bar should show line 2. Screen:\n{}",
         screen
     );
@@ -269,9 +265,7 @@ fn test_relative_select_from_line_2_plus_2() {
     harness
         .send_key(KeyCode::Enter, KeyModifiers::NONE)
         .unwrap();
-    harness
-        .wait_until(|h| h.screen_to_string().contains("Ln 2,"))
-        .unwrap();
+    harness.wait_until(|h| h.status_line() == Some(2)).unwrap();
 
     // Execute select_to_line with relative target +2
     execute_select_to_line(&mut harness, "+2");
@@ -279,7 +273,7 @@ fn test_relative_select_from_line_2_plus_2() {
     // Verify status bar shows we're at line 4 (line 2 + +2 = 4)
     let screen = harness.screen_to_string();
     assert!(
-        screen.contains("Ln 4,"),
+        harness.status_line() == Some(4),
         "Status bar should show line 4. Screen:\n{}",
         screen
     );

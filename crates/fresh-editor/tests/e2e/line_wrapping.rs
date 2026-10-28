@@ -2412,7 +2412,7 @@ fn test_per_language_page_view_auto_activation() {
     // In page view mode, line numbers should be hidden.
     // A normal file shows "  1 │" gutter; in page view this disappears.
     assert!(
-        !screen.contains(" 1 │"),
+        !harness.gutter_shows_line(1),
         "Page view should hide line numbers for markdown. Screen:\n{}",
         screen
     );
@@ -2452,7 +2452,7 @@ fn test_page_view_not_activated_for_other_languages() {
 
     // Non-markdown file should show line numbers (not in page view)
     assert!(
-        screen.contains(" 1 │") || screen.contains("1 │"),
+        harness.gutter_shows_line(1),
         "Non-markdown file should show line numbers (no page view). Screen:\n{}",
         screen
     );

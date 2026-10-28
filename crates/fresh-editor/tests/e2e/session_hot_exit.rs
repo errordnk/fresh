@@ -268,7 +268,7 @@ fn test_session_restore_refreshes_cursor_line_cache() {
             .send_key(KeyCode::Enter, KeyModifiers::NONE)
             .unwrap();
         harness
-            .wait_until(|h| h.screen_to_string().contains("Ln 100"))
+            .wait_until(|h| h.status_line() == Some(100))
             .unwrap();
 
         harness.shutdown(true).unwrap();
@@ -295,8 +295,8 @@ fn test_session_restore_refreshes_cursor_line_cache() {
 
         let screen = harness.screen_to_string();
         assert!(
-            screen.contains("Ln 100"),
-            "Status bar should report Ln 100 after restore, not the stale \
+            harness.status_line() == Some(100),
+            "Status bar should report line 100 after restore, not the stale \
              default. Screen:\n{screen}",
         );
     }

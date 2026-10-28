@@ -3167,7 +3167,7 @@ fn test_view_transform_scroll_with_single_virtual_line() {
     // Verify exact line order by extracting content lines from screen
     let content_lines: Vec<&str> = screen
         .lines()
-        .filter(|l| l.contains("│") && !l.contains("~"))
+        .filter(|l| l.contains("HEADER AT BYTE 0") || l.contains("Line "))
         .collect();
 
     println!("Content lines: {content_lines:?}");
@@ -3178,31 +3178,33 @@ fn test_view_transform_scroll_with_single_virtual_line() {
         "Expected at least 4 content lines"
     );
 
-    // Line 0: Header (no line number, just separator)
+    // Line 0: Header (no line number)
     assert!(
-        content_lines[0].contains("│ == HEADER AT BYTE 0 =="),
+        content_lines[0]
+            .trim_start()
+            .starts_with("== HEADER AT BYTE 0 =="),
         "Line 0 should be header without line number. Got: {}",
         content_lines[0]
     );
 
     // Line 1: "Line 1" with gutter showing "1"
     assert!(
-        content_lines[1].contains("1 │ Line 1"),
-        "Line 1 should show '1 │ Line 1'. Got: {}",
+        content_lines[1].trim_start().starts_with("1 Line 1"),
+        "Line 1 should show '1 Line 1'. Got: {}",
         content_lines[1]
     );
 
     // Line 2: "Line 2" with gutter showing "2"
     assert!(
-        content_lines[2].contains("2 │ Line 2"),
-        "Line 2 should show '2 │ Line 2'. Got: {}",
+        content_lines[2].trim_start().starts_with("2 Line 2"),
+        "Line 2 should show '2 Line 2'. Got: {}",
         content_lines[2]
     );
 
     // Line 3: "Line 3" with gutter showing "3"
     assert!(
-        content_lines[3].contains("3 │ Line 3"),
-        "Line 3 should show '3 │ Line 3'. Got: {}",
+        content_lines[3].trim_start().starts_with("3 Line 3"),
+        "Line 3 should show '3 Line 3'. Got: {}",
         content_lines[3]
     );
 }
@@ -3349,9 +3351,10 @@ fn test_git_log_file_view_jk_navigation() {
     // avoids a race: the ready message is later overwritten by any status
     // the next key produces, but the buffer's name / [RO] indicator stays.
     let file_view_active = |h: &EditorTestHarness| {
-        h.screen_to_string()
-            .lines()
-            .any(|l| l.contains(":notes.txt*") && l.contains("[RO]") && l.contains("Ln "))
+        h.status_position().is_some()
+            && h.screen_to_string()
+                .lines()
+                .any(|l| l.contains(":notes.txt*") && l.contains("[RO]"))
     };
 
     // Walk the cursor down the detail panel, trying Enter each time until
@@ -3394,7 +3397,7 @@ fn test_git_log_file_view_jk_navigation() {
     let start_line: usize = {
         let screen = harness.screen_to_string();
         parse_ln(&screen).unwrap_or_else(|| {
-            panic!("Could not parse 'Ln <N>' from file-view status. Screen:\n{screen}")
+            panic!("Could not parse 'line:col' from file-view status. Screen:\n{screen}")
         })
     };
     assert!(
@@ -3443,14 +3446,9 @@ fn test_git_log_file_view_jk_navigation() {
     }
 }
 
-/// Extract the line number from a status-bar fragment of the form "Ln N, Col M".
-/// Uses `rfind` so it picks the status bar at the bottom of the screen rather
-/// than any earlier occurrence (e.g. "| Ln" in help text).
+/// Extract the line number from the status bar's `line:col` readout.
 fn parse_ln(screen: &str) -> Option<usize> {
-    let idx = screen.rfind("Ln ")?;
-    let rest = &screen[idx + 3..];
-    let end = rest.find(',')?;
-    rest[..end].trim().parse().ok()
+    crate::common::harness::status_position_in(screen).map(|(line, _)| line)
 }
 
 /// Regression: activating Git Blame should land the cursor on the same line

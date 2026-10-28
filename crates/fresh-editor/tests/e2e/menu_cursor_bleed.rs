@@ -52,7 +52,7 @@ fn test_cursor_does_not_bleed_through_dropdown_menu() {
     // Verify cursor is now on line 2
     let status = harness.get_status_bar();
     assert!(
-        status.contains("Ln 2"),
+        harness.status_line() == Some(2),
         "Expected cursor on line 2, got status: {}",
         status
     );

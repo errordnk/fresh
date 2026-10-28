@@ -7,7 +7,7 @@
 //! until the bar had been closed with Enter.
 //!
 //! Everything here is asserted from the rendered screen: the status bar's
-//! `Ln N, Col M` for where the cursor landed, its `Match N of M` for the
+//! `line:col` for where the cursor landed, its `Match N of M` for the
 //! step count, the buffer rows for what scrolled into view, and the
 //! `Search: …` prompt line for the bar still being open.
 
@@ -17,13 +17,13 @@ use tempfile::TempDir;
 
 /// Four lines, `alpha` on the last three — never on line 1, so the very
 /// first jump is visible in the status bar instead of coinciding with the
-/// cursor's starting `Ln 1, Col 1`.
+/// cursor's starting `1:1`.
 const CONTENT: &str = "one two three\nbeta alpha two\ngamma alpha three\ndelta alpha four\n";
 
 /// Where each `alpha` sits, as the status bar renders it.
-const MATCH_1: &str = "Ln 2, Col 6";
-const MATCH_2: &str = "Ln 3, Col 7";
-const MATCH_3: &str = "Ln 4, Col 7";
+const MATCH_1: (usize, usize) = (2, 6);
+const MATCH_2: (usize, usize) = (3, 7);
+const MATCH_3: (usize, usize) = (4, 7);
 
 fn harness_with(content: &str, dir: &TempDir) -> EditorTestHarness {
     let file_path = dir.path().join("test.txt");
@@ -58,12 +58,14 @@ fn test_f3_advances_matches_and_keeps_search_bar_open() {
     let mut harness = harness_with(CONTENT, &temp_dir);
 
     open_search_bar(&mut harness, "alpha");
-    harness.assert_screen_contains("Ln 1, Col 1");
+    harness.assert_status_position(1, 1);
 
     // The first press commits the typed query and lands on the first match
     // at/after the cursor — the same spot Enter would pick, minus the closing.
     harness.send_key(KeyCode::F(3), KeyModifiers::NONE).unwrap();
-    harness.wait_for_screen_contains(MATCH_1).unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some(MATCH_1))
+        .unwrap();
     harness.assert_screen_contains("Search: alpha");
 
     // Each further press steps one match forward, wrapping at the end. The
@@ -73,7 +75,7 @@ fn test_f3_advances_matches_and_keeps_search_bar_open() {
         harness
             .wait_for_screen_contains(&format!("Match {press} of 3"))
             .unwrap();
-        harness.assert_screen_contains(expected);
+        harness.assert_status_position(expected.0, expected.1);
         harness.assert_screen_contains("Search: alpha");
     }
 }
@@ -90,7 +92,9 @@ fn test_shift_f3_steps_backwards_with_search_bar_open() {
     harness
         .send_key(KeyCode::F(3), KeyModifiers::SHIFT)
         .unwrap();
-    harness.wait_for_screen_contains(MATCH_3).unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some(MATCH_3))
+        .unwrap();
     harness.assert_screen_contains("Search: alpha");
 
     for (press, expected) in [(2, MATCH_2), (1, MATCH_1)] {
@@ -100,7 +104,7 @@ fn test_shift_f3_steps_backwards_with_search_bar_open() {
         harness
             .wait_for_screen_contains(&format!("Match {press} of 3"))
             .unwrap();
-        harness.assert_screen_contains(expected);
+        harness.assert_status_position(expected.0, expected.1);
         harness.assert_screen_contains("Search: alpha");
     }
 }
@@ -133,7 +137,7 @@ fn test_f3_with_search_bar_open_reaches_matches_below_the_viewport() {
     }
 
     harness.wait_for_screen_contains("Match 6 of 12").unwrap();
-    harness.assert_screen_contains("Ln 60, Col 1");
+    harness.assert_status_position(60, 1);
     // The viewport followed the cursor, so the sixth match is on screen.
     harness.assert_screen_contains("needle here 60");
     harness.assert_screen_contains("Search: needle");
@@ -148,7 +152,9 @@ fn test_editing_the_query_after_f3_re_runs_the_search() {
 
     open_search_bar(&mut harness, "alpha");
     harness.send_key(KeyCode::F(3), KeyModifiers::NONE).unwrap();
-    harness.wait_for_screen_contains(MATCH_1).unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some(MATCH_1))
+        .unwrap();
 
     // The bar still owns the keyboard, so the query can be rewritten in place
     // (Ctrl+A selects the whole query) and the next F3 searches the new text.
@@ -160,6 +166,8 @@ fn test_editing_the_query_after_f3_re_runs_the_search() {
 
     harness.send_key(KeyCode::F(3), KeyModifiers::NONE).unwrap();
     // "needle" only appears on line 4, at the column `alpha` used there.
-    harness.wait_for_screen_contains(MATCH_3).unwrap();
+    harness
+        .wait_until(|h| h.status_position() == Some(MATCH_3))
+        .unwrap();
     harness.assert_screen_contains("Search: needle");
 }

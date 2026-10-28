@@ -105,9 +105,16 @@ fn find_text_position(harness: &EditorTestHarness, needle: &str) -> (u16, u16) {
     );
 }
 
+/// A harness with code folding on (it is off by default).
+fn folding_harness(width: u16, height: u16) -> EditorTestHarness {
+    let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
+    EditorTestHarness::with_config(width, height, config).unwrap()
+}
+
 #[test]
 fn test_fold_gutter_double_click_toggles_like_single() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
 
     let content: String = (0..30).map(|i| format!("line {i}\n")).collect();
     let fixture = TestFixture::new("fold_double_click.py", &content).unwrap();
@@ -138,7 +145,7 @@ fn test_fold_gutter_double_click_toggles_like_single() {
 /// as the placeholder on the header row, instead of the generic `...` default.
 #[test]
 fn test_lsp_collapsed_text_renders_as_placeholder() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
 
     let content: String = (0..30).map(|i| format!("line {i}\n")).collect();
     let fixture = TestFixture::new("fold_collapsed_text.py", &content).unwrap();
@@ -178,7 +185,7 @@ fn test_lsp_collapsed_text_renders_as_placeholder() {
 
 #[test]
 fn test_fold_click_moves_cursor_out_of_fold() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
 
     let content: String = (0..30).map(|i| format!("line {i}\n")).collect();
     let fixture = TestFixture::new("fold_cursor_inside.py", &content).unwrap();
@@ -224,7 +231,7 @@ fn test_fold_click_moves_cursor_out_of_fold() {
 
 #[test]
 fn test_mouse_scroll_skips_folded_lines() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
 
     let content: String = (0..120).map(|i| format!("line {i}\n")).collect();
     let fixture = TestFixture::new("fold_scroll.py", &content).unwrap();
@@ -256,7 +263,7 @@ fn test_mouse_scroll_skips_folded_lines() {
 
 #[test]
 fn test_cursor_down_skips_folded_lines() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
 
     let content: String = (0..40).map(|i| format!("line {i}\n")).collect();
     let fixture = TestFixture::new("fold_cursor_down.py", &content).unwrap();
@@ -315,7 +322,7 @@ fn test_cursor_down_skips_folded_lines() {
 
 #[test]
 fn test_folding_preserves_syntax_highlighting_after_skip() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
 
     let mut lines: Vec<String> = (0..120).map(|i| format!("line {i}\n")).collect();
     lines[80] = "def highlighted_function():\n".to_string();
@@ -365,7 +372,7 @@ fn test_folding_preserves_syntax_highlighting_after_skip() {
 
 #[test]
 fn test_cursor_down_up_keeps_fold_collapsed() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
 
     let content: String = (0..40).map(|i| format!("line {i}\n")).collect();
     let fixture = TestFixture::new("fold_cursor_down_up.py", &content).unwrap();
@@ -416,7 +423,7 @@ fn test_cursor_down_up_keeps_fold_collapsed() {
 
 #[test]
 fn test_folded_viewport_inside_range_fills_lines() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
 
     let content: String = (0..200).map(|i| format!("line {i}\n")).collect();
     let fixture = TestFixture::new("fold_viewport_inside.py", &content).unwrap();
@@ -564,6 +571,7 @@ fn test_folded_gutter_line_numbers_match_content_during_scroll() -> anyhow::Resu
     //    calls maybe_request_folding_ranges_debounced inside the semantic-ranges
     //    loop.
     let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
     config.editor.enable_semantic_tokens_full = true;
     config.lsp.insert(
         "rust".to_string(),
@@ -637,7 +645,7 @@ fn test_folded_gutter_line_numbers_match_content_during_scroll() -> anyhow::Resu
 /// unfold.
 #[test]
 fn test_unfold_works_after_folding_ranges_cleared() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
 
     let content: String = (0..30).map(|i| format!("line {i}\n")).collect();
     let fixture = TestFixture::new("fold_unfold_no_lsp.py", &content).unwrap();
@@ -740,7 +748,7 @@ fn test_scroll_margin_identical_with_and_without_fold() {
 
     // --- Plain file: 60 lines, no folds ---
     let plain_content: String = (0..visible_lines).map(|i| format!("line {i}\n")).collect();
-    let mut harness_plain = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness_plain = folding_harness(80, 24);
     let fixture_plain = TestFixture::new("scroll_plain.py", &plain_content).unwrap();
     harness_plain.open_file(&fixture_plain.path).unwrap();
     harness_plain.render().unwrap();
@@ -769,7 +777,7 @@ fn test_scroll_margin_identical_with_and_without_fold() {
         })
         .collect();
 
-    let mut harness_folded = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness_folded = folding_harness(80, 24);
     let fixture_folded = TestFixture::new("scroll_folded.py", &folded_content).unwrap();
     harness_folded.open_file(&fixture_folded.path).unwrap();
 
@@ -860,6 +868,7 @@ fn gamma() {
 
     // Lower the large-file threshold so this file triggers large-file mode.
     let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("byte_fold_target.rs", content).unwrap();
@@ -982,6 +991,7 @@ fn test_gutter_click_folds_correct_block_in_large_file_mode() {
 
     // Force large-file mode so get_line_number uses byte/est_ll estimation.
     let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("gutter_click_fold.rs", &content).unwrap();
@@ -1052,6 +1062,7 @@ fn test_indent_folding_works_in_large_file_mode() {
 
     // Lower the large-file threshold so this small file triggers large-file mode.
     let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("large_fold.py", &content).unwrap();
@@ -1123,6 +1134,7 @@ fn test_gutter_highlight_correct_at_end_of_large_file() {
 
     // Force large-file mode
     let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("gutter_highlight.txt", &content).unwrap();
@@ -1220,6 +1232,7 @@ fn test_fold_indicators_correct_at_end_of_large_file() {
 
     // Force large-file mode
     let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("fold_indicator_end.rs", &content).unwrap();
@@ -1341,6 +1354,7 @@ fn test_fold_unfold_at_end_of_large_file_cursor() {
     content.push_str("THE_END\n");
 
     let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("fold_end_cursor.rs", &content).unwrap();
@@ -1456,6 +1470,7 @@ fn test_fold_unfold_function_body_at_end_of_large_file() {
     content.push_str("AFTER\n");
 
     let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("fold_body_end.rs", &content).unwrap();
@@ -1561,6 +1576,7 @@ fn test_fold_unfold_at_end_of_large_file_gutter_click() {
     content.push_str("THE_END\n");
 
     let mut config = fresh::config::Config::default();
+    config.editor.code_folding = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("fold_end_click.rs", &content).unwrap();
@@ -1673,7 +1689,7 @@ fn test_page_down_advances_a_full_page_across_collapsed_folds() {
     // Control run on the same file with nothing folded. Measuring the page
     // here keeps the assertion free of the viewport height and the
     // page-overlap constant.
-    let mut plain = EditorTestHarness::new(80, 24).unwrap();
+    let mut plain = folding_harness(80, 24);
     let plain_fixture = TestFixture::new("page_plain.py", &content).unwrap();
     plain.open_file(&plain_fixture.path).unwrap();
     plain.render().unwrap();
@@ -1684,7 +1700,7 @@ fn test_page_down_advances_a_full_page_across_collapsed_folds() {
     );
 
     // Same file, two collapsed regions: lines 11..=100 and 131..=180.
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = folding_harness(80, 24);
     let fixture = TestFixture::new("page_folded.py", &content).unwrap();
     harness.open_file(&fixture.path).unwrap();
     set_fold_ranges(&mut harness, &[(10, 100), (130, 180)]);

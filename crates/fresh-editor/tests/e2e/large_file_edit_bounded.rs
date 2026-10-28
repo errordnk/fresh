@@ -242,10 +242,10 @@ fn soft_wrap_off_draws_one_row_for_a_file_with_no_line_breaks() {
     }
     harness.render().unwrap();
     let after = harness.screen_to_string();
-    let at_line_end = format!("Ln 1, Col {}", bytes + 1);
+    let at_line_end = (1, bytes + 1);
     assert!(
-        after.contains(&at_line_end),
-        "Down on the only line should rest at its end ({at_line_end}), still on \
+        harness.status_position() == Some(at_line_end),
+        "Down on the only line should rest at its end ({at_line_end:?}), still on \
          line 1 and not at a read-budget boundary part-way along it:\n{after}"
     );
     // And the pane still draws that one logical line as one row.
@@ -267,30 +267,20 @@ fn soft_wrap_on_walks_down_the_same_file() {
     let (single_path, _, _) = write_pair(dir.path());
 
     let mut harness = opened(&single_path, true);
-    let before = status_bar_byte(&harness.screen_to_string());
+    let before = harness.status_byte();
 
     for _ in 0..10 {
         harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     }
     harness.render().unwrap();
     let screen = harness.screen_to_string();
-    let after = status_bar_byte(&screen);
+    let after = harness.status_byte();
 
     assert!(
         after > before,
         "ten Down presses with soft wrap on should walk into the line \
          (byte {before:?} -> {after:?}):\n{screen}"
     );
-}
-
-/// The cursor offset the status bar reports in large-file mode (`Byte N`).
-fn status_bar_byte(screen: &str) -> Option<usize> {
-    let at = screen.find("Byte ")?;
-    screen[at + "Byte ".len()..]
-        .split_whitespace()
-        .next()?
-        .parse()
-        .ok()
 }
 
 /// A line wider than the pane costs its own right-hand end, not the line below
@@ -389,12 +379,12 @@ fn arrows_move_between_lines_that_are_merely_long() {
 
     for line_wrap in [false, true] {
         let mut harness = opened(&path, line_wrap);
-        let start = status_bar_byte(&harness.screen_to_string());
+        let start = harness.status_byte();
 
         // Down onto the next line, then back up onto the first.
         harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
         harness.render().unwrap();
-        let down = status_bar_byte(&harness.screen_to_string());
+        let down = harness.status_byte();
         assert!(
             down > start,
             "[wrap={line_wrap}] Down did not move off the first line \
@@ -403,7 +393,7 @@ fn arrows_move_between_lines_that_are_merely_long() {
 
         harness.send_key(KeyCode::Up, KeyModifiers::NONE).unwrap();
         harness.render().unwrap();
-        let up = status_bar_byte(&harness.screen_to_string());
+        let up = harness.status_byte();
         assert_eq!(
             up, start,
             "[wrap={line_wrap}] Up did not come back (byte {down:?} -> {up:?})"

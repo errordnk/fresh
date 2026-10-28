@@ -131,11 +131,9 @@ fn switch_to(h: &mut EditorTestHarness, window: WindowId, file: &str) {
 /// outcome: vi-normal moved the cursor down to `line`, or a `j` was typed
 /// (the cursor went to column 2). Returns the screen.
 fn press_j(h: &mut EditorTestHarness, line: usize) -> String {
-    let moved = format!("Ln {line}, Col 1");
     h.send_key(KeyCode::Char('j'), KeyModifiers::NONE).unwrap();
     h.wait_until(|h| {
-        let s = h.screen_to_string();
-        s.contains(&moved) || s.contains(", Col 2")
+        h.status_position() == Some((line, 1)) || h.status_position().is_some_and(|(_, c)| c == 2)
     })
     .unwrap();
     h.screen_to_string()
@@ -162,7 +160,7 @@ fn wait_for_editor_mode(s: &mut Setup, mode: &str) {
 fn assert_vi_j_moves_to(h: &mut EditorTestHarness, line: usize, where_: &str) {
     let screen = press_j(h, line);
     assert!(
-        screen.contains(&format!("Ln {line}, Col 1")),
+        h.status_position() == Some((line, 1)),
         "{where_}: vi-normal `j` must move the cursor to line {line}, not type a `j`.\n\
          Screen:\n{screen}"
     );
@@ -261,7 +259,7 @@ fn disabling_vi_takes_effect_in_every_window() {
     switch_to(&mut s.h, window_a, "a.txt");
     let screen = press_j(&mut s.h, 2);
     assert!(
-        screen.contains("ja1") && screen.contains("Ln 1, Col 2"),
+        screen.contains("ja1") && screen.contains("1:2"),
         "vi was turned off in window B, so `j` in window A must type a `j`.\n\
          Screen:\n{screen}"
     );

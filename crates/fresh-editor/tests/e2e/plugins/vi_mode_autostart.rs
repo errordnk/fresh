@@ -78,24 +78,17 @@ fn vi_mode_autostart_true_enables_vi_immediately() {
     harness.render().unwrap();
 
     let screen = rendered_after_ix_esc(&mut harness);
-    // The buffer area renders content after ` N │ `. Pull the first
-    // line's content.
-    // The buffer row renders as `... N │ <content>`. There may be a
-    // border `│` from the chrome on the same line, so take everything
-    // after the LAST `│` rather than the first.
-    let line1 = screen
-        .lines()
-        .find(|l| l.contains("1 │"))
-        .expect("expected line 1 in render");
+    // Line 1 is the first text row; its text starts right of the gutter.
+    let (text_x, text_y) = harness.text_origin();
+    let line1: String = harness
+        .get_screen_row(text_y as usize)
+        .chars()
+        .skip(text_x as usize)
+        .collect();
     // `trim_end_matches('▌')` drops the scrollbar's unsaved-change mark: the
     // buffer is dirty at this point, so the track carries one in the last
     // column of the same row.
-    let content = line1
-        .rsplit('│')
-        .next()
-        .unwrap_or("")
-        .trim_end_matches('▌')
-        .trim();
+    let content = line1.trim_end_matches('▌').trim();
     assert_eq!(
         content, "X",
         "autoStart=true: vi-normal `i` should swallow the keystroke, \
@@ -117,22 +110,17 @@ fn vi_mode_autostart_false_leaves_vi_dormant() {
     harness.render().unwrap();
 
     let screen = rendered_after_ix_esc(&mut harness);
-    // The buffer row renders as `... N │ <content>`. There may be a
-    // border `│` from the chrome on the same line, so take everything
-    // after the LAST `│` rather than the first.
-    let line1 = screen
-        .lines()
-        .find(|l| l.contains("1 │"))
-        .expect("expected line 1 in render");
+    // Line 1 is the first text row; its text starts right of the gutter.
+    let (text_x, text_y) = harness.text_origin();
+    let line1: String = harness
+        .get_screen_row(text_y as usize)
+        .chars()
+        .skip(text_x as usize)
+        .collect();
     // `trim_end_matches('▌')` drops the scrollbar's unsaved-change mark: the
     // buffer is dirty at this point, so the track carries one in the last
     // column of the same row.
-    let content = line1
-        .rsplit('│')
-        .next()
-        .unwrap_or("")
-        .trim_end_matches('▌')
-        .trim();
+    let content = line1.trim_end_matches('▌').trim();
     assert_eq!(
         content, "iX",
         "autoStart=false: vi mode should stay off, both `i` and `X` \
@@ -225,12 +213,12 @@ fn assert_vi_j_moves_down(h: &mut EditorTestHarness) {
     // typed into the buffer.
     h.wait_until(|h| {
         let s = h.screen_to_string();
-        s.contains("Ln 2, Col 1") || s.contains("jalpha")
+        h.status_position() == Some((2, 1)) || s.contains("jalpha")
     })
     .unwrap();
     let screen = h.screen_to_string();
     assert!(
-        !screen.contains("jalpha") && screen.contains("Ln 2, Col 1"),
+        !screen.contains("jalpha") && h.status_position() == Some((2, 1)),
         "vi-normal `j` moves down instead of typing:\n{screen}"
     );
 }

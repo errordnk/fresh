@@ -2182,12 +2182,13 @@ fn test_status_bar_column_counts_graphemes_not_bytes() {
     let mut harness = EditorTestHarness::new(120, 24).unwrap();
 
     // 4 Chinese characters, 3 bytes each (12 bytes). The pre-fix byte count
-    // would report Col 13 at the end; the grapheme count is Col 5.
+    // would report column 13 at the end; the grapheme count is column 5.
     harness.type_text("你好世界").unwrap();
     harness.render().unwrap();
-    assert!(
-        harness.get_status_bar().contains("Col 5"),
-        "end of 4-char line should render Col 5, got: {}",
+    assert_eq!(
+        harness.status_position().map(|(_, col)| col),
+        Some(5),
+        "end of 4-char line should render column 5, got: {}",
         harness.get_status_bar()
     );
 
@@ -2199,10 +2200,11 @@ fn test_status_bar_column_counts_graphemes_not_bytes() {
             .send_key(KeyCode::Right, KeyModifiers::NONE)
             .unwrap();
         harness.render().unwrap();
-        let status = harness.get_status_bar();
-        assert!(
-            status.contains(&format!("Col {expected_col}")),
-            "after crossing one multi-byte char column should be {expected_col}, got: {status}"
+        assert_eq!(
+            harness.status_position().map(|(_, col)| col),
+            Some(expected_col),
+            "after crossing one multi-byte char column should be {expected_col}, got: {}",
+            harness.get_status_bar()
         );
     }
 }

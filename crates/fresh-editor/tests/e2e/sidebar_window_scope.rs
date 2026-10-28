@@ -88,7 +88,7 @@ fn each_window_shows_its_own_outline_and_a_row_never_opens_the_other_windows_fil
     h.run_palette_command("Focus Next Sidebar Section").unwrap();
     h.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     h.send_key(KeyCode::Enter, KeyModifiers::NONE).unwrap();
-    wait_for(&mut h, "the jump to Uno", |h| screen_has(h, "Ln 3,"));
+    wait_for(&mut h, "the jump to Uno", |h| h.status_line() == Some(3));
     let tabs = h
         .screen_to_string()
         .lines()

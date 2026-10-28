@@ -70,7 +70,7 @@ fn clicking_group_tab_activates_group_in_the_clicked_split() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         width,
         height,
-        Config::default(),
+        crate::common::harness::config_with_tab_bar(),
         repo.path.clone(),
     )
     .unwrap();

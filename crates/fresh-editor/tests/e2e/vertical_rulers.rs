@@ -13,19 +13,22 @@ use ratatui::style::Color;
 use tempfile::TempDir;
 
 /// Helper: query the rendered gutter width from the active buffer's margin state.
-/// For a <=99-line buffer this is 1 (indicator) + 2 (digits) + 3 (" │ ") = 6.
+/// (line numbers plus their separator; the indicator column is off by default).
 fn gutter_width(harness: &EditorTestHarness) -> u16 {
     harness.editor().active_state().margins.left_total_width() as u16
 }
 
-/// The default ruler background color: Rgb(50, 50, 50)
-const RULER_BG: Color = Color::Rgb(50, 50, 50);
+/// The active theme's ruler background color.
+fn ruler_bg(harness: &EditorTestHarness) -> Color {
+    harness.editor().theme().ruler_bg
+}
 
 /// Helper to check if a cell has the ruler background color.
 fn has_ruler_bg(harness: &EditorTestHarness, x: u16, y: u16) -> bool {
+    let ruler = ruler_bg(harness);
     harness
         .get_cell_style(x, y)
-        .map(|s| s.bg == Some(RULER_BG))
+        .map(|s| s.bg == Some(ruler))
         .unwrap_or(false)
 }
 
@@ -274,7 +277,7 @@ fn test_ruler_uses_theme_color() {
     let style = style.unwrap();
     assert_eq!(
         style.bg,
-        Some(RULER_BG),
+        Some(ruler_bg(&harness)),
         "Ruler cell should have the ruler_bg background color"
     );
 }

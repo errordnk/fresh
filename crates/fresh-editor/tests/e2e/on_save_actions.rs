@@ -867,7 +867,7 @@ fn test_format_on_save_keeps_cursor_anchored_to_its_text() {
     }
     harness.send_key(KeyCode::End, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("Ln 5, Col 11");
+    harness.assert_status_position(5, 11);
 
     // Save: the formatter removes the three blank lines.
     harness
@@ -878,7 +878,7 @@ fn test_format_on_save_keeps_cursor_anchored_to_its_text() {
 
     // The cursor must still sit at the end of "MARKER xyz", now line 2.
     // Before the fix it read "Ln 3, Col 3" (inside "omega").
-    harness.assert_screen_contains("Ln 2, Col 11");
+    harness.assert_status_position(2, 11);
 }
 
 /// Companion to the #2777 reproducer: a cursor entirely before the
@@ -937,14 +937,14 @@ fn test_format_on_save_cursor_before_edit_stays_put() {
     // End of line 1 ("alpha"), before every removed blank line.
     harness.send_key(KeyCode::End, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
-    harness.assert_screen_contains("Ln 1, Col 6");
+    harness.assert_status_position(1, 6);
 
     harness
         .send_key(KeyCode::Char('s'), KeyModifiers::CONTROL)
         .unwrap();
     harness.render().unwrap();
     harness.assert_buffer_content("alpha\nMARKER xyz\nomega\n");
-    harness.assert_screen_contains("Ln 1, Col 6");
+    harness.assert_status_position(1, 6);
 }
 
 /// Test whitespace cleanup does nothing when file is already clean

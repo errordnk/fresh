@@ -52,8 +52,13 @@ fn launch(left: &[u8], right: &[u8], width: u16, height: u16) -> Compare {
     fs::write(&left_path, left).unwrap();
     fs::write(&right_path, right).unwrap();
 
+    // The comparison is one tab whose changed lines carry gutter glyphs:
+    // show the tab bar and the indicator column (both hidden by default).
+    let mut config = Config::default();
+    config.editor.show_tab_bar = true;
+    config.editor.gutter_indicators = true;
     let mut h =
-        EditorTestHarness::with_config_and_working_dir(width, height, Config::default(), root)
+        EditorTestHarness::with_config_and_working_dir(width, height, config, root)
             .unwrap();
     // Production order (real_main): the pair is recorded, then `ready`
     // fires. The editor opens neither file itself.
@@ -74,6 +79,11 @@ fn row_of(h: &EditorTestHarness, text: &str) -> Option<u16> {
     h.find_text_on_screen(text).map(|(_, row)| row)
 }
 
+/// The first text row, under the tab bar.
+fn top_row(h: &EditorTestHarness) -> u16 {
+    h.content_start_row() as u16
+}
+
 /// The rows of every occurrence of `text`, top to bottom.
 fn rows_of(h: &EditorTestHarness, text: &str) -> Vec<u16> {
     let screen = h.screen_to_string();
@@ -90,9 +100,9 @@ fn level(h: &EditorTestHarness, text: &str) -> bool {
     rows.len() == 2 && rows[0] == rows[1]
 }
 
-/// The tab bar (row 1, under the menu bar).
+/// The tab bar.
 fn tabs(h: &EditorTestHarness) -> String {
-    h.screen_row_text(1)
+    h.get_tab_bar()
 }
 
 fn status_has(h: &EditorTestHarness, text: &str) -> bool {
@@ -333,7 +343,7 @@ fn the_line_after_a_one_sided_change_is_level_at_the_top() {
     for _ in 0..29 {
         h.send_key(KeyCode::Down, KeyModifiers::CONTROL).unwrap();
     }
-    h.wait_until(|h| row_of(h, "row 030") == Some(2) && level(h, "row 030"))
+    h.wait_until(|h| row_of(h, "row 030") == Some(top_row(h)) && level(h, "row 030"))
         .unwrap();
 }
 
@@ -378,7 +388,7 @@ fn the_wheel_scrolls_through_filler_rows() {
     h.wait_until(|h| status_has(h, "Compare: 1 difference(s)"))
         .unwrap();
     h.send_key(KeyCode::Home, KeyModifiers::CONTROL).unwrap();
-    h.wait_until(|h| row_of(h, "row 001") == Some(2)).unwrap();
+    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h))).unwrap();
 
     let mut saw_middle_of_change = false;
     while !(level(&h, "row 080") && row_of(&h, "row 080").is_some_and(|r| r < 10)) {
@@ -408,7 +418,7 @@ fn the_wheel_through_a_change_keeps_the_other_side_level() {
     h.wait_until(|h| status_has(h, "Compare: 1 difference(s)"))
         .unwrap();
     h.send_key(KeyCode::Home, KeyModifiers::CONTROL).unwrap();
-    h.wait_until(|h| row_of(h, "row 001") == Some(2)).unwrap();
+    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h))).unwrap();
 
     while !(level(&h, "row 080") && row_of(&h, "row 080").is_some_and(|r| r < 10)) {
         // Over the right panel.
@@ -441,7 +451,7 @@ fn the_cursor_past_filler_rows_keeps_the_panels_level() {
     h.wait_until(|h| status_has(h, "Compare: 1 difference(s)"))
         .unwrap();
     h.send_key(KeyCode::Home, KeyModifiers::CONTROL).unwrap();
-    h.wait_until(|h| row_of(h, "row 001") == Some(2)).unwrap();
+    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h))).unwrap();
 
     for _ in 0..60 {
         h.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
@@ -476,7 +486,7 @@ fn the_cursor_past_filler_rows_stays_on_screen_in_a_long_file() {
     for _ in 0..3 {
         h.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     }
-    h.wait_until(|h| status_has(h, "Ln 5951")).unwrap();
+    h.wait_until(|h| h.status_line() == Some(5951)).unwrap();
     assert!(
         level(&h, "row 5951"),
         "the cursor's line:\n{}",
@@ -486,13 +496,7 @@ fn the_cursor_past_filler_rows_stays_on_screen_in_a_long_file() {
 
 /// The cursor's line number, from the status bar.
 fn cursor_line(h: &EditorTestHarness) -> usize {
-    let status = h.get_status_bar();
-    let at = status.find("Ln ").expect("status shows the cursor's line") + 3;
-    status[at..]
-        .split(|c: char| !c.is_ascii_digit())
-        .next()
-        .and_then(|n| n.parse().ok())
-        .expect("a line number")
+    h.status_line().expect("status shows the cursor's line")
 }
 
 /// Page Down and Page Up through a block of filler rows keep the cursor on
@@ -506,16 +510,18 @@ fn paging_through_filler_rows_keeps_the_cursor_on_the_page() {
     h.wait_until(|h| status_has(h, "Compare: 1 difference(s)"))
         .unwrap();
     h.send_key(KeyCode::Home, KeyModifiers::CONTROL).unwrap();
-    h.wait_until(|h| row_of(h, "row 001") == Some(2)).unwrap();
+    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h))).unwrap();
 
     // Line 121 is the empty one after the last newline.
     let on_page = |h: &EditorTestHarness| {
         let screen = h.screen_to_string();
-        let label = match cursor_line(h) {
-            121 => " 121 │".to_string(),
-            line => format!("row {line:03}"),
-        };
-        !screen.contains("row ") || screen.contains(&label)
+        if !screen.contains("row ") {
+            return true;
+        }
+        match cursor_line(h) {
+            121 => h.gutter_shows_line(121),
+            line => screen.contains(&format!("row {line:03}")),
+        }
     };
     for key in [KeyCode::PageDown, KeyCode::PageUp] {
         for _ in 0..12 {
@@ -585,7 +591,7 @@ fn a_tall_change_at_the_top_opens_on_its_first_line() {
     let (left, right) = with_inserted_block_after(60, 0, 40);
     let Compare { mut h, _tmp, .. } = compare_sized(left.as_bytes(), right.as_bytes(), 120, 24);
     h.wait_until(|h| {
-        status_has(h, "Compare: 1 difference(s)") && row_of(h, "inserted 0") == Some(2)
+        status_has(h, "Compare: 1 difference(s)") && row_of(h, "inserted 0") == Some(top_row(h))
     })
     .unwrap();
 }

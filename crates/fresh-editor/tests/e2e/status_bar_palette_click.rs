@@ -10,7 +10,11 @@ fn test_palette_hint_click_opens_palette() {
     let file_path = temp_dir.path().join("test.txt");
     std::fs::write(&file_path, "hello world").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    // The default status bar has no palette hint; put it there.
+    let config = crate::common::harness::config_with_status_elements(&[
+        fresh::config::StatusBarElement::Palette,
+    ]);
+    let mut harness = EditorTestHarness::with_config(100, 24, config).unwrap();
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
