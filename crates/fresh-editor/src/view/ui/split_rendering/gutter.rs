@@ -79,65 +79,64 @@ pub(super) fn render_left_margin(
     // rows of the same virtual line set `virtual_gutter_glyph` to
     // `None`, so they keep the blank fallback.
     if crate::config::gutter_indicators_enabled() {
-    if let Some((glyph, color)) = ctx.virtual_gutter_glyph {
-        let mut style = Style::default().fg(*color);
-        if let Some(bg) = indicator_bg {
-            style = style.patch(bg);
+        if let Some((glyph, color)) = ctx.virtual_gutter_glyph {
+            let mut style = Style::default().fg(*color);
+            if let Some(bg) = indicator_bg {
+                style = style.patch(bg);
+            }
+            push_span_with_map(line_spans, line_view_map, glyph.clone(), style, None);
+        } else if ctx.is_continuation {
+            // For continuation lines, don't show any indicators
+            let mut style = Style::default();
+            if let Some(bg) = indicator_bg {
+                style = style.patch(bg);
+            }
+            push_span_with_map(line_spans, line_view_map, " ".to_string(), style, None);
+        } else if ctx
+            .diagnostic_anchor_byte
+            .is_some_and(|k| ctx.diagnostic_lines.contains(&k))
+        {
+            // Diagnostic indicators have highest priority
+            let mut style = Style::default().fg(Color::Red);
+            if let Some(bg) = indicator_bg {
+                style = style.patch(bg);
+            }
+            push_span_with_map(line_spans, line_view_map, "●".to_string(), style, None);
+        } else if ctx.state.diff_gutter.is_none()
+            && lookup_key.is_some_and(|k| {
+                ctx.fold_indicators.contains_key(&k) && !ctx.line_indicators.contains_key(&k)
+            })
+        {
+            // A diff stream draws its own collapse glyphs, in the text, on
+            // the rows that can be collapsed; a margin glyph beside them
+            // would be a second, differently-placed answer to the same
+            // question.
+            let fold = ctx.fold_indicators.get(&lookup_key.unwrap()).unwrap();
+            let symbol = if fold.collapsed { "▸" } else { "▾" };
+            let mut style = Style::default().theme_fg(ctx.theme, "editor.line_number_fg");
+            if let Some(bg) = indicator_bg {
+                style = style.patch(bg);
+            }
+            push_span_with_map(line_spans, line_view_map, symbol.to_string(), style, None);
+        } else if let Some(indicator) = lookup_key.and_then(|k| ctx.line_indicators.get(&k)) {
+            let mut style = Style::default().fg(indicator.color);
+            if let Some(bg) = indicator_bg {
+                style = style.patch(bg);
+            }
+            push_span_with_map(
+                line_spans,
+                line_view_map,
+                indicator.symbol.clone(),
+                style,
+                None,
+            );
+        } else {
+            let mut style = Style::default();
+            if let Some(bg) = indicator_bg {
+                style = style.patch(bg);
+            }
+            push_span_with_map(line_spans, line_view_map, " ".to_string(), style, None);
         }
-        push_span_with_map(line_spans, line_view_map, glyph.clone(), style, None);
-    } else if ctx.is_continuation {
-        // For continuation lines, don't show any indicators
-        let mut style = Style::default();
-        if let Some(bg) = indicator_bg {
-            style = style.patch(bg);
-        }
-        push_span_with_map(line_spans, line_view_map, " ".to_string(), style, None);
-    } else if ctx
-        .diagnostic_anchor_byte
-        .is_some_and(|k| ctx.diagnostic_lines.contains(&k))
-    {
-        // Diagnostic indicators have highest priority
-        let mut style = Style::default().fg(Color::Red);
-        if let Some(bg) = indicator_bg {
-            style = style.patch(bg);
-        }
-        push_span_with_map(line_spans, line_view_map, "●".to_string(), style, None);
-    } else if ctx.state.diff_gutter.is_none()
-        && lookup_key.is_some_and(|k| {
-            ctx.fold_indicators.contains_key(&k) && !ctx.line_indicators.contains_key(&k)
-        })
-    {
-        // A diff stream draws its own collapse glyphs, in the text, on
-        // the rows that can be collapsed; a margin glyph beside them
-        // would be a second, differently-placed answer to the same
-        // question.
-        let fold = ctx.fold_indicators.get(&lookup_key.unwrap()).unwrap();
-        let symbol = if fold.collapsed { "▸" } else { "▾" };
-        let mut style = Style::default().theme_fg(ctx.theme, "editor.line_number_fg");
-        if let Some(bg) = indicator_bg {
-            style = style.patch(bg);
-        }
-        push_span_with_map(line_spans, line_view_map, symbol.to_string(), style, None);
-    } else if let Some(indicator) = lookup_key.and_then(|k| ctx.line_indicators.get(&k)) {
-        let mut style = Style::default().fg(indicator.color);
-        if let Some(bg) = indicator_bg {
-            style = style.patch(bg);
-        }
-        push_span_with_map(
-            line_spans,
-            line_view_map,
-            indicator.symbol.clone(),
-            style,
-            None,
-        );
-    } else {
-        let mut style = Style::default();
-        if let Some(bg) = indicator_bg {
-            style = style.patch(bg);
-        }
-        push_span_with_map(line_spans, line_view_map, " ".to_string(), style, None);
-    }
-
     }
 
     let is_cursor_line = lookup_key.is_some_and(|k| k == ctx.cursor_line_start_byte);

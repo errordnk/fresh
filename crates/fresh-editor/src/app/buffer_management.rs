@@ -788,7 +788,8 @@ impl Editor {
             );
         }
 
-        self.active_window_mut().post_status_message(t!("buffer.new").to_string());
+        self.active_window_mut()
+            .post_status_message(t!("buffer.new").to_string());
 
         buffer_id
     }

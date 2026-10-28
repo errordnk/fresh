@@ -164,7 +164,8 @@ impl Editor {
         );
 
         // Status will be updated by poll_stdin_streaming
-        self.active_window_mut().post_status_message(t!("stdin.streaming").to_string());
+        self.active_window_mut()
+            .post_status_message(t!("stdin.streaming").to_string());
 
         Ok(buffer_id)
     }

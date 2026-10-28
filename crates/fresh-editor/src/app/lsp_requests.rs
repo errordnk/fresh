@@ -3512,7 +3512,8 @@ impl Editor {
 
         // Check if the name actually changed
         if new_name == original_text {
-            self.active_window_mut().post_status_message(t!("lsp.name_unchanged").to_string());
+            self.active_window_mut()
+                .post_status_message(t!("lsp.name_unchanged").to_string());
             return;
         }
 

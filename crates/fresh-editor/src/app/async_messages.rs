@@ -1895,7 +1895,8 @@ impl Editor {
         let restart_results = lsp.process_pending_restarts();
 
         for (language, success, message) in restart_results {
-            self.active_window_mut().post_status_message(message.clone());
+            self.active_window_mut()
+                .post_status_message(message.clone());
 
             if success {
                 self.resend_did_open_for_language(&language);

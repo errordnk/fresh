@@ -338,7 +338,8 @@ impl Editor {
         }
 
         if !silent {
-            self.active_window_mut().post_status_message(t!("status.file_saved").to_string());
+            self.active_window_mut()
+                .post_status_message(t!("status.file_saved").to_string());
         }
 
         // Mark the event log position as saved (for undo modified tracking)
@@ -878,7 +879,8 @@ impl Editor {
             },
         );
 
-        self.active_window_mut().post_status_message(t!("status.reverted").to_string());
+        self.active_window_mut()
+            .post_status_message(t!("status.reverted").to_string());
         Ok(true)
     }
 

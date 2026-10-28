@@ -136,7 +136,8 @@ impl Editor {
     /// Otherwise, opens the warning log file for the user to view.
     pub fn show_warnings_popup(&mut self) {
         if !self.active_window_mut().warning_domains.has_any_warnings() {
-            self.active_window_mut().post_status_message(t!("warnings.none").to_string());
+            self.active_window_mut()
+                .post_status_message(t!("warnings.none").to_string());
             return;
         }
 
@@ -276,7 +277,8 @@ impl Editor {
     fn build_and_show_lsp_status_popup(&mut self, language: &str, focused: bool) {
         let servers = self.collect_lsp_status_servers(language);
         if servers.names.is_empty() {
-            self.active_window_mut().post_status_message(t!("lsp.no_server_active").to_string());
+            self.active_window_mut()
+                .post_status_message(t!("lsp.no_server_active").to_string());
             return;
         }
 

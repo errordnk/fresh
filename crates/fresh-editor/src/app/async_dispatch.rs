@@ -740,7 +740,8 @@ impl Editor {
             server_name,
             language
         );
-        self.active_window_mut().post_status_message(format!("LSP ({}) ready", language));
+        self.active_window_mut()
+            .post_status_message(format!("LSP ({}) ready", language));
 
         // A (re)started server has none of the previous process's
         // semantic-token state: whatever we hold is stale and its `resultId`

@@ -6767,7 +6767,8 @@ impl Editor {
             self.active_window_mut().post_status_message(msg);
             ok
         } else {
-            self.active_window_mut().post_status_message("No LSP manager available".to_string());
+            self.active_window_mut()
+                .post_status_message("No LSP manager available".to_string());
             false
         };
         if success {

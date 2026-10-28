@@ -636,7 +636,8 @@ impl Editor {
                 self.stop_lsp_server_and_cleanup(&lang, Some(name));
             }
 
-            self.active_window_mut().post_status_message(format!("LSP disabled for {}.", lang));
+            self.active_window_mut()
+                .post_status_message(format!("LSP disabled for {}.", lang));
         } else if let Some(language) = action_key.strip_prefix("enable:") {
             // Symmetric re-enable: flip `enabled = true` on every
             // configured server for this language and persist. The
@@ -667,7 +668,8 @@ impl Editor {
                     );
                 }
             }
-            self.active_window_mut().post_status_message(format!("LSP enabled for {}.", lang));
+            self.active_window_mut()
+                .post_status_message(format!("LSP enabled for {}.", lang));
         }
     }
 
