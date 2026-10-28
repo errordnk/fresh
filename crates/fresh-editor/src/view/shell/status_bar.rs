@@ -121,6 +121,8 @@ fn element(it: &Item, key: Key, side: Side) -> Node<UiMsg> {
     // right element too wide for the whole row is not a truncation decision,
     // it is a bar with nothing to show.
     .elide(match side {
+        // A path keeps its file name: the cut goes at the start.
+        Side::Left | Side::Center if it.name == "filename" => Elide::Head,
         Side::Left | Side::Center => Elide::Tail,
         Side::Right => Elide::None,
     });
@@ -254,11 +256,7 @@ fn build(bar: &StatusBar) -> Node<UiMsg> {
     // One more cell after the right side: the editor's vertical scrollbar
     // runs down the last column above the bar, and the right side's last
     // character would otherwise sit right under it.
-    kids.push(
-        row()
-            .w(Sizing::Cells(1))
-            .priority(yields_last::RIGHT),
-    );
+    kids.push(row().w(Sizing::Cells(1)).priority(yields_last::RIGHT));
     // **The row claims its own gaps.** A press between elements means
     // nothing, and letting it through would put the caret in the buffer
     // below.

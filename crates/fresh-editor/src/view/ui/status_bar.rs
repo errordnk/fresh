@@ -460,7 +460,7 @@ impl StatusBarRenderer {
                 if remote_disconnected {
                     disconnected_filename(text)
                 } else {
-                    item(text, "text", BAR, None, hovered)
+                    item(text, "filename", BAR, None, hovered)
                 }
             }
             StatusBarElement::ReadOnly => {
@@ -931,7 +931,7 @@ fn disconnected_filename(text: String) -> Option<Item> {
         .then(|| text.find(SSH_PREFIX_TERMINATOR))
         .flatten();
     let Some(term_off) = split else {
-        return item(text, "text", ERROR, None, None);
+        return item(text, "filename", ERROR, None, None);
     };
     let (prefix, rest) = text.split_at(term_off + SSH_PREFIX_TERMINATOR.len());
     Some(Item {
@@ -939,7 +939,7 @@ fn disconnected_filename(text: String) -> Option<Item> {
             (format!(" {prefix}"), ink(ERROR, false)),
             (format!("{rest} "), ink(BAR, false)),
         ],
-        name: "text",
+        name: "filename",
         clickable: None,
         token_key: None,
     })

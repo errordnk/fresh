@@ -350,8 +350,14 @@ impl BufferMetadata {
             .ok()
             .and_then(|rel| rel.to_str().map(|s| s.to_string()));
 
+        // Outside the working dir the name is the absolute path, without the
+        // `\\?\` that canonicalize puts on Windows paths.
         relative
-            .or_else(|| canonical_path.to_str().map(|s| s.to_string()))
+            .or_else(|| {
+                crate::primitives::path_utils::strip_verbatim_prefix(&canonical_path)
+                    .to_str()
+                    .map(|s| s.to_string())
+            })
             .unwrap_or_else(|| t!("buffer.unknown").to_string())
     }
 

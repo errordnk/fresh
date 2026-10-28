@@ -1134,6 +1134,9 @@ impl Editor {
         let theme = Arc::new(RwLock::new(theme_inner));
 
         t.phase("theme_setup");
+        // Folding and the gutter indicator column read these process-wide
+        // flags; the config only reaches them here and on reload.
+        config.editor.publish_runtime_flags();
         let keybindings = Arc::new(RwLock::new(KeybindingResolver::new(&config)));
         t.phase("keybindings");
 
