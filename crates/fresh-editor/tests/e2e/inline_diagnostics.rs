@@ -140,8 +140,7 @@ fn test_current_line_highlight_extends_through_inline_diagnostic() {
     harness.render().unwrap();
 
     // Cursor is on line 0 (the only line), so current_line_bg should apply.
-    // Default theme is high-contrast, where current_line_bg = (20, 20, 20).
-    let current_line_bg = Color::Rgb(20, 20, 20);
+    let current_line_bg = harness.editor().theme().current_line_bg;
 
     // Find the content row that contains "let x = bad;"
     let (code_x, content_row) = harness
@@ -225,8 +224,10 @@ fn test_multiline_diagnostic_highlight_visible_when_partially_scrolled() {
         .unwrap();
     harness.render().unwrap();
 
-    // Verify the overlay is visible on line 1 (content row 2) before scrolling
-    let style_before = harness.get_cell_style(0, 2).unwrap();
+    // Verify the overlay is visible on line 1 (the first content row) before
+    // scrolling
+    let top_row = harness.content_start_row() as u16;
+    let style_before = harness.get_cell_style(0, top_row).unwrap();
     assert_eq!(
         style_before.bg,
         Some(Color::Rgb(60, 20, 20)),
@@ -238,8 +239,8 @@ fn test_multiline_diagnostic_highlight_visible_when_partially_scrolled() {
     harness.mouse_scroll_down(40, 5).unwrap();
     harness.render().unwrap();
 
-    // After scrolling down 3 lines, line 4 should be at the top of content area (row 2)
-    let row_text = harness.get_row_text(2);
+    // After scrolling down 3 lines, line 4 should be at the top of content area
+    let row_text = harness.get_row_text(top_row);
     assert!(
         row_text.contains("line 4"),
         "Expected line 4 at top of content area, got: {:?}",
@@ -248,7 +249,7 @@ fn test_multiline_diagnostic_highlight_visible_when_partially_scrolled() {
 
     // The overlay spans lines 1-4, so line 4 should still show the highlight
     // even though lines 1-3 (including the overlay start) are scrolled out of view.
-    let style_after = harness.get_cell_style(0, 2).unwrap();
+    let style_after = harness.get_cell_style(0, top_row).unwrap();
     assert_eq!(
         style_after.bg,
         Some(Color::Rgb(60, 20, 20)),
@@ -287,6 +288,8 @@ fn test_inline_diagnostic_on_empty_buffer() {
 #[test]
 fn test_diagnostic_gutter_marker_on_empty_buffer() {
     let mut config = fresh::config::Config::default();
+    // The marker is drawn in the indicator column (off by default).
+    config.editor.gutter_indicators = true;
     config.editor.diagnostics_inline_text = false;
     config.editor.line_numbers = true;
 

@@ -36,7 +36,14 @@ fn position_of(harness: &EditorTestHarness, text: &str) -> (u16, u16) {
 /// A click below the text uses the click's column on the last line, and
 /// stops at the end of that line once the click is past it.
 fn assert_clicks_below_text(content: &str, last_line: &str, cases: &[(u16, &str)]) {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    // The clamped cursor: with virtual space (the default) a click past a line
+    // lands where it was made.
+    let mut harness = EditorTestHarness::with_config(
+        80,
+        24,
+        crate::common::harness::config_without_virtual_space(),
+    )
+    .unwrap();
     let _fixture = harness.load_buffer_from_text(content).unwrap();
     harness.render().unwrap();
 
@@ -85,7 +92,14 @@ fn click_below_text_lands_at_end_of_longer_last_line() {
 /// `}`, so that is where a click below the text belongs.
 #[test]
 fn click_below_text_with_trailing_newline_lands_on_the_empty_last_line() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    // The clamped cursor: with virtual space (the default) a click past a line
+    // lands where it was made.
+    let mut harness = EditorTestHarness::with_config(
+        80,
+        24,
+        crate::common::harness::config_without_virtual_space(),
+    )
+    .unwrap();
     let _fixture = harness
         .load_buffer_from_text("{\n  \"key\": 1\n}\n")
         .unwrap();

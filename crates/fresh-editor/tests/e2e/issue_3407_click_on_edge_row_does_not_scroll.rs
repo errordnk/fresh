@@ -76,18 +76,18 @@ fn test_key_after_drag_to_top_row_scrolls_only_when_it_moves_the_cursor() {
     let (mut harness, _fixture) = scrolled_harness();
     let top = top_line(&harness);
     let (first_row, _) = harness.content_area_rows();
-    let first_row = first_row as u16;
+    // The first text row is the screen's top edge (no menu or tab bar), where
+    // a drag scrolls; drag to the row under it, inside the scroll-off margin.
+    let row = first_row as u16 + 1;
 
-    harness
-        .mouse_drag(20, first_row + 10, 20, first_row)
-        .unwrap();
-    assert_eq!(status_line(&harness), top);
+    harness.mouse_drag(20, row + 10, 20, row).unwrap();
+    assert_eq!(status_line(&harness), top + 1);
     assert_eq!(top_line(&harness), top, "the drag itself must not scroll");
 
     // Esc drops the selection but leaves the cursor where it is.
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
-    assert_eq!(status_line(&harness), top);
+    assert_eq!(status_line(&harness), top + 1);
     assert_eq!(
         top_line(&harness),
         top,
@@ -96,6 +96,8 @@ fn test_key_after_drag_to_top_row_scrolls_only_when_it_moves_the_cursor() {
     );
 
     // Moving the cursor with the keyboard brings the scroll-off margin back.
+    harness.send_key(KeyCode::Up, KeyModifiers::NONE).unwrap();
+    harness.render().unwrap();
     harness.send_key(KeyCode::Up, KeyModifiers::NONE).unwrap();
     harness.render().unwrap();
     assert_eq!(status_line(&harness), top - 1);

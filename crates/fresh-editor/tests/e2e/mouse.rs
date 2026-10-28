@@ -1116,12 +1116,12 @@ fn test_tab_close_button_hover_changes_color() {
         fg_before, fg_after
     );
 
-    // Verify it's the expected hover color (red-ish)
+    // Verify it's the theme's close-hover color
     match fg_after {
         Some(Color::Rgb(r, g, b)) => {
             assert!(
-                r > 200 && g < 150 && b < 150,
-                "Expected red-ish hover color, got RGB({}, {}, {})",
+                Color::Rgb(r, g, b) == harness.editor().theme().tab_close_hover_fg,
+                "Expected the theme's close-hover color, got RGB({}, {}, {})",
                 r,
                 g,
                 b
@@ -1209,8 +1209,8 @@ fn test_tab_hover_position_accuracy() {
         match hovered_color {
             Some(Color::Rgb(r, g, b)) => {
                 assert!(
-                    r > 200 && g < 150 && b < 150,
-                    "Close button {} at position {} should be red when hovered, got RGB({}, {}, {})",
+                    Color::Rgb(r, g, b) == harness.editor().theme().tab_close_hover_fg,
+                    "Close button {} at position {} should take the close-hover color when hovered, got RGB({}, {}, {})",
                     idx, x_pos, r, g, b
                 );
             }
@@ -1226,7 +1226,7 @@ fn test_tab_hover_position_accuracy() {
                 // It should NOT be the hover color
                 if let Some(Color::Rgb(r, g, b)) = other_color {
                     assert!(
-                        !(r > 200 && g < 150 && b < 150),
+                        !(Color::Rgb(r, g, b) == harness.editor().theme().tab_close_hover_fg),
                         "Close button {} should NOT be red when button {} is hovered, but got RGB({}, {}, {})",
                         other_idx, idx, r, g, b
                     );
@@ -1535,8 +1535,8 @@ fn test_tab_hover_with_real_files() {
     match fg_after {
         Some(Color::Rgb(r, g, b)) => {
             assert!(
-                r > 200 && g < 150 && b < 150,
-                "Expected red-ish hover color, got RGB({}, {}, {})",
+                Color::Rgb(r, g, b) == harness.editor().theme().tab_close_hover_fg,
+                "Expected the theme's close-hover color, got RGB({}, {}, {})",
                 r,
                 g,
                 b
@@ -1670,8 +1670,8 @@ fn test_mouse_hover_clears_in_gutter() {
         "Should have hover state over text"
     );
 
-    // Move to gutter (line numbers area, column 3)
-    harness.mouse_move(3, content_first_row as u16).unwrap();
+    // Move to the gutter (its first column: the line number area)
+    harness.mouse_move(0, content_first_row as u16).unwrap();
 
     assert!(
         harness.editor().get_mouse_hover_state().is_none(),
@@ -2362,9 +2362,16 @@ fn horizontal_scrollbar(harness: &EditorTestHarness) -> (u16, std::ops::RangeInc
             })
             .count()
     };
+    // Pick by the thumb: a status bar whose ground is the track's colour
+    // (Nord) would otherwise count as the bar.
+    let thumbs = |row: u16| {
+        (0..width - 1)
+            .filter(|&c| harness.is_scrollbar_thumb_at(c, row))
+            .count()
+    };
     let row = [last as u16, last as u16 + 1]
         .into_iter()
-        .max_by_key(|&r| cells(r))
+        .max_by_key(|&r| thumbs(r))
         .unwrap();
     assert!(cells(row) > 10, "a horizontal scrollbar is drawn");
     let thumb: Vec<u16> = (0..width - 1)

@@ -444,7 +444,7 @@ fn overflowing_row_offers_no_status_tooltip_under_the_scrollbar() {
     // on this row at all, so pin that first: the buffer is unsaved, and the
     // tree knows it.
     assert!(
-        screen.contains(&format!("{long_name}*")),
+        screen.contains(&format!("{long_name} *")),
         "precondition: the buffer should be unsaved.\nScreen:\n{screen}"
     );
     let root = screen

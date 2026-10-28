@@ -670,13 +670,11 @@ fn test_all_cursors_visible_in_viewport() {
     // Line 1, Line 2, Line 3 all start at column 0, so we should check
     // that there's cursor styling at the 'L' of each line
 
-    // Get the y-coordinates of the three lines (after tab bar)
-    // Tab bar is 1 line, content starts at y=1
-    // But we also need to account for line numbers (gutter)
-    // Line numbers take up some space (e.g., "1 ", "2 ", "3 ")
-    // Let's check multiple x positions to find the cursor
-
-    let line_y_positions = vec![1, 2, 3]; // y positions of the three lines
+    // The y-coordinates of the three lines: the first rows of the text area.
+    // We also need to account for line numbers (gutter), so check multiple
+    // x positions to find the cursor.
+    let top = harness.content_start_row() as u16;
+    let line_y_positions = vec![top, top + 1, top + 2]; // y positions of the three lines
 
     let mut cursor_indicators_found = 0;
 

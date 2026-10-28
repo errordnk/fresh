@@ -100,7 +100,14 @@ fn test_issue_2197_unresponsive_server_is_not_rendered_as_ready() -> anyhow::Res
     let file = temp_dir.path().join("main.py");
     std::fs::write(&file, "def add(a, b):\n    return a + b\n")?;
 
-    let mut harness = EditorTestHarness::new(120, 30)?;
+    // The LSP indicator is not on the default status bar; put it there.
+    let mut harness = EditorTestHarness::with_config(
+        120,
+        30,
+        crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::Lsp,
+        ]),
+    )?;
     harness.open_file(&file)?;
 
     // The server came up fine: this is exactly the state the bug report

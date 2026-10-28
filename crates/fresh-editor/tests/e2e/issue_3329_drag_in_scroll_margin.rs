@@ -116,12 +116,16 @@ fn drag_along_row(harness: &mut EditorTestHarness, row: u16, text_col: u16) -> u
 #[test]
 fn test_drag_along_top_row_selects_suffix_without_scrolling() {
     let (mut harness, _fixture, first_row, _, text_col) = scrolled_fixture();
+    // With the menu and tab bars hidden the first text row is the screen's
+    // top edge, where a drag scrolls (see the chrome-hidden test below); the
+    // row under it is still inside the scroll-off margin.
+    let row = first_row + 1;
     let before = harness.screen_to_string();
 
-    let line = drag_along_row(&mut harness, first_row, text_col);
+    let line = drag_along_row(&mut harness, row, text_col);
 
     assert_eq!(
-        gutter_line(&harness, first_row),
+        gutter_line(&harness, row),
         Some(line),
         "a drag inside the text area must not scroll the view.\nBefore:\n{before}\nAfter:\n{}",
         harness.screen_to_string()
@@ -165,6 +169,9 @@ fn test_drag_along_bottom_row_selects_suffix_without_scrolling() {
 #[test]
 fn test_drag_off_the_side_of_the_pane_along_top_row_does_not_scroll() {
     let (mut harness, _fixture, first_row, _, text_col) = scrolled_fixture();
+    // The first text row is the screen's top edge (no menu or tab bar), where
+    // a drag scrolls; the row under it is still inside the scroll-off margin.
+    let first_row = first_row + 1;
     let before = harness.screen_to_string();
     let line = gutter_line(&harness, first_row).unwrap();
     let right = harness.buffer().area.width - 1;

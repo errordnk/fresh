@@ -33,7 +33,14 @@ fn row_of(harness: &EditorTestHarness, text: &str) -> u16 {
 }
 
 fn open() -> (EditorTestHarness, crate::common::fixtures::TestFixture) {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    // The clamped cursor: with virtual space (the default) a click past a line
+    // lands where it was made.
+    let mut harness = EditorTestHarness::with_config(
+        80,
+        24,
+        crate::common::harness::config_without_virtual_space(),
+    )
+    .unwrap();
     let fixture = harness.load_buffer_from_text(CONTENT).unwrap();
     harness.render().unwrap();
     (harness, fixture)

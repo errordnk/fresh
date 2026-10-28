@@ -387,8 +387,8 @@ fn test_palette_saves_last_focused_buffer_from_explorer() {
     harness.open_file(&file).unwrap();
     harness.type_text("EDITED").unwrap();
     harness.render().unwrap();
-    // The tab carries the modified marker while the edit is unsaved.
-    harness.assert_screen_contains("saveme.txt*");
+    // The status bar marks the file modified while the edit is unsaved.
+    harness.assert_screen_contains("saveme.txt *");
 
     harness.editor_mut().focus_file_explorer();
     let _ = harness.editor_mut().process_async_messages();
@@ -403,7 +403,7 @@ fn test_palette_saves_last_focused_buffer_from_explorer() {
     // The marker clears: the save reached the buffer that had focus before the
     // tree did, not the tree's selection.
     harness
-        .wait_until(|h| !h.screen_to_string().contains("saveme.txt*"))
+        .wait_until(|h| !h.screen_to_string().contains("saveme.txt *"))
         .expect("the modified marker should clear once the buffer is saved");
     assert!(
         fs::read_to_string(&file).unwrap().contains("EDITED"),

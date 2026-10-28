@@ -9,8 +9,8 @@ use fresh::view::overlay::OverlayNamespace;
 use ratatui::style::Color;
 
 const INDENT: usize = 8;
-/// The gutter takes the first 6 screen columns.
-const GUTTER: u16 = 6;
+/// The gutter takes the first 3 screen columns (two digits and a space).
+const GUTTER: u16 = 3;
 const WORD: &str = "banana";
 
 fn bg(harness: &EditorTestHarness, x: u16, y: u16) -> Option<Color> {
