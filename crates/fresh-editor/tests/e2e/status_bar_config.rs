@@ -19,6 +19,37 @@ fn config_with_status_bar(left: Vec<StatusBarElement>, right: Vec<StatusBarEleme
     config
 }
 
+/// The right side's content is right-aligned, one space from the edge: the
+/// default `line:col` is padded on its left, not its right, both with a
+/// message in the middle and without.
+#[test]
+fn test_right_side_is_one_space_from_the_edge() {
+    let mut harness = EditorTestHarness::create(
+        100,
+        30,
+        HarnessOptions::new()
+            .with_project_root()
+            .with_config(Config::default()),
+    )
+    .unwrap();
+    let dir = harness.project_dir().unwrap();
+    let file = dir.join("hello.txt");
+    fs::write(&file, "hello world\n").unwrap();
+    harness.open_file(&file).unwrap();
+    harness.render().unwrap();
+
+    for _ in 0..2 {
+        let status = harness.get_status_bar();
+        assert!(
+            status.ends_with(" 1:1 ") && !status.ends_with("  "),
+            "line:col must end one space from the right edge.\nStatus bar: {status:?}"
+        );
+        harness.editor_mut().set_status_message("Saved".to_string());
+        harness.render().unwrap();
+        harness.assert_screen_contains("Saved");
+    }
+}
+
 /// Removing an element from the config should remove it from the rendered
 /// status bar. Here we drop `{encoding}` and verify "UTF-8" no longer appears.
 #[test]

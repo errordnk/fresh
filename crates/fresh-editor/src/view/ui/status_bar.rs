@@ -372,14 +372,15 @@ fn format_cursor_position(line: usize, col: usize, line_count: usize) -> String 
 
 /// Compact variant of `format_cursor_position`, used by
 /// `StatusBarElement::CursorCompact`. Renders as `line:col` with the same
-/// stable-width trailing-space strategy.
+/// stable width, but padded on the left: it sits on the right of the bar,
+/// whose content is right-aligned.
 fn format_cursor_position_compact(line: usize, col: usize, line_count: usize) -> String {
     let text = format!("{line}:{col}");
     let line_digits = line_count.max(1).to_string().len();
     // ":" literal is 1 ASCII char.
     let min_width = 1 + line_digits + CURSOR_COL_RESERVE;
     if text.len() < min_width {
-        format!("{text:<min_width$}")
+        format!("{text:>min_width$}")
     } else {
         text
     }
@@ -1338,8 +1339,8 @@ mod tests {
     fn test_cursor_position_compact_preserves_natural_text() {
         let text = format_cursor_position_compact(1, 1, 50);
         assert!(
-            text.starts_with("1:1"),
-            "expected text to start with natural numbers, got {text:?}"
+            text.ends_with("1:1") && text.trim_start() == "1:1",
+            "expected the natural numbers, padded on the left, got {text:?}"
         );
     }
 
