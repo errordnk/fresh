@@ -320,9 +320,11 @@ impl BufferViewState {
     /// they show. That ordering is what lets "Toggle Folding Indicators"
     /// still do something while a mode is hiding them.
     pub fn fold_indicators_visible(&self) -> bool {
-        self.fold_indicators_override
-            .or(self.fold_indicators_plugin_override)
-            .unwrap_or(true)
+        crate::config::code_folding_enabled()
+            && self
+                .fold_indicators_override
+                .or(self.fold_indicators_plugin_override)
+                .unwrap_or(true)
     }
 
     /// Whether the gutter should draw line numbers in this split, given the

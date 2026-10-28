@@ -679,6 +679,9 @@ impl Editor {
 impl crate::app::window::Window {
     /// Toggle folding at the current cursor position in the active buffer.
     pub fn toggle_fold_at_cursor(&mut self) {
+        if !crate::config::code_folding_enabled() {
+            return;
+        }
         let buffer_id = self.active_buffer();
         let pos = self.active_cursors().primary().position;
         self.toggle_fold_at_byte(buffer_id, pos);
@@ -709,7 +712,7 @@ impl crate::app::window::Window {
         buffer_id: crate::model::event::BufferId,
         byte_pos: usize,
     ) {
-        if self.buffers.splits().is_none() {
+        if !crate::config::code_folding_enabled() || self.buffers.splits().is_none() {
             return;
         }
         // The pane the user is in — a shown group's focused panel, not the

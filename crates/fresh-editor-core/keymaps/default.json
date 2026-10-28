@@ -816,11 +816,19 @@
       "when": "normal"
     },
     {
+      "comment": "F11 toggles the tab bar, F12 the menu bar (both hidden by default).",
+      "key": "F11",
+      "modifiers": [],
+      "action": "toggle_tab_bar",
+      "args": {},
+      "when": "global"
+    },
+    {
       "key": "F12",
       "modifiers": [],
-      "action": "lsp_goto_definition",
+      "action": "toggle_menu_bar",
       "args": {},
-      "when": "normal"
+      "when": "global"
     },
     {
       "key": "F12",

@@ -201,6 +201,7 @@ impl Editor {
         }
 
         // Apply bar visibility changes immediately
+        self.config.editor.publish_runtime_flags();
         self.active_window_mut().menu_bar_visible = self.config.editor.show_menu_bar;
         self.active_window_mut().tab_bar_visible = self.config.editor.show_tab_bar;
         self.active_window_mut().status_bar_visible = self.config.editor.show_status_bar;

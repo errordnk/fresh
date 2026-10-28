@@ -1198,8 +1198,8 @@ pub struct EditorConfig {
     pub syntax_highlighting: bool,
 
     /// Show the menu bar (File, Edit, View, …) at the top. Can be toggled at any time.
-    /// Default: true
-    #[serde(default = "default_true")]
+    /// Default: false
+    #[serde(default = "default_false")]
     #[schemars(extend("x-section" = "Display"))]
     pub show_menu_bar: bool,
 
@@ -1221,10 +1221,16 @@ pub struct EditorConfig {
     pub menu_bar_mnemonics: bool,
 
     /// Show the tab bar of open files in each pane. Can be toggled at any time.
-    /// Default: true
-    #[serde(default = "default_true")]
+    /// Default: false
+    #[serde(default = "default_false")]
     #[schemars(extend("x-section" = "Display"))]
     pub show_tab_bar: bool,
+
+    /// Code folding: fold markers in the gutter, click-to-fold and the fold
+    /// toggle command. Default: false
+    #[serde(default = "default_false")]
+    #[schemars(extend("x-section" = "Display"))]
+    pub code_folding: bool,
 
     /// Show the status bar at the bottom. Can be toggled at any time.
     /// Default: true
@@ -1765,6 +1771,23 @@ fn default_file_tree_poll_interval() -> u64 {
     3000 // 3 seconds between directory mtime checks
 }
 
+static CODE_FOLDING_ENABLED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// Whether code folding is switched on (`editor.code_folding`). The rendering
+/// and click paths have no config at hand, so the editor publishes the flag
+/// with [`EditorConfig::publish_runtime_flags`] whenever it applies a config.
+pub fn code_folding_enabled() -> bool {
+    CODE_FOLDING_ENABLED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+impl EditorConfig {
+    /// Makes the settings that deep code reads through free functions visible.
+    pub fn publish_runtime_flags(&self) {
+        CODE_FOLDING_ENABLED.store(self.code_folding, std::sync::atomic::Ordering::Relaxed);
+    }
+}
+
 impl Default for EditorConfig {
     fn default() -> Self {
         Self {
@@ -1829,11 +1852,12 @@ impl Default for EditorConfig {
             quick_suggestions: true,
             quick_suggestions_delay_ms: default_quick_suggestions_delay(),
             suggest_on_trigger_characters: true,
-            show_menu_bar: true,
+            show_menu_bar: false,
             screensaver_enabled: false,
             screensaver_idle_minutes: default_screensaver_idle_minutes(),
             menu_bar_mnemonics: true,
-            show_tab_bar: true,
+            show_tab_bar: false,
+            code_folding: false,
             show_status_bar: true,
             status_bar: StatusBarConfig::default(),
             search: SearchConfig::default(),

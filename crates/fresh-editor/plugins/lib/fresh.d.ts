@@ -3997,6 +3997,7 @@ interface EditorConfig {
 		* Default: `true`
 		*/
 		show_tab_bar?: boolean;
+		code_folding?: boolean;
 		/**
 		* Show the status bar at the bottom. Can be toggled at any time.
 		* Default: true

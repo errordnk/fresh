@@ -2083,6 +2083,7 @@ impl Editor {
                 self.clipboard.apply_config(&self.config.clipboard);
                 {
                     let cfg = self.config.editor.clone();
+                    cfg.publish_runtime_flags();
                     let win = self.active_window_mut();
                     win.menu_bar_visible = cfg.show_menu_bar;
                     win.tab_bar_visible = cfg.show_tab_bar;

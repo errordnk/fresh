@@ -61,11 +61,12 @@
         "wrap_column": null,
         "page_width": 80,
         "syntax_highlighting": true,
-        "show_menu_bar": true,
+        "show_menu_bar": false,
         "screensaver_enabled": false,
         "screensaver_idle_minutes": 5,
         "menu_bar_mnemonics": true,
-        "show_tab_bar": true,
+        "show_tab_bar": false,
+        "code_folding": false,
         "show_status_bar": true,
         "status_bar": {
           "left": [
@@ -526,9 +527,9 @@
           "x-section": "Display"
         },
         "show_menu_bar": {
-          "description": "Show the menu bar (File, Edit, View, …) at the top. Can be toggled at any time.\nDefault: true",
+          "description": "Show the menu bar (File, Edit, View, …) at the top. Can be toggled at any time.\nDefault: false",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "x-section": "Display"
         },
         "screensaver_enabled": {
@@ -552,9 +553,15 @@
           "x-section": "Display"
         },
         "show_tab_bar": {
-          "description": "Show the tab bar of open files in each pane. Can be toggled at any time.\nDefault: true",
+          "description": "Show the tab bar of open files in each pane. Can be toggled at any time.\nDefault: false",
           "type": "boolean",
-          "default": true,
+          "default": false,
+          "x-section": "Display"
+        },
+        "code_folding": {
+          "description": "Code folding: fold markers in the gutter, click-to-fold and the fold\ntoggle command. Default: false",
+          "type": "boolean",
+          "default": false,
           "x-section": "Display"
         },
         "show_status_bar": {
