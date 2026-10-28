@@ -7,13 +7,9 @@ use std::fs;
 
 const LONG: &str = "a_rather_long_file_name_for_a_tab_strip";
 
-/// The strip's row: the one under the menu bar.
+/// The strip's row.
 fn tab_row(h: &EditorTestHarness) -> String {
-    h.screen_to_string()
-        .lines()
-        .nth(1)
-        .unwrap_or_default()
-        .to_string()
+    h.get_tab_bar()
 }
 
 /// Whether the strip shows a name shortened to the cap. A whole name the

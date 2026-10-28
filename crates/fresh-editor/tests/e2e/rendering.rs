@@ -203,12 +203,11 @@ fn test_cursor_position_with_large_line_numbers() {
         screen_pos.0, screen_pos.1
     );
 
-    // First, verify that the line numbers are correct
-    // Filter for lines with line number separator " │ " (not just scrollbar "│")
+    // First, verify that the line numbers are correct: the rows whose gutter
+    // holds a number
     let content_lines: Vec<&str> = lines
         .iter()
-        .skip(1) // Skip tab bar
-        .filter(|line| line.contains(" │ "))
+        .filter(|line| harness.row_line_number(line).is_some())
         .copied()
         .collect();
 
@@ -217,19 +216,12 @@ fn test_cursor_position_with_large_line_numbers() {
     // Get the last visible line number (skip continuation lines from wrapped text)
     // Note: For large files, line numbers are estimated when jumping to end
     // The estimation is based on buffer_len / 80 (average line length)
-    // Continuation lines have only whitespace before "│", so filter those out
+    // Continuation lines have only whitespace in the gutter, so they drop out
     // In byte offset mode (large file without line scan), gutter shows byte offsets
     // Parse all gutter values as byte offsets
     let mut gutter_offsets: Vec<usize> = content_lines
         .iter()
-        .filter_map(|line| {
-            let part = line.split("│").next().unwrap_or("").trim();
-            if !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()) {
-                part.parse::<usize>().ok()
-            } else {
-                None
-            }
-        })
+        .filter_map(|line| harness.row_line_number(line))
         .collect();
     gutter_offsets.sort();
 
@@ -262,10 +254,10 @@ fn test_cursor_position_with_large_line_numbers() {
 
     // Now verify cursor positioning is correct for the gutter width
     // In byte offset mode, gutter sized for file size (~73,000,000 bytes = 8 digits)
-    // Format: [indicator (1)] + [max(4, digits)] + [" │ " (3 chars)]
+    // Format: [max(2, digits)] + [" " (1 char)]; the indicator column is off
     let digits = ((buffer_len as f64).log10().floor() as usize) + 1;
-    let expected_gutter = 1 + digits.max(4) + 3;
-    println!("\nExpected gutter width: {expected_gutter} (1 + {digits}-digit byte offset + 3)",);
+    let expected_gutter = digits.max(2) + 1;
+    println!("\nExpected gutter width: {expected_gutter} ({digits}-digit byte offset + 1)",);
     println!("Actual gutter_width: {gutter_width}");
 
     assert_eq!(
@@ -661,15 +653,15 @@ fn test_current_line_highlight_spans_full_width() {
         "Non-cursor line should NOT have current_line_bg"
     );
 
-    // Gutter on cursor line should also have current_line_bg
-    // Check the line number area (after the indicator column)
+    // The highlight stays out of the gutter (the line number brightens
+    // instead)
     let style_gutter = harness
         .get_cell_style(1, content_row as u16)
         .expect("gutter cell should exist");
-    assert_eq!(
+    assert_ne!(
         style_gutter.bg,
         Some(current_line_bg),
-        "Gutter on cursor line should have current_line_bg"
+        "Gutter on cursor line should not have current_line_bg"
     );
 }
 
@@ -907,16 +899,17 @@ fn test_hide_current_line_on_selection() {
 
     let (content_row, _) = harness.content_area_rows();
     let current_line_bg = Color::Rgb(40, 40, 40);
-    let gutter_width: u16 = 8;
+    let gutter_width = harness.gutter_width() as u16;
 
-    // Initially with no selection, current_line_bg should be present in the gutter
-    let style_gutter_initial = harness
-        .get_cell_style(1, content_row as u16)
-        .expect("gutter cell should exist");
+    // Initially with no selection, current_line_bg should be present past
+    // the text
+    let style_past_initial = harness
+        .get_cell_style(gutter_width + 20, content_row as u16)
+        .expect("cell should exist");
     assert_eq!(
-        style_gutter_initial.bg,
+        style_past_initial.bg,
         Some(current_line_bg),
-        "Gutter should have current_line_bg initially"
+        "Past-text cell should have current_line_bg initially"
     );
 
     // Create a selection by holding Shift and pressing Right

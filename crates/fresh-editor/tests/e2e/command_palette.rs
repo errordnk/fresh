@@ -313,8 +313,7 @@ fn test_quick_open_goto_line_live_preview_updates() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            h.line_number_before("LINE75") == Some(75)
-                && h.line_number_before("LINE35") != Some(35)
+            h.line_number_before("LINE75") == Some(75) && h.line_number_before("LINE35") != Some(35)
         })
         .expect("Viewport should follow the updated target to line 80");
 }
@@ -769,8 +768,7 @@ fn test_goto_line_prompt_live_preview_updates() {
     harness
         .wait_until(|h| {
             let screen = h.screen_to_string();
-            h.line_number_before("LINE75") == Some(75)
-                && h.line_number_before("LINE35") != Some(35)
+            h.line_number_before("LINE75") == Some(75) && h.line_number_before("LINE35") != Some(35)
         })
         .expect("Preview should follow the updated target to line 80");
 }
@@ -1282,7 +1280,9 @@ fn test_command_palette_new_file_switches_buffer() {
 
     let fixture = TestFixture::new("test.txt", "Original content\nLine 2\nLine 3").unwrap();
 
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(100, 24, crate::common::harness::config_with_tab_bar())
+            .unwrap();
 
     // Open the fixture file
     harness.open_file(&fixture.path).unwrap();

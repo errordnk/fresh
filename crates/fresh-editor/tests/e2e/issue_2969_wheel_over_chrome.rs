@@ -84,7 +84,12 @@ fn tab_bar_text(screen: &str) -> String {
 /// bar scrolls the editor, top line 9 → 1").
 #[test]
 fn wheel_over_chrome_does_not_scroll_the_focused_editor() {
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = EditorTestHarness::with_config(
+        120,
+        30,
+        crate::common::harness::config_with_menu_and_tab_bar(),
+    )
+    .unwrap();
 
     let content: Vec<String> = (1..=200).map(|i| format!("LINE {i}")).collect();
     let _fixture = harness.load_buffer_from_text(&content.join("\n")).unwrap();
@@ -156,7 +161,12 @@ fn wheel_over_chrome_does_not_scroll_the_focused_terminal() {
         eprintln!("Skipping terminal test: PTY not available in this environment");
         return;
     }
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness = EditorTestHarness::with_config(
+        120,
+        30,
+        crate::common::harness::config_with_menu_and_tab_bar(),
+    )
+    .unwrap();
 
     // Editor on the left with locatable content, terminal on the right. The
     // terminal takes focus, so it is what the old fall-through would scroll.
@@ -224,7 +234,12 @@ fn wheel_over_chrome_does_not_scroll_the_focused_terminal() {
 /// selection: the active tab and the editor beneath both stay put.
 #[test]
 fn wheel_over_the_tab_bar_pans_the_tab_strip() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_config(
+        100,
+        30,
+        crate::common::harness::config_with_menu_and_tab_bar(),
+    )
+    .unwrap();
 
     // Enough long-named tabs to overflow a 100-column bar. Each fixture has to
     // outlive the test, so they are all bound.

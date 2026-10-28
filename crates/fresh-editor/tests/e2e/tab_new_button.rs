@@ -7,6 +7,9 @@
 use crate::common::harness::EditorTestHarness;
 use crossterm::event::{KeyCode, KeyModifiers};
 
+/// The tab bar's row: the tests show it, without the menu bar, on the top row.
+const TAB_ROW: u16 = 0;
+
 /// Locate the 0-based cell column of `needle` on the given (0-based) screen row.
 fn col_of_char_on_row(screen: &str, row: usize, needle: char) -> Option<u16> {
     let line = screen.lines().nth(row)?;
@@ -30,15 +33,14 @@ fn plus_button_opens_menu_and_new_file_creates_buffer() {
     let mut harness = EditorTestHarness::with_tab_bar(120, 30).unwrap();
     harness.render().unwrap();
 
-    // The "+" button is rendered as a trailing tab on the tab row (row 1:
-    // row 0 = menu bar, row 1 = tab bar).
+    // The "+" button is rendered as a trailing tab on the tab row.
     let screen = harness.screen_to_string();
-    let plus_col = col_of_char_on_row(&screen, 1, '+').unwrap_or_else(|| {
+    let plus_col = col_of_char_on_row(&screen, TAB_ROW as usize, '+').unwrap_or_else(|| {
         panic!("expected a '+' new-tab button on the tab row. Screen:\n{screen}")
     });
 
     // Click the "+" button — the popup should appear.
-    harness.mouse_click(plus_col, 1).unwrap();
+    harness.mouse_click(plus_col, TAB_ROW).unwrap();
     harness.assert_screen_contains("New Terminal");
     harness.assert_screen_contains("New File");
 
@@ -82,13 +84,16 @@ fn plus_button_is_reachable_on_an_overflowing_strip() {
     harness.render().unwrap();
 
     let screen = harness.screen_to_string();
-    let plus_col = col_of_char_on_row(&screen, 1, '+')
+    let plus_col = col_of_char_on_row(&screen, TAB_ROW as usize, '+')
         .unwrap_or_else(|| panic!("expected a '+' button on the tab row. Screen:\n{screen}"));
 
     // The strip overflows, so it caps its near end — and the `+` is inside the
     // window, not under a cap.
     assert!(
-        screen.lines().nth(1).is_some_and(|r| r.contains('<')),
+        screen
+            .lines()
+            .nth(TAB_ROW as usize)
+            .is_some_and(|r| r.contains('<')),
         "precondition: the strip overflows, so its near end is capped. Screen:\n{screen}"
     );
     assert!(
@@ -97,7 +102,7 @@ fn plus_button_is_reachable_on_an_overflowing_strip() {
     );
 
     // It is still interactive: clicking it opens the popup.
-    harness.mouse_click(plus_col, 1).unwrap();
+    harness.mouse_click(plus_col, TAB_ROW).unwrap();
     harness.assert_screen_contains("New Terminal");
     harness.assert_screen_contains("New File");
 }
@@ -124,7 +129,7 @@ fn plus_button_menu_near_right_edge_clicks_land_on_drawn_items() {
     harness.render().unwrap();
 
     let screen = harness.screen_to_string();
-    let plus_col = col_of_char_on_row(&screen, 1, '+')
+    let plus_col = col_of_char_on_row(&screen, TAB_ROW as usize, '+')
         .unwrap_or_else(|| panic!("expected a '+' button on the tab row. Screen:\n{screen}"));
     assert!(
         plus_col + NEW_TAB_MENU_WIDTH > width,
@@ -132,7 +137,7 @@ fn plus_button_menu_near_right_edge_clicks_land_on_drawn_items() {
          so it has to clamp. Screen:\n{screen}"
     );
 
-    harness.mouse_click(plus_col, 1).unwrap();
+    harness.mouse_click(plus_col, TAB_ROW).unwrap();
     harness.assert_screen_contains("New File");
 
     let buffers_before = harness.editor().active_window().buffers.len();
@@ -164,10 +169,10 @@ fn plus_button_menu_captures_keyboard_and_filters_keys() {
     harness.render().unwrap();
 
     let screen = harness.screen_to_string();
-    let plus_col = col_of_char_on_row(&screen, 1, '+').unwrap_or_else(|| {
+    let plus_col = col_of_char_on_row(&screen, TAB_ROW as usize, '+').unwrap_or_else(|| {
         panic!("expected a '+' new-tab button on the tab row. Screen:\n{screen}")
     });
-    harness.mouse_click(plus_col, 1).unwrap();
+    harness.mouse_click(plus_col, TAB_ROW).unwrap();
     harness.assert_screen_contains("New Terminal");
 
     // The popup is modal: typing while it's open must be swallowed, not
@@ -200,10 +205,10 @@ fn plus_button_menu_dismisses_on_escape() {
     harness.render().unwrap();
 
     let screen = harness.screen_to_string();
-    let plus_col = col_of_char_on_row(&screen, 1, '+').unwrap_or_else(|| {
+    let plus_col = col_of_char_on_row(&screen, TAB_ROW as usize, '+').unwrap_or_else(|| {
         panic!("expected a '+' new-tab button on the tab row. Screen:\n{screen}")
     });
-    harness.mouse_click(plus_col, 1).unwrap();
+    harness.mouse_click(plus_col, TAB_ROW).unwrap();
     harness.assert_screen_contains("New Terminal");
 
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();
@@ -224,7 +229,7 @@ fn tab_context_menu_captures_keyboard_and_filters_keys() {
     harness.render().unwrap();
 
     // Right-click the (only) tab to open its context menu.
-    harness.mouse_right_click(2, 1).unwrap();
+    harness.mouse_right_click(2, TAB_ROW).unwrap();
     harness.assert_screen_contains("Close Others");
 
     // Modal: typing must not leak into the buffer underneath. The menu
@@ -250,11 +255,11 @@ fn plus_button_menu_dismisses_on_outside_click() {
     harness.render().unwrap();
 
     let screen = harness.screen_to_string();
-    let plus_col = col_of_char_on_row(&screen, 1, '+').unwrap_or_else(|| {
+    let plus_col = col_of_char_on_row(&screen, TAB_ROW as usize, '+').unwrap_or_else(|| {
         panic!("expected a '+' new-tab button on the tab row. Screen:\n{screen}")
     });
 
-    harness.mouse_click(plus_col, 1).unwrap();
+    harness.mouse_click(plus_col, TAB_ROW).unwrap();
     harness.assert_screen_contains("New Terminal");
 
     // Click far away in the editor content area — the popup should close

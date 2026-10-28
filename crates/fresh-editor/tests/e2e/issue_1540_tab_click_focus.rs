@@ -23,7 +23,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
 use std::fs;
 use std::time::Duration;
 
-const TAB_BAR_ROW: u16 = 1;
+const TAB_BAR_ROW: u16 = 0; // the tab bar, shown without the menu bar
 const EXPLORER_CLICK_COL: u16 = 10;
 
 fn explorer_row_for(harness: &EditorTestHarness, name: &str) -> u16 {
@@ -60,7 +60,12 @@ fn single_click_file(harness: &mut EditorTestHarness, name: &str) {
 
 #[test]
 fn clicking_tab_after_explorer_click_moves_focus_to_editor() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project = harness.project_dir().unwrap();
     fs::write(project.join("alpha.txt"), "alpha\n").unwrap();
 

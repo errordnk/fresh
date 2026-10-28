@@ -1684,7 +1684,12 @@ fn test_ctrl_right_jumps_to_word_end() {
         ];
 
         for (start_pos, expected_end) in expected_destinations {
-            let mut harness = EditorTestHarness::new(80, 24).unwrap();
+            let mut harness = EditorTestHarness::with_config(
+                80,
+                24,
+                crate::common::harness::config_without_virtual_space(),
+            )
+            .unwrap();
             harness.type_text(text).unwrap();
             harness.send_key(KeyCode::Home, KeyModifiers::NONE).unwrap();
 
@@ -1735,7 +1740,12 @@ fn test_ctrl_right_jumps_to_word_end() {
         ];
 
         for (start_pos, expected_end) in expected_destinations {
-            let mut harness = EditorTestHarness::new(80, 24).unwrap();
+            let mut harness = EditorTestHarness::with_config(
+                80,
+                24,
+                crate::common::harness::config_without_virtual_space(),
+            )
+            .unwrap();
             harness.type_text(text).unwrap();
             harness
                 .send_key(KeyCode::Home, KeyModifiers::CONTROL)
@@ -1794,7 +1804,12 @@ fn test_ctrl_left_jumps_to_word_beginning() {
         ];
 
         for (start_pos, expected_end) in expected_destinations {
-            let mut harness = EditorTestHarness::new(80, 24).unwrap();
+            let mut harness = EditorTestHarness::with_config(
+                80,
+                24,
+                crate::common::harness::config_without_virtual_space(),
+            )
+            .unwrap();
             harness.type_text(text).unwrap();
             harness.send_key(KeyCode::Home, KeyModifiers::NONE).unwrap();
 
@@ -1845,7 +1860,12 @@ fn test_ctrl_left_jumps_to_word_beginning() {
         ];
 
         for (start_pos, expected_end) in expected_destinations {
-            let mut harness = EditorTestHarness::new(80, 24).unwrap();
+            let mut harness = EditorTestHarness::with_config(
+                80,
+                24,
+                crate::common::harness::config_without_virtual_space(),
+            )
+            .unwrap();
             harness.type_text(text).unwrap();
             harness
                 .send_key(KeyCode::Home, KeyModifiers::CONTROL)

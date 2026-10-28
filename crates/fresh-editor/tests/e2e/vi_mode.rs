@@ -2255,8 +2255,8 @@ fn test_vi_colon_quit() {
         .unwrap();
     harness.render().unwrap();
 
-    // Wait for buffer to close - we should now see test1.txt
-    harness.wait_for_screen_contains("test1.txt").unwrap();
+    // `:q` / `:q!` / `:wq` quit the editor, as in vim
+    harness.wait_until(|h| h.editor().should_quit()).unwrap();
 }
 
 /// Test ':q!' force quits even with unsaved changes
@@ -2309,8 +2309,8 @@ fn test_vi_colon_force_quit() {
         .unwrap();
     harness.render().unwrap();
 
-    // Wait for buffer to close - we should now see test1.txt
-    harness.wait_for_screen_contains("test1.txt").unwrap();
+    // `:q` / `:q!` / `:wq` quit the editor, as in vim
+    harness.wait_until(|h| h.editor().should_quit()).unwrap();
 }
 
 /// Test ':wq' saves and quits
@@ -2363,8 +2363,8 @@ fn test_vi_colon_write_quit() {
         .unwrap();
     harness.render().unwrap();
 
-    // Wait for buffer to close - we should now see test1.txt
-    harness.wait_for_screen_contains("test1.txt").unwrap();
+    // `:q` / `:q!` / `:wq` quit the editor, as in vim
+    harness.wait_until(|h| h.editor().should_quit()).unwrap();
 
     // Wait for file to be written to disk using semantic waiting
     // The file write is asynchronous, so we poll until the content appears

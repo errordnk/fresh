@@ -58,8 +58,7 @@ fn launch(left: &[u8], right: &[u8], width: u16, height: u16) -> Compare {
     config.editor.show_tab_bar = true;
     config.editor.gutter_indicators = true;
     let mut h =
-        EditorTestHarness::with_config_and_working_dir(width, height, config, root)
-            .unwrap();
+        EditorTestHarness::with_config_and_working_dir(width, height, config, root).unwrap();
     // Production order (real_main): the pair is recorded, then `ready`
     // fires. The editor opens neither file itself.
     let canonical = |p: &PathBuf| fs::canonicalize(p).unwrap();
@@ -388,7 +387,8 @@ fn the_wheel_scrolls_through_filler_rows() {
     h.wait_until(|h| status_has(h, "Compare: 1 difference(s)"))
         .unwrap();
     h.send_key(KeyCode::Home, KeyModifiers::CONTROL).unwrap();
-    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h))).unwrap();
+    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h)))
+        .unwrap();
 
     let mut saw_middle_of_change = false;
     while !(level(&h, "row 080") && row_of(&h, "row 080").is_some_and(|r| r < 10)) {
@@ -418,7 +418,8 @@ fn the_wheel_through_a_change_keeps_the_other_side_level() {
     h.wait_until(|h| status_has(h, "Compare: 1 difference(s)"))
         .unwrap();
     h.send_key(KeyCode::Home, KeyModifiers::CONTROL).unwrap();
-    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h))).unwrap();
+    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h)))
+        .unwrap();
 
     while !(level(&h, "row 080") && row_of(&h, "row 080").is_some_and(|r| r < 10)) {
         // Over the right panel.
@@ -451,7 +452,8 @@ fn the_cursor_past_filler_rows_keeps_the_panels_level() {
     h.wait_until(|h| status_has(h, "Compare: 1 difference(s)"))
         .unwrap();
     h.send_key(KeyCode::Home, KeyModifiers::CONTROL).unwrap();
-    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h))).unwrap();
+    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h)))
+        .unwrap();
 
     for _ in 0..60 {
         h.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
@@ -510,7 +512,8 @@ fn paging_through_filler_rows_keeps_the_cursor_on_the_page() {
     h.wait_until(|h| status_has(h, "Compare: 1 difference(s)"))
         .unwrap();
     h.send_key(KeyCode::Home, KeyModifiers::CONTROL).unwrap();
-    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h))).unwrap();
+    h.wait_until(|h| row_of(h, "row 001") == Some(top_row(h)))
+        .unwrap();
 
     // Line 121 is the empty one after the last newline.
     let on_page = |h: &EditorTestHarness| {

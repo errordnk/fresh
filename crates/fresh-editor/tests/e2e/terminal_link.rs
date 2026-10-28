@@ -394,12 +394,13 @@ fn ctrl_click_on_nonexistent_path_is_inert() {
     harness.render().unwrap();
 
     // Nothing opened. The link open path is synchronous, so a wrongly-opened
-    // file would already show as a tab — assert on the tab bar (which a
-    // ConPTY repaint can't wipe, unlike the grid text itself).
-    let tab_bar = harness.get_row_text(1);
+    // file would already be the active buffer — assert on the status bar's
+    // file name (which a ConPTY repaint can't wipe, unlike the grid text
+    // itself).
+    let status = harness.get_status_bar();
     assert!(
-        !tab_bar.contains("exist.rs"),
-        "Ctrl+Click on a nonexistent path must not open a buffer; tab bar: {tab_bar}"
+        !status.contains("exist.rs"),
+        "Ctrl+Click on a nonexistent path must not open a buffer; status bar: {status}"
     );
     // And the live terminal is still the active view: its grid still renders
     // to the screen (re-feed in case a racing repaint wiped it).

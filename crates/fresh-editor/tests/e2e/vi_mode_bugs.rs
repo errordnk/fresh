@@ -1619,12 +1619,8 @@ fn test_vi_bug_2441_comma_repeats_find_reverse() {
 // intervening buffer text instead of only the typed keystrokes.
 //
 // These reproducers observe only what is on screen: the rendered text rows and
-// the status line's mode and `Ln N, Col N` readouts.
+// the status line's mode and `line:col` readouts.
 // =============================================================================
-
-/// First screen row that shows buffer text (row 0 is the menu bar, row 1 the
-/// tab bar).
-const FIRST_TEXT_ROW: u16 = 2;
 
 /// Consecutive identical frames that count as "the editor has finished
 /// reacting". Used only to decide that a *wrong* result is final; the expected
@@ -1638,20 +1634,22 @@ const SETTLED_RENDERS: usize = 20;
 /// buffer come back as the `~` filler verbatim, so an expectation that lists the
 /// filler also pins the buffer's line count.
 fn rendered_buffer_lines(harness: &EditorTestHarness, count: usize) -> Vec<String> {
+    let (_, first_text_row) = harness.text_origin();
     (0..count)
         .map(|i| {
-            let row = harness.screen_row_text(FIRST_TEXT_ROW + i as u16);
+            let row = harness.screen_row_text(first_text_row + i as u16);
             // The scrollbar paints a block glyph in the last column of some
             // rows; it is chrome, not buffer text.
             let row = row.trim_end_matches(['▌', '▐', '█', ' ']).to_string();
-            if let Some((_gutter, text)) = row.split_once(" │ ") {
-                text.to_string()
-            } else if row.ends_with('│') {
-                // Gutter with no text after it: an empty buffer line.
-                String::new()
-            } else {
-                row
+            // A row past the end of the buffer is a bare `~`, with no gutter.
+            if row.trim() == "~" {
+                return row.trim().to_string();
             }
+            harness
+                .split_gutter(&row)
+                .1
+                .trim_end_matches(['▌', '▐', '█', ' '])
+                .to_string()
         })
         .collect()
 }

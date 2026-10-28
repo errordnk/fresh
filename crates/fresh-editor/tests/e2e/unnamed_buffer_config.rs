@@ -154,7 +154,10 @@ fn new_window_scratch_buffer_follows_buffer_config() {
 /// the first buffer of a session was LF whatever the config said.
 #[test]
 fn initial_scratch_buffer_takes_the_default_line_ending() {
-    let mut config = Config::default();
+    // The line ending is not on the default status bar; put it there.
+    let mut config = crate::common::harness::config_with_status_elements(&[
+        fresh::config::StatusBarElement::LineEnding,
+    ]);
     config.editor.default_line_ending = LineEndingOption::Crlf;
     let mut harness = EditorTestHarness::with_config(WIDTH, 24, config).unwrap();
     harness.render().unwrap();

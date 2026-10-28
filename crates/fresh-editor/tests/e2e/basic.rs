@@ -55,7 +55,7 @@ fn test_multi_buffer_workflow() {
     std::fs::write(&file1, "File 1 content").unwrap();
     std::fs::write(&file2, "File 2 content").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open first file
     harness.open_file(&file1).unwrap();
@@ -85,7 +85,7 @@ fn test_buffer_switching() {
     std::fs::write(&file1, "Content of alpha").unwrap();
     std::fs::write(&file2, "Content of beta").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open first file
     harness.open_file(&file1).unwrap();

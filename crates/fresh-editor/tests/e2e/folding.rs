@@ -509,12 +509,9 @@ fn assert_gutter_matches_content(harness: &EditorTestHarness) {
             continue;
         }
 
-        // The gutter and content are separated by '│'.
-        let Some(sep) = text.find('│') else {
-            continue;
-        };
-        let gutter = &text[..sep];
-        let content = &text[sep + '│'.len_utf8()..];
+        // The gutter is the row's first `gutter_width` cells.
+        let (gutter, content) = harness.split_gutter(&text);
+        let (gutter, content) = (gutter.as_str(), content.as_str());
 
         // Extract the line number from the gutter (digits only, ignoring indicators).
         let digits: String = gutter.chars().filter(|c| c.is_ascii_digit()).collect();

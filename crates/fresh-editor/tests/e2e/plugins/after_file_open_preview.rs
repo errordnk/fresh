@@ -31,7 +31,7 @@ const PROBE_PLUGIN: &str = include_str!(concat!(
 /// editor chrome, filenames, or status text.
 const MARKER: &str = "AFTER_OPEN_PROBE_MARKER";
 
-const TAB_BAR_ROW: u16 = 1;
+const TAB_BAR_ROW: u16 = 0; // the tab bar, shown without the menu bar
 
 fn setup_project(temp: &Path) -> std::path::PathBuf {
     let project_root = temp.join("project");

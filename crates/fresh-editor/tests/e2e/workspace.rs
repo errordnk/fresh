@@ -373,8 +373,8 @@ fn test_session_file_location() {
     // Get expected session path
     let session_path = get_workspace_path(&project_dir).unwrap();
 
-    // Verify XDG location
-    let data_dir = dirs::data_dir().unwrap();
+    // Verify XDG location: ~/.local/share on every platform
+    let data_dir = dirs::home_dir().unwrap().join(".local").join("share");
     assert!(
         session_path.starts_with(&data_dir),
         "Session should be in XDG data directory: {:?}",
@@ -1543,7 +1543,7 @@ fn test_session_restores_tabs_per_split() {
         let mut harness = EditorTestHarness::with_config_and_working_dir(
             120,
             24,
-            Config::default(),
+            crate::common::harness::config_with_tab_bar(),
             project_dir.clone(),
         )
         .unwrap();
@@ -1576,7 +1576,7 @@ fn test_session_restores_tabs_per_split() {
         let mut harness = EditorTestHarness::with_config_and_working_dir(
             120,
             24,
-            Config::default(),
+            crate::common::harness::config_with_tab_bar(),
             project_dir.clone(),
         )
         .unwrap();
@@ -1707,7 +1707,7 @@ fn test_reopen_without_args_restores_session_no_extra_buffer() {
 
     // First session: open two files, modify one, then hot exit
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1736,7 +1736,7 @@ fn test_reopen_without_args_restores_session_no_extra_buffer() {
 
     // Second session: reopen without CLI args — should restore both files
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1792,7 +1792,7 @@ fn test_reopen_with_file_arg_restores_session_and_opens_new_file() {
 
     // First session: open two files, modify one, then hot exit
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1822,7 +1822,7 @@ fn test_reopen_with_file_arg_restores_session_and_opens_new_file() {
     // Second session: reopen with file3 as CLI arg
     // `fresh c.txt` — should restore session + open c.txt (focused)
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1884,7 +1884,7 @@ fn test_tab_order_preserved_across_restore() {
             100,
             24,
             HarnessOptions::new()
-                .with_config(Config::default())
+                .with_config(crate::common::harness::config_with_tab_bar())
                 .with_working_dir(project_dir.clone())
                 .with_shared_dir_context(dir_context.clone())
                 .without_empty_plugins_dir(),
@@ -1915,7 +1915,7 @@ fn test_tab_order_preserved_across_restore() {
             100,
             24,
             HarnessOptions::new()
-                .with_config(Config::default())
+                .with_config(crate::common::harness::config_with_tab_bar())
                 .with_working_dir(project_dir.clone())
                 .with_shared_dir_context(dir_context.clone())
                 .without_empty_plugins_dir(),
@@ -2664,7 +2664,7 @@ fn test_session_keeps_a_file_that_could_not_be_opened() {
         EditorTestHarness::with_config_and_working_dir(
             100,
             24,
-            Config::default(),
+            crate::common::harness::config_with_tab_bar(),
             project_dir.clone(),
         )
         .unwrap()
@@ -2741,7 +2741,7 @@ fn test_session_keeps_a_file_that_fails_on_every_launch() {
         EditorTestHarness::with_config_and_working_dir(
             300,
             24,
-            Config::default(),
+            crate::common::harness::config_with_tab_bar(),
             project_dir.clone(),
         )
         .unwrap()

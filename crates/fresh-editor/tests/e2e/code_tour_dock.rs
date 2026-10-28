@@ -172,10 +172,30 @@ fn setup_tour_project() -> (tempfile::TempDir, PathBuf) {
 }
 
 fn harness_in(project_root: &Path, width: u16, height: u16) -> EditorTestHarness {
+    harness_with_config_in(project_root, width, height, Default::default())
+}
+
+/// [`harness_in`] with the tab bar shown (it is hidden by default), for the
+/// tests that read the panes' tab strips.
+fn harness_with_tabs_in(project_root: &Path, width: u16, height: u16) -> EditorTestHarness {
+    harness_with_config_in(
+        project_root,
+        width,
+        height,
+        crate::common::harness::config_with_tab_bar(),
+    )
+}
+
+fn harness_with_config_in(
+    project_root: &Path,
+    width: u16,
+    height: u16,
+    config: fresh::config::Config,
+) -> EditorTestHarness {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         width,
         height,
-        Default::default(),
+        config,
         project_root.to_path_buf(),
     )
     .unwrap();
@@ -520,7 +540,7 @@ fn test_clicking_next_button_advances_step() {
 #[test]
 fn test_two_tours_coexist_as_dock_tabs() {
     let (_temp, project_root) = setup_tour_project();
-    let mut harness = harness_in(&project_root, 160, 40);
+    let mut harness = harness_with_tabs_in(&project_root, 160, 40);
 
     let manifest = project_root.join(".fresh-tour.json");
     load_tour(
@@ -651,7 +671,7 @@ fn tab_close_col(harness: &EditorTestHarness, tab_row: usize, label: &str) -> u1
 #[test]
 fn test_closing_a_tour_opened_file_does_not_eject_the_panel() {
     let (_temp, project_root) = setup_tour_project();
-    let mut harness = harness_in(&project_root, 160, 40);
+    let mut harness = harness_with_tabs_in(&project_root, 160, 40);
 
     let manifest = project_root.join(".fresh-tour.json");
     load_tour(
@@ -1011,7 +1031,7 @@ fn tab_bar_halves(harness: &EditorTestHarness) -> (String, String) {
     let screen = harness.screen_to_string();
     let row = screen
         .lines()
-        .nth(1)
+        .nth(harness.tab_bar_row())
         .unwrap_or_else(|| panic!("expected a tab-bar row\nScreen:\n{screen}"));
     row.split_once('\u{2502}')
         .map(|(left, right)| (left.to_string(), right.to_string()))
@@ -1030,14 +1050,14 @@ fn tab_bar_halves(harness: &EditorTestHarness) -> (String, String) {
 #[test]
 fn test_tour_opens_every_step_in_its_target_panel() {
     let (_temp, project_root) = setup_tour_project();
-    let mut harness = harness_in(&project_root, 160, 40);
+    let mut harness = harness_with_tabs_in(&project_root, 160, 40);
 
     run_command(&mut harness, "Split Vertical");
     harness
         .wait_until(|h| {
             h.screen_to_string()
                 .lines()
-                .nth(1)
+                .nth(h.tab_bar_row())
                 .is_some_and(|r| r.contains('\u{2502}'))
         })
         .unwrap();
@@ -1063,7 +1083,10 @@ fn test_tour_opens_every_step_in_its_target_panel() {
         .wait_until_stable(|h| {
             let screen = h.screen_to_string();
             screen.contains("Step 2 of 2")
-                && screen.lines().nth(1).is_some_and(|r| r.contains("wide.rs"))
+                && screen
+                    .lines()
+                    .nth(h.tab_bar_row())
+                    .is_some_and(|r| r.contains("wide.rs"))
         })
         .unwrap();
 
@@ -2137,7 +2160,7 @@ fn test_tour_panel_fits_the_dock_when_the_prompt_line_is_shown() {
     assert!(
         rows.iter()
             .nth_back(1)
-            .is_some_and(|r| r.contains("Trusted")),
+            .is_some_and(|r| r.trim_end().ends_with(" 1:1")),
         "expected the status bar directly above the prompt line\nScreen:\n{screen}"
     );
 

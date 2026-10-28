@@ -32,7 +32,7 @@ fn test_save_as_external_file_has_tab_after_restore() {
     // Session 1: open files, create unnamed buffer, type content, save-as to
     // external path, then shutdown with workspace save.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -83,7 +83,7 @@ fn test_save_as_external_file_has_tab_after_restore() {
 
     // Session 2: restore and verify the external file has a tab
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -106,7 +106,7 @@ fn test_save_as_external_file_has_tab_after_restore() {
         // The tab bar is on row 1 (0-indexed, row 0 is the menu bar).
         // Check that "scratch.txt" appears in the tab bar row, not just
         // in the status bar at the bottom.
-        let tab_bar_row = harness.screen_row_text(1);
+        let tab_bar_row = harness.get_tab_bar();
         eprintln!("Tab bar row: {}", tab_bar_row);
         let screen = harness.screen_to_string();
         eprintln!("Full screen:\n{}", screen);

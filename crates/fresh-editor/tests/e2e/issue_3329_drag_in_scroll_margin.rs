@@ -37,9 +37,8 @@ fn mouse(harness: &mut EditorTestHarness, kind: MouseEventKind, col: u16, row: u
 /// The gutter's line number on screen `row`, if the row shows a line.
 fn gutter_line(harness: &EditorTestHarness, row: u16) -> Option<u32> {
     harness
-        .screen_row_text(row)
-        .split_once('│')
-        .and_then(|(gutter, _)| gutter.trim().parse().ok())
+        .row_line_number(&harness.screen_row_text(row))
+        .map(|n| n as u32)
 }
 
 /// The characters painted with the selection background on `row` (the
@@ -266,8 +265,7 @@ fn long_line() -> String {
 /// The number of the leftmost whole `wNN` token drawn on `row`'s text: the
 /// rendered horizontal scroll position.
 fn first_token(harness: &EditorTestHarness, row: u16) -> u32 {
-    let text = harness.screen_row_text(row);
-    let (_, content) = text.split_once('│').unwrap_or(("", &text));
+    let (_, content) = harness.split_gutter(&harness.screen_row_text(row));
     content
         .split('w')
         .skip(1)

@@ -49,7 +49,11 @@ fn test_cs_file_detected_as_csharp() {
         30,
         HarnessOptions::new()
             .with_project_root()
-            .with_full_grammar_registry(),
+            .with_full_grammar_registry()
+            // The default status bar has no language name; put it there.
+            .with_config(crate::common::harness::config_with_status_elements(&[
+                fresh::config::StatusBarElement::Language,
+            ])),
     )
     .unwrap();
     let project_dir = harness.project_dir().unwrap();
@@ -97,7 +101,11 @@ fn test_set_language_prompt_shows_csharp_as_current() {
         30,
         HarnessOptions::new()
             .with_project_root()
-            .with_full_grammar_registry(),
+            .with_full_grammar_registry()
+            // The default status bar has no language name; put it there.
+            .with_config(crate::common::harness::config_with_status_elements(&[
+                fresh::config::StatusBarElement::Language,
+            ])),
     )
     .unwrap();
     let project_dir = harness.project_dir().unwrap();
@@ -144,7 +152,11 @@ fn test_switch_language_csharp_to_python_and_back() {
         30,
         HarnessOptions::new()
             .with_project_root()
-            .with_full_grammar_registry(),
+            .with_full_grammar_registry()
+            // The default status bar has no language name; put it there.
+            .with_config(crate::common::harness::config_with_status_elements(&[
+                fresh::config::StatusBarElement::Language,
+            ])),
     )
     .unwrap();
     let project_dir = harness.project_dir().unwrap();
@@ -205,7 +217,11 @@ fn test_switch_from_text_to_csharp_to_rust() {
         30,
         HarnessOptions::new()
             .with_project_root()
-            .with_full_grammar_registry(),
+            .with_full_grammar_registry()
+            // The default status bar has no language name; put it there.
+            .with_config(crate::common::harness::config_with_status_elements(&[
+                fresh::config::StatusBarElement::Language,
+            ])),
     )
     .unwrap();
     let project_dir = harness.project_dir().unwrap();

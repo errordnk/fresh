@@ -12,9 +12,9 @@ use tempfile::TempDir;
 fn test_default_theme_is_dark() {
     let harness = EditorTestHarness::new(80, 24).unwrap();
 
-    // Default theme should be "high-contrast"
+    // Default theme should be "nord-darker"
     let theme = harness.editor().theme();
-    assert_eq!(theme.name, "high-contrast");
+    assert_eq!(theme.name, "nord-darker");
 }
 
 #[test]
@@ -118,6 +118,10 @@ fn test_theme_renders_with_correct_tab_colors() {
         ..Default::default()
     };
 
+    let config = Config {
+        editor: crate::common::harness::config_with_tab_bar().editor,
+        ..config
+    };
     let mut harness = EditorTestHarness::with_config(80, 24, config).unwrap();
     harness.render().unwrap();
 
@@ -125,8 +129,8 @@ fn test_theme_renders_with_correct_tab_colors() {
     // The active tab should have the theme's tab_active colors
     let theme = harness.editor().theme();
 
-    // Get style of a cell in the tab bar area (row 1, after menu bar at row 0)
-    if let Some(style) = harness.get_cell_style(1, 1) {
+    // Get style of a cell in the tab bar area (the top row: no menu bar)
+    if let Some(style) = harness.get_cell_style(1, harness.tab_bar_row() as u16) {
         // For dark theme, active tab has yellow fg and blue bg
         assert_eq!(style.fg, Some(theme.tab_active_fg));
         assert_eq!(style.bg, Some(theme.tab_active_bg));
@@ -518,15 +522,16 @@ fn test_issue_1001_theme_persists_after_restart_with_name_mismatch() {
     .unwrap();
     harness.render().unwrap();
 
-    // Verify default theme is high-contrast (the fallback).
-    // Sample the first content row (row 2) inside the editor area so we hit
-    // `editor.bg` rather than the post-EOF shade (`editor.after_eof_bg`).
-    let default_style = harness.get_cell_style(5, 2);
+    // Verify the default theme (nord-darker) is in effect.
+    // Sample the first content row (row 0: no menu bar, no tab bar) inside the
+    // editor area so we hit `editor.bg` rather than the post-EOF shade
+    // (`editor.after_eof_bg`).
+    let default_style = harness.get_cell_style(5, 0);
     let default_bg = default_style.and_then(|s| s.bg);
     assert_eq!(
         default_bg,
-        Some(Color::Rgb(0, 0, 0)),
-        "Editor should start with high-contrast theme (black background)"
+        Some(Color::Rgb(25, 28, 41)),
+        "Editor should start with the nord-darker theme"
     );
 
     // Open command palette (Ctrl+P)
@@ -544,7 +549,7 @@ fn test_issue_1001_theme_persists_after_restart_with_name_mismatch() {
     // Wait for the theme selection prompt to appear
     harness.wait_for_screen_contains("Select theme").unwrap();
 
-    // Clear the pre-filled input (current theme name "high-contrast" = 13 chars)
+    // Clear the pre-filled input (current theme name "nord-darker" = 11 chars)
     // Use Backspace to clear, then type the new theme name
     for _ in 0..20 {
         harness
@@ -566,7 +571,7 @@ fn test_issue_1001_theme_persists_after_restart_with_name_mismatch() {
     // Verify the theme was applied by checking rendered editor background color.
     // Catppuccin Mocha uses Rgb(30, 30, 46), NOT black.
     let catppuccin_bg = Color::Rgb(30, 30, 46);
-    let applied_style = harness.get_cell_style(5, 2);
+    let applied_style = harness.get_cell_style(5, 0);
     let applied_bg = applied_style.and_then(|s| s.bg);
     assert_eq!(
         applied_bg,
@@ -623,7 +628,7 @@ fn test_issue_1001_theme_persists_after_restart_with_name_mismatch() {
 
     // The restarted editor should load catppuccin-mocha, NOT fall back to high-contrast.
     // Verify by checking the rendered editor background color.
-    let restarted_style = harness2.get_cell_style(5, 2);
+    let restarted_style = harness2.get_cell_style(5, 0);
     let restarted_bg = restarted_style.and_then(|s| s.bg);
     assert_eq!(
         restarted_bg,
@@ -685,7 +690,7 @@ fn test_issue_1001_config_with_spaces_in_theme_name_loads_correctly() {
     // The editor should normalize "Catppuccin Mocha" → "catppuccin-mocha" on lookup
     // and find the theme. Verify by checking rendered background.
     let catppuccin_bg = Color::Rgb(30, 30, 46);
-    let style = harness.get_cell_style(5, 2);
+    let style = harness.get_cell_style(5, 0);
     let bg = style.and_then(|s| s.bg);
     assert_eq!(
         bg,

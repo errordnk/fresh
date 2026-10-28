@@ -118,10 +118,13 @@ fn test_read_only_buffer_shows_ro_status_indicator() {
     let ro_file = lib_dir.join("index.js");
     std::fs::write(&ro_file, "library content\n").unwrap();
 
+    // The `[RO]` indicator is not on the default status bar; put it there.
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         160,
         24,
-        Config::default(),
+        crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::ReadOnly,
+        ]),
         temp_dir.path().to_path_buf(),
     )
     .unwrap();
@@ -144,10 +147,13 @@ fn test_editable_buffer_has_no_ro_status_indicator() {
     let file_path = temp_dir.path().join("editable.txt");
     std::fs::write(&file_path, "editable content\n").unwrap();
 
+    // The `[RO]` indicator is not on the default status bar; put it there.
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         160,
         24,
-        Config::default(),
+        crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::ReadOnly,
+        ]),
         temp_dir.path().to_path_buf(),
     )
     .unwrap();
@@ -188,10 +194,13 @@ fn test_read_only_indicator_click_opens_menu_and_enables_editing() {
     let ro_file = lib_dir.join("index.js");
     std::fs::write(&ro_file, "library content\n").unwrap();
 
+    // The `[RO]` indicator is not on the default status bar; put it there.
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         160,
         24,
-        Config::default(),
+        crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::ReadOnly,
+        ]),
         temp_dir.path().to_path_buf(),
     )
     .unwrap();
@@ -244,10 +253,13 @@ fn test_library_file_opens_read_only_by_default() {
     let file_path = lib_dir.join("index.js");
     std::fs::write(&file_path, "library content\n").unwrap();
 
+    // The `[RO]` indicator is not on the default status bar; put it there.
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         160,
         24,
-        Config::default(),
+        crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::ReadOnly,
+        ]),
         temp_dir.path().to_path_buf(),
     )
     .unwrap();
@@ -318,10 +330,13 @@ fn test_bracketed_paste_blocked_in_read_only_buffer() {
     let file_path = lib_dir.join("index.js");
     std::fs::write(&file_path, "library content\n").unwrap();
 
+    // The `[RO]` indicator is not on the default status bar; put it there.
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         160,
         24,
-        Config::default(),
+        crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::ReadOnly,
+        ]),
         temp_dir.path().to_path_buf(),
     )
     .unwrap();
@@ -362,10 +377,13 @@ fn test_bracketed_paste_works_in_editable_buffer() {
     let file_path = temp_dir.path().join("editable.txt");
     std::fs::write(&file_path, "editable content\n").unwrap();
 
+    // The `[RO]` indicator is not on the default status bar; put it there.
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         160,
         24,
-        Config::default(),
+        crate::common::harness::config_with_status_elements(&[
+            fresh::config::StatusBarElement::ReadOnly,
+        ]),
         temp_dir.path().to_path_buf(),
     )
     .unwrap();

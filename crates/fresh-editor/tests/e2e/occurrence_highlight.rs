@@ -23,9 +23,9 @@ fn test_selection_replaces_word_highlight_with_selection_matches() {
     let line1 = first_row as u16;
     let line2 = line1 + 1;
 
-    // Screen columns: the gutter occupies the first 6 columns, so text column
-    // N of a line is screen column 6 + N.
-    let col = |text_col: u16| 6 + text_col;
+    // Screen columns: text column N of a line is N cells right of the gutter.
+    let gutter = harness.gutter_width() as u16;
+    let col = |text_col: u16| gutter + text_col;
     // line 1: "beta" at text columns 6..10, "gamma" at 11..16
     let (l1_b, l1_e, l1_t, l1_a) = (col(6), col(7), col(8), col(9));
     let l1_neutral = col(11); // 'g' of "gamma" — never highlighted
@@ -128,9 +128,14 @@ fn test_occurrence_highlight_toggle() {
     }
     harness.render().unwrap();
 
-    let first_apple_col = 6;
-    let third_apple_col = 32;
-    let default_bg = harness.get_cell_style(1, content_first as u16).unwrap().bg;
+    let gutter = harness.gutter_width() as u16;
+    let first_apple_col = gutter;
+    let third_apple_col = gutter + 26;
+    // "banana" (text columns 6..12) is never highlighted
+    let default_bg = harness
+        .get_cell_style(gutter + 8, content_first as u16)
+        .unwrap()
+        .bg;
 
     // Use wait_until for initial highlight
     harness
@@ -223,7 +228,8 @@ fn test_zero_width_block_selection_keeps_word_highlight() {
     let (first_row, _) = harness.content_area_rows();
     let line1 = first_row as u16;
     let line2 = line1 + 1;
-    let col = |text_col: u16| 6 + text_col;
+    let gutter = harness.gutter_width() as u16;
+    let col = |text_col: u16| gutter + text_col;
     let bg = |h: &EditorTestHarness, x: u16, y: u16| h.get_cell_style(x, y).and_then(|s| s.bg);
 
     // Cursor into "beta" on line 1; both "beta"s highlight.
@@ -291,7 +297,8 @@ fn test_single_line_block_selection_highlights_its_matches() {
     let (first_row, _) = harness.content_area_rows();
     let line1 = first_row as u16;
     let line2 = line1 + 1;
-    let col = |text_col: u16| 6 + text_col;
+    let gutter = harness.gutter_width() as u16;
+    let col = |text_col: u16| gutter + text_col;
     let bg = |h: &EditorTestHarness, x: u16, y: u16| h.get_cell_style(x, y).and_then(|s| s.bg);
 
     // Cursor to the "b" of "beta" on line 1.

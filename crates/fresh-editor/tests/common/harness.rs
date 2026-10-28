@@ -542,6 +542,23 @@ pub fn config_with_tab_bar() -> Config {
     config
 }
 
+/// A default config whose cursor stays on the line's text (`virtual_space`
+/// off): Right at the end of a line goes to the next one. For tests of that
+/// classic movement; by default the cursor may go past the end of a line.
+pub fn config_without_virtual_space() -> Config {
+    let mut config = Config::default();
+    config.editor.virtual_space = fresh::config::VirtualSpaceMode::Off;
+    config
+}
+
+/// A default config with the menu bar and the tab bar shown (both are hidden
+/// by default). For tests whose subject is the menu bar or the chrome rows.
+pub fn config_with_menu_and_tab_bar() -> Config {
+    let mut config = config_with_tab_bar();
+    config.editor.show_menu_bar = true;
+    config
+}
+
 /// A default config whose status bar also shows `elements`, in front of the
 /// right side's `line:col`. For tests of elements the default bar leaves off.
 pub fn config_with_status_elements(elements: &[fresh::config::StatusBarElement]) -> Config {
@@ -2983,6 +3000,31 @@ impl EditorTestHarness {
         let row = screen.lines().find(|row| row.contains(text))?;
         let before = &row[..row.find(text)?];
         before.split_whitespace().last()?.parse().ok()
+    }
+
+    /// The active buffer's gutter width in cells (line numbers and their
+    /// separating space; the indicator column only when it is on).
+    pub fn gutter_width(&self) -> usize {
+        self.editor.active_state().margins.left_total_width()
+    }
+
+    /// A screen row split into its gutter and its text, at the active
+    /// buffer's gutter width. Assumes a single split.
+    pub fn split_gutter(&self, row: &str) -> (String, String) {
+        let width = self.gutter_width();
+        (
+            row.chars().take(width).collect(),
+            row.chars().skip(width).collect(),
+        )
+    }
+
+    /// The line number the gutter draws on a screen row, or `None` for a row
+    /// without one (a wrapped continuation, `~`, the status bar).
+    pub fn row_line_number(&self, row: &str) -> Option<usize> {
+        if self.gutter_width() == 0 {
+            return None;
+        }
+        self.split_gutter(row).0.trim().parse().ok()
     }
 
     /// Whether the active buffer's gutter draws line number `n` on any text

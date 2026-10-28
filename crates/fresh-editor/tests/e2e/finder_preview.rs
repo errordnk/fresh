@@ -20,13 +20,18 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 /// The tab bar sits on screen row 1 in the default harness layout.
-const TAB_BAR_ROW: u16 = 1;
+const TAB_BAR_ROW: u16 = 0; // the tab bar, shown without the menu bar
 
 /// A harness over a temp project holding `files` (each file's content is
 /// its own name), with `first` opened as a normal, permanent tab — the
 /// buffer the user is reading when they start searching.
 fn setup(files: &[&str], first: &str) -> (EditorTestHarness, PathBuf) {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project = harness.project_dir().unwrap();
     for name in files {
         fs::write(project.join(name), format!("{name} content\n")).unwrap();
@@ -193,7 +198,7 @@ fn a_file_that_would_prompt_is_skipped_not_asked_about() {
                 // Anything past this is "large", so the GBK file below
                 // takes the path that asks before loading.
                 large_file_threshold_bytes: 500,
-                ..Default::default()
+                ..crate::common::harness::config_with_tab_bar().editor
             },
             ..Default::default()
         },

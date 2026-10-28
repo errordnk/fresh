@@ -527,7 +527,12 @@ fn test_movement_through_multiple_empty_lines() {
     let content = "Line 1\n\nLine 3\n\n\nLine 6\n";
     std::fs::write(&file_path, content).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_config(
+        80,
+        24,
+        crate::common::harness::config_without_virtual_space(),
+    )
+    .unwrap();
     harness.open_file(&file_path).unwrap();
 
     // Start at position 0 (beginning of "Line 1")

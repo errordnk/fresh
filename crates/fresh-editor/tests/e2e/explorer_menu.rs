@@ -390,7 +390,12 @@ fn test_explorer_menu_new_folder_action() {
 /// Test that Explorer menu appears in the menu bar when file explorer is focused
 #[test]
 fn test_explorer_menu_in_menu_bar() {
-    let mut harness = EditorTestHarness::with_temp_project(100, 30).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        100,
+        30,
+        crate::common::harness::config_with_menu_and_tab_bar(),
+    )
+    .unwrap();
 
     // Focus file explorer first (Explorer menu is only visible when file explorer is focused)
     harness.editor_mut().focus_file_explorer();

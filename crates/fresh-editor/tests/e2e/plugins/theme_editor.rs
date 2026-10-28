@@ -141,9 +141,13 @@ fn test_theme_editor_tab_bar_persists() {
     copy_plugin_lib(&plugins_dir);
     copy_plugin(&plugins_dir, "theme_editor");
 
-    let mut harness =
-        EditorTestHarness::with_config_and_working_dir(120, 40, crate::common::harness::config_with_tab_bar(), project_root)
-            .unwrap();
+    let mut harness = EditorTestHarness::with_config_and_working_dir(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+        project_root,
+    )
+    .unwrap();
 
     // === Initial state: tab bar present with [No Name] ===
     harness.render().unwrap();
@@ -221,9 +225,13 @@ fn test_close_buffer_while_in_group_closes_whole_group() {
     copy_plugin_lib(&plugins_dir);
     copy_plugin(&plugins_dir, "theme_editor");
 
-    let mut harness =
-        EditorTestHarness::with_config_and_working_dir(120, 40, crate::common::harness::config_with_tab_bar(), project_root)
-            .unwrap();
+    let mut harness = EditorTestHarness::with_config_and_working_dir(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+        project_root,
+    )
+    .unwrap();
 
     harness.render().unwrap();
 
@@ -301,9 +309,13 @@ fn test_next_buffer_cycles_across_groups_and_buffers() {
     let test_file = project_root.join("cycle_test.txt");
     fs::write(&test_file, "UniqueContentMarker\n").unwrap();
 
-    let mut harness =
-        EditorTestHarness::with_config_and_working_dir(120, 40, crate::common::harness::config_with_tab_bar(), project_root)
-            .unwrap();
+    let mut harness = EditorTestHarness::with_config_and_working_dir(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+        project_root,
+    )
+    .unwrap();
 
     // Open the source file.
     harness.open_file(&test_file).unwrap();
@@ -568,9 +580,13 @@ fn test_theme_editor_reopen_after_close_buffer() {
     copy_plugin_lib(&plugins_dir);
     copy_plugin(&plugins_dir, "theme_editor");
 
-    let mut harness =
-        EditorTestHarness::with_config_and_working_dir(120, 40, crate::common::harness::config_with_tab_bar(), project_root)
-            .unwrap();
+    let mut harness = EditorTestHarness::with_config_and_working_dir(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+        project_root,
+    )
+    .unwrap();
 
     harness.render().unwrap();
 

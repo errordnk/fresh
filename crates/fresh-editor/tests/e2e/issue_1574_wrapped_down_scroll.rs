@@ -529,10 +529,9 @@ fn run_jump_scenario_at_width_with_fixture(
 
     let (_cx_empty, cy_empty) = harness.screen_cursor_position();
     let empty_row = harness.get_screen_row(cy_empty as usize);
-    let empty_body: String = empty_row
-        .split('│')
-        .nth(1)
-        .unwrap_or("")
+    let empty_body: String = harness
+        .split_gutter(&empty_row)
+        .1
         .chars()
         .filter(|c| !c.is_whitespace())
         .collect();
@@ -553,10 +552,9 @@ fn run_jump_scenario_at_width_with_fixture(
     let ok = loop {
         let (_, cy) = harness.screen_cursor_position();
         let cursor_row_text = harness.get_screen_row(cy as usize);
-        let cursor_row_is_empty: bool = cursor_row_text
-            .split('│')
-            .nth(1)
-            .unwrap_or("")
+        let cursor_row_is_empty: bool = harness
+            .split_gutter(&cursor_row_text)
+            .1
             .chars()
             .all(char::is_whitespace);
         let cursor_at_bottom = (cy as usize) >= content_last_row;
@@ -591,10 +589,8 @@ fn run_jump_scenario_at_width_with_fixture(
     // Re-verify preconditions after scroll.
     let (_, cy_before) = harness.screen_cursor_position();
     let before_row_body: String = harness
-        .get_screen_row(cy_before as usize)
-        .split('│')
-        .nth(1)
-        .unwrap_or("")
+        .split_gutter(&harness.get_screen_row(cy_before as usize))
+        .1
         .chars()
         .filter(|c| !c.is_whitespace())
         .collect();
@@ -697,10 +693,9 @@ fn run_up_jump_scenario_at_width_with_fixture(
 
     let (_cx_empty, cy_empty) = harness.screen_cursor_position();
     let empty_row = harness.get_screen_row(cy_empty as usize);
-    let empty_body: String = empty_row
-        .split('│')
-        .nth(1)
-        .unwrap_or("")
+    let empty_body: String = harness
+        .split_gutter(&empty_row)
+        .1
         .chars()
         .filter(|c| !c.is_whitespace())
         .collect();
@@ -732,10 +727,9 @@ fn run_up_jump_scenario_at_width_with_fixture(
     let ok = loop {
         let (_, cy) = harness.screen_cursor_position();
         let cursor_row_text = harness.get_screen_row(cy as usize);
-        let cursor_row_is_empty: bool = cursor_row_text
-            .split('│')
-            .nth(1)
-            .unwrap_or("")
+        let cursor_row_is_empty: bool = harness
+            .split_gutter(&cursor_row_text)
+            .1
             .chars()
             .all(char::is_whitespace);
         let cursor_at_top = (cy as usize) <= content_first_row;
@@ -771,10 +765,8 @@ fn run_up_jump_scenario_at_width_with_fixture(
     // Re-verify preconditions after scroll.
     let (_, cy_before) = harness.screen_cursor_position();
     let before_row_body: String = harness
-        .get_screen_row(cy_before as usize)
-        .split('│')
-        .nth(1)
-        .unwrap_or("")
+        .split_gutter(&harness.get_screen_row(cy_before as usize))
+        .1
         .chars()
         .filter(|c| !c.is_whitespace())
         .collect();

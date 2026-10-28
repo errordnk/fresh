@@ -29,7 +29,7 @@ fn top_line(harness: &EditorTestHarness) -> usize {
     let screen = harness.screen_to_string();
     screen
         .lines()
-        .find_map(|row| row.split_once('│')?.0.trim().parse().ok())
+        .find_map(|row| harness.row_line_number(row))
         .unwrap_or_else(|| panic!("no line numbers on screen:\n{screen}"))
 }
 

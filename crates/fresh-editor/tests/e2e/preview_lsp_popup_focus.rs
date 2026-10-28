@@ -32,7 +32,7 @@ use std::fs;
 use std::time::Duration;
 
 /// Same row constants as `preview_tabs.rs` — the harness layout is shared.
-const TAB_BAR_ROW: u16 = 1;
+const TAB_BAR_ROW: u16 = 0; // the tab bar, shown without the menu bar
 const EXPLORER_CLICK_COL: u16 = 10;
 const FIRST_EXPLORER_ROW: usize = 2;
 
@@ -43,7 +43,12 @@ const FIRST_EXPLORER_ROW: usize = 2;
 const POPUP_MARKER: &str = "calculate_difference";
 
 fn setup_explorer_with_files(filenames: &[&str]) -> EditorTestHarness {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project = harness.project_dir().unwrap();
     for name in filenames {
         // Pad each file with a few lines so a hypothetical popup anchored

@@ -99,7 +99,7 @@ fn test_quick_open_after_search_replace_opens_in_main_split() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         30,
-        Default::default(),
+        crate::common::harness::config_with_tab_bar(),
         project_root.clone(),
     )
     .unwrap();
@@ -177,7 +177,7 @@ fn test_maximize_button_click_targets_clicked_split_not_active() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         30,
-        Default::default(),
+        crate::common::harness::config_with_tab_bar(),
         project_root.clone(),
     )
     .unwrap();
@@ -275,7 +275,7 @@ fn test_open_file_while_split_maximized_reveals_buffer() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         120,
         30,
-        Default::default(),
+        crate::common::harness::config_with_tab_bar(),
         project_root.clone(),
     )
     .unwrap();

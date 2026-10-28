@@ -33,7 +33,11 @@ fn run_command_palette(harness: &mut EditorTestHarness, query: &str) {
 /// Wide harness so the status bar isn't clipped at the right edge — the
 /// extraction status line includes a file name and a workspace label.
 fn wide_temp_project_harness() -> EditorTestHarness {
-    EditorTestHarness::with_temp_project_and_config(220, 30, Default::default()).unwrap()
+    wide_temp_project_harness_with(Default::default())
+}
+
+fn wide_temp_project_harness_with(config: fresh::config::Config) -> EditorTestHarness {
+    EditorTestHarness::with_temp_project_and_config(220, 30, config).unwrap()
 }
 
 /// Locate the active tab on screen so right-click events land on a real tab
@@ -55,7 +59,18 @@ fn active_tab_position(harness: &EditorTestHarness) -> (u16, u16) {
 /// a real tab after the extraction) and `subproj/notes.txt`, which is opened
 /// last so its tab is the focused one.
 fn harness_with_subproject_file() -> EditorTestHarness {
-    let mut harness = wide_temp_project_harness();
+    subproject_file_in(wide_temp_project_harness())
+}
+
+/// [`harness_with_subproject_file`] with the tab bar shown (it is hidden by
+/// default), for the tests that right-click a tab.
+fn tab_bar_harness_with_subproject_file() -> EditorTestHarness {
+    subproject_file_in(wide_temp_project_harness_with(
+        crate::common::harness::config_with_tab_bar(),
+    ))
+}
+
+fn subproject_file_in(mut harness: EditorTestHarness) -> EditorTestHarness {
     let project_root = harness.project_dir().unwrap();
 
     fs::write(project_root.join("keep.txt"), "keep\n").unwrap();
@@ -161,7 +176,7 @@ fn extract_tab_preserves_unsaved_edits_and_undo_history() {
 
 #[test]
 fn tab_right_click_menu_lists_extract_entry() {
-    let mut harness = harness_with_subproject_file();
+    let mut harness = tab_bar_harness_with_subproject_file();
 
     let (col, row) = active_tab_position(&harness);
     harness.mouse_right_click(col, row).unwrap();
@@ -172,7 +187,7 @@ fn tab_right_click_menu_lists_extract_entry() {
 
 #[test]
 fn tab_right_click_extract_moves_buffer_to_new_workspace() {
-    let mut harness = harness_with_subproject_file();
+    let mut harness = tab_bar_harness_with_subproject_file();
 
     let (col, row) = active_tab_position(&harness);
     harness.mouse_right_click(col, row).unwrap();

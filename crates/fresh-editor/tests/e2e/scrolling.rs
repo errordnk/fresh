@@ -361,6 +361,8 @@ fn test_cursor_wrap_on_long_line_navigation() {
     let config = Config {
         editor: fresh::config::EditorConfig {
             line_wrap: false,
+            // Right at the end of the line moves on to the next one
+            virtual_space: fresh::config::VirtualSpaceMode::Off,
             ..Default::default()
         },
         ..Default::default()
@@ -1992,9 +1994,9 @@ fn test_page_down_when_buffer_equals_viewport_height() {
     use tempfile::TempDir;
 
     let terminal_height = 24u16;
-    // Layout: menu bar, tab bar, content, status bar, prompt line
-    // Content area is terminal_height - 3 (rows 2 to terminal_height-3)
-    let viewport_height = (terminal_height - 3) as usize; // 21 lines
+    // Layout: content, status bar, prompt line (no menu bar, no tab bar)
+    // Content area is terminal_height - 2 (rows 0 to terminal_height-3)
+    let viewport_height = (terminal_height - 2) as usize; // 22 lines
     let expected_bottom_row = terminal_height - 3; // Row 21
 
     // Create buffer with exactly viewport_height lines
@@ -2762,8 +2764,13 @@ fn test_vertical_scroll_margin_up() {
 /// snapshot reflects only the scrolled view.
 fn content_area_snapshot(harness: &EditorTestHarness) -> String {
     let (first, last) = harness.content_area_rows();
+    // The last column is the scrollbar, whose thumb moves from page to page.
     (first..=last)
-        .map(|r| harness.get_screen_row(r))
+        .map(|r| {
+            let row = harness.get_screen_row(r);
+            let width = row.chars().count().saturating_sub(1);
+            row.chars().take(width).collect::<String>()
+        })
         .collect::<Vec<_>>()
         .join("\n")
 }

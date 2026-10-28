@@ -14,7 +14,7 @@ fn test_open_multiple_files() {
     std::fs::write(&file2, "Content of file 2").unwrap();
     std::fs::write(&file3, "Content of file 3").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open all three files
     harness.open_file(&file1).unwrap();
@@ -66,7 +66,7 @@ fn test_open_duplicate_file() {
 
     std::fs::write(&file1, "Unique content").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open the same file twice
     harness.open_file(&file1).unwrap();
@@ -92,7 +92,7 @@ fn test_multiple_files_maintain_cursor_positions() {
     std::fs::write(&file1, "Line 1\nLine 2\nLine 3\nLine 4\nLine 5").unwrap();
     std::fs::write(&file2, "Alpha\nBeta\nGamma\nDelta").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open file1 and move cursor to line 3
     harness.open_file(&file1).unwrap();
@@ -152,7 +152,7 @@ fn test_open_files_with_special_characters() {
     std::fs::write(&file2, "Content 2").unwrap();
     std::fs::write(&file3, "Content 3").unwrap();
 
-    let mut harness = EditorTestHarness::new(160, 30).unwrap(); // Use wider terminal to fit all tabs
+    let mut harness = EditorTestHarness::with_tab_bar(160, 30).unwrap(); // Use wider terminal to fit all tabs
 
     // Open all files with special characters
     harness.open_file(&file1).unwrap();
@@ -193,7 +193,7 @@ fn test_open_many_files() {
         files.push(file_path);
     }
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open all files
     for file in &files {
@@ -239,7 +239,7 @@ fn test_directory_argument_handling() {
     std::fs::write(&file1, "File 1 content").unwrap();
     std::fs::write(&file2, "File 2 content").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open files - directories should be skipped
     harness.open_file(&file1).unwrap();
@@ -263,7 +263,7 @@ fn test_multiple_files_tab_order() {
     std::fs::write(&file_bravo, "Bravo").unwrap();
     std::fs::write(&file_charlie, "Charlie").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open files in order: alpha, bravo, charlie
     harness.open_file(&file_alpha).unwrap();
@@ -320,7 +320,7 @@ fn test_open_files_from_different_directories() {
     std::fs::write(&file1, "fn main() {}").unwrap();
     std::fs::write(&file2, "#[test]").unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_tab_bar(80, 24).unwrap();
 
     // Open files from different directories
     harness.open_file(&file1).unwrap();

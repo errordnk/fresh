@@ -8,7 +8,7 @@
 //   Flow E: Tab order preserved across restart (#1234)
 //   Flow F: File changed on disk since hot exit (mtime mismatch)
 
-use crate::common::harness::{layout, EditorTestHarness, HarnessOptions};
+use crate::common::harness::{EditorTestHarness, HarnessOptions};
 use crossterm::event::{KeyCode, KeyModifiers};
 use fresh::config::Config;
 use fresh::config_io::DirectoryContext;
@@ -34,7 +34,7 @@ fn test_flow_a_no_extra_unnamed_buffer_on_workspace_restore() {
 
     // Session 1: open a file, then shut down cleanly
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -58,7 +58,7 @@ fn test_flow_a_no_extra_unnamed_buffer_on_workspace_restore() {
 
     // Session 2: restore with no CLI files
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -80,7 +80,7 @@ fn test_flow_a_no_extra_unnamed_buffer_on_workspace_restore() {
         harness.assert_screen_contains("main.rs");
 
         // There should be NO extra unnamed buffer tab
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             !tab_bar.contains("[No Name]"),
             "Workspace restore with no CLI files should not create extra unnamed buffer.\nTab bar: {tab_bar}"
@@ -103,7 +103,7 @@ fn test_flow_a_restored_buffer_content_visible() {
 
     // Session 1: open file, shut down
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -125,7 +125,7 @@ fn test_flow_a_restored_buffer_content_visible() {
 
     // Session 2: verify content is shown
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -166,7 +166,7 @@ fn test_flow_b_cli_files_additive_to_workspace() {
 
     // Session 1: open workspace_file, shut down
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -190,7 +190,7 @@ fn test_flow_b_cli_files_additive_to_workspace() {
 
     // Session 2: restore workspace, but also pass cli_file on command line
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -211,7 +211,7 @@ fn test_flow_b_cli_files_additive_to_workspace() {
         harness.render().unwrap();
 
         // Both tabs should be visible: the workspace file AND the CLI file
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains("workspace_file.txt"),
             "Workspace tab should still be present after CLI file open.\nTab bar: {tab_bar}"
@@ -237,7 +237,7 @@ fn test_flow_b_cli_file_already_in_workspace_no_duplicate() {
 
     // Session 1: open the file, shut down
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -259,7 +259,7 @@ fn test_flow_b_cli_file_already_in_workspace_no_duplicate() {
 
     // Session 2: restore workspace AND pass same file as CLI arg
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -278,7 +278,7 @@ fn test_flow_b_cli_file_already_in_workspace_no_duplicate() {
 
         // There should be exactly one tab for shared.txt, no duplicates.
         // Duplicate tabs would show "shared.txt 1" and "shared.txt 2".
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains("shared.txt"),
             "shared.txt should be in tab bar.\nTab bar: {tab_bar}"
@@ -306,7 +306,7 @@ fn test_flow_b_hot_exit_recovery_with_cli_files() {
 
     // Session 1: modify a file, shut down (hot exit saves the changes)
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -337,7 +337,7 @@ fn test_flow_b_hot_exit_recovery_with_cli_files() {
 
     // Session 2: restore with CLI file — unsaved changes should still be recovered
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -357,7 +357,7 @@ fn test_flow_b_hot_exit_recovery_with_cli_files() {
         harness.render().unwrap();
 
         // The unsaved change should have been recovered
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains("modified.txt"),
             "Modified file should be restored from workspace.\nTab bar: {tab_bar}"
@@ -408,7 +408,7 @@ fn test_flow_c_session_scoped_recovery_isolation() {
 
     // Session A: open and modify a file, shut down
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -438,7 +438,7 @@ fn test_flow_c_session_scoped_recovery_isolation() {
 
     // Session B: open a different file, shut down
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -468,7 +468,7 @@ fn test_flow_c_session_scoped_recovery_isolation() {
 
     // Restore session A: should see A's file, NOT B's
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -496,7 +496,7 @@ fn test_flow_c_session_scoped_recovery_isolation() {
 
     // Restore session B: should see B's file, NOT A's
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -545,7 +545,7 @@ fn test_flow_d_cli_files_added_to_restored_session() {
 
     // Session 1: open file in session, shut down
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -568,7 +568,7 @@ fn test_flow_d_cli_files_added_to_restored_session() {
 
     // Session 2: restore session but also open a CLI file (simulates `fresh -a mysession file.txt`)
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -590,7 +590,7 @@ fn test_flow_d_cli_files_added_to_restored_session() {
         harness.render().unwrap();
 
         // Both tabs should exist
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains("session_file.txt"),
             "Session file should be present after restore.\nTab bar: {tab_bar}"
@@ -630,7 +630,7 @@ fn test_flow_e_tab_order_preserved_across_restart() {
 
     // Session 1: open files in a specific order: beta, gamma, alpha
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -652,7 +652,7 @@ fn test_flow_e_tab_order_preserved_across_restart() {
         harness.render().unwrap();
 
         // Verify initial order
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         let pos_beta = tab_bar
             .find("beta.txt")
             .expect("beta.txt should be in tab bar");
@@ -672,7 +672,7 @@ fn test_flow_e_tab_order_preserved_across_restart() {
 
     // Session 2: verify the same order is restored
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -690,7 +690,7 @@ fn test_flow_e_tab_order_preserved_across_restart() {
         assert!(restored, "Workspace should be restored");
         harness.render().unwrap();
 
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         let pos_beta = tab_bar
             .find("beta.txt")
             .expect("beta.txt should be in restored tab bar");
@@ -723,7 +723,7 @@ fn test_flow_e_active_tab_preserved_across_restart() {
 
     // Session 1: open two files, switch to the first one, shut down
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -754,7 +754,7 @@ fn test_flow_e_active_tab_preserved_across_restart() {
 
     // Session 2: the first file should still be active
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -798,7 +798,7 @@ fn test_flow_f_mtime_mismatch_skips_recovery() {
 
     // Session 1: open file, make unsaved edits, shut down
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -832,7 +832,7 @@ fn test_flow_f_mtime_mismatch_skips_recovery() {
     // Session 2: restore — the unsaved edit should NOT be applied
     // because the file changed on disk
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -876,7 +876,7 @@ fn test_multiple_unnamed_buffers_preserved() {
 
     // Session 1: create two unnamed buffers with content
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -907,7 +907,7 @@ fn test_multiple_unnamed_buffers_preserved() {
 
     // Session 2: both unnamed buffers should be restored
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -926,7 +926,7 @@ fn test_multiple_unnamed_buffers_preserved() {
         harness.render().unwrap();
 
         // At least one unnamed buffer should be visible
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains("[No Name]"),
             "Unnamed buffers should be restored.\nTab bar: {tab_bar}"
@@ -959,7 +959,7 @@ fn test_hot_exit_disabled_no_recovery() {
 
     // Session 1: modify file with hot_exit DISABLED, shut down
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = false;
         // hot_exit = false also disables unnamed buffer persistence
 
@@ -997,7 +997,7 @@ fn test_hot_exit_disabled_no_recovery() {
 
     // Session 2: restore — the discarded edit left no recovery data
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = false;
         // hot_exit = false also disables unnamed buffer persistence
 
@@ -1040,7 +1040,7 @@ fn test_undo_after_hot_exit_recovery_keeps_modified_flag() {
 
     // Session 1: open file, make an edit, then hot-exit
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1064,7 +1064,7 @@ fn test_undo_after_hot_exit_recovery_keeps_modified_flag() {
         harness.render().unwrap();
 
         // Tab bar should show modified indicator
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains('*'),
             "Tab should show modified indicator after editing.\nTab bar: {tab_bar}"
@@ -1076,7 +1076,7 @@ fn test_undo_after_hot_exit_recovery_keeps_modified_flag() {
 
     // Session 2: restore workspace, then press undo
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1095,7 +1095,7 @@ fn test_undo_after_hot_exit_recovery_keeps_modified_flag() {
         harness.render().unwrap();
 
         // Tab bar should show modified indicator after recovery
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains('*'),
             "Tab should show modified indicator after hot exit recovery.\nTab bar: {tab_bar}"
@@ -1112,7 +1112,7 @@ fn test_undo_after_hot_exit_recovery_keeps_modified_flag() {
         harness.render().unwrap();
 
         // The tab bar should STILL show the modified indicator
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains('*'),
             "Tab should still show modified indicator after undo following hot exit recovery.\nTab bar: {tab_bar}"
@@ -1159,7 +1159,7 @@ fn test_unnamed_buffer_survives_use_in_another_folder() {
     // matching `shutdown` actually performs the cleanup that historically
     // deleted other folders' recovery files.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1184,7 +1184,7 @@ fn test_unnamed_buffer_survives_use_in_another_folder() {
     // Folder B: same dance with different content. With a global recovery
     // directory, this shutdown wipes folder A's unnamed-buffer recovery file.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1210,7 +1210,7 @@ fn test_unnamed_buffer_survives_use_in_another_folder() {
     // unsaved content. Without the per-CWD recovery scope this fails because
     // folder B's shutdown wiped folder A's recovery files.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1235,7 +1235,7 @@ fn test_unnamed_buffer_survives_use_in_another_folder() {
     // Sanity-check the symmetric case too: folder B's unnamed buffer must
     // also still be intact.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -1289,7 +1289,7 @@ fn test_hot_exit_restore_without_session_reuses_the_scratch_buffer() {
     // itself and hide the bug, and the restore order is the recovery
     // directory's, so the file is left unedited to keep this deterministic.)
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
         let mut harness = harness_for(config);
         harness.editor_mut().set_session_mode(true);
@@ -1305,14 +1305,14 @@ fn test_hot_exit_restore_without_session_reuses_the_scratch_buffer() {
     // `restore_previous_session = false` takes; hot-exit content still
     // comes back.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
         config.editor.restore_previous_session = false;
         let mut harness = harness_for(config);
         harness.startup(true, std::slice::from_ref(&file)).unwrap();
         harness.render().unwrap();
 
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains("a.txt"),
             "the file argument is open.\nTab bar: {tab_bar}"
@@ -1347,7 +1347,7 @@ fn test_restored_unnamed_buffer_follows_display_config() {
     // `BufferViewState::new` hard-codes, so a view state that missed the
     // stamp is unmistakable rather than accidentally right.
     let config = || {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
         config.editor.highlight_current_line = false;
         config.editor.line_numbers = false;
@@ -1390,7 +1390,7 @@ fn test_restored_unnamed_buffer_follows_display_config() {
         );
         harness.render().unwrap();
 
-        let tab_bar = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+        let tab_bar = harness.get_tab_bar();
         assert!(
             tab_bar.contains("[No Name]*"),
             "the restored, modified unnamed buffer is the tab.\nTab bar: {tab_bar}"
@@ -1448,7 +1448,7 @@ fn test_restored_unnamed_buffer_keeps_its_per_buffer_pin() {
     let dir_context = DirectoryContext::for_testing(temp_dir.path());
 
     let config = || {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
         // Off globally, so a pin that survives is the only way the restored
         // buffer can come back highlighting its current line.

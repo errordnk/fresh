@@ -35,6 +35,17 @@ fn wide_temp_project_harness() -> EditorTestHarness {
     EditorTestHarness::with_temp_project_and_config(220, 30, Default::default()).unwrap()
 }
 
+/// [`wide_temp_project_harness`] with the tab bar shown (it is hidden by
+/// default), for the tests that right-click a tab.
+fn wide_tab_bar_harness() -> EditorTestHarness {
+    EditorTestHarness::with_temp_project_and_config(
+        220,
+        30,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap()
+}
+
 #[test]
 fn copy_relative_file_path_via_command_palette() {
     let mut harness = wide_temp_project_harness();
@@ -137,7 +148,7 @@ fn active_tab_position(harness: &EditorTestHarness) -> (u16, u16) {
 
 #[test]
 fn tab_right_click_menu_lists_copy_path_entries() {
-    let mut harness = wide_temp_project_harness();
+    let mut harness = wide_tab_bar_harness();
     let project_root = harness.project_dir().unwrap();
 
     let file_path = project_root.join("ctx.txt");
@@ -156,7 +167,7 @@ fn tab_right_click_menu_lists_copy_path_entries() {
 
 #[test]
 fn tab_right_click_copy_relative_path_copies_to_clipboard() {
-    let mut harness = wide_temp_project_harness();
+    let mut harness = wide_tab_bar_harness();
     let project_root = harness.project_dir().unwrap();
 
     let file_path = project_root.join("rel.txt");
@@ -179,7 +190,7 @@ fn tab_right_click_copy_relative_path_copies_to_clipboard() {
 
 #[test]
 fn tab_right_click_copy_full_path_copies_absolute() {
-    let mut harness = wide_temp_project_harness();
+    let mut harness = wide_tab_bar_harness();
     let project_root = harness.project_dir().unwrap();
 
     let file_path = project_root.join("full.txt");

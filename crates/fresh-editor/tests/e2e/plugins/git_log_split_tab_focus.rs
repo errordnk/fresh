@@ -98,7 +98,7 @@ fn clicking_group_tab_activates_group_in_the_clicked_split() {
 
     // Step 3: click the main.rs tab so the file buffer becomes the active
     // tab again (clearing the active group). Tabs are on row 1.
-    const TAB_BAR_ROW: u16 = 1;
+    const TAB_BAR_ROW: u16 = 0; // the tab bar, shown without the menu bar
     let file_tab_col = col_of_text_in_row(&harness, TAB_BAR_ROW, "main.rs");
     advance_past_double_click(&mut harness);
     harness.mouse_click(file_tab_col, TAB_BAR_ROW).unwrap();

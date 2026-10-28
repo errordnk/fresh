@@ -41,7 +41,8 @@ fn setup() -> (EditorTestHarness, tempfile::TempDir) {
     let md = root.join("doc.md");
     std::fs::write(&md, fixture()).unwrap();
 
-    let mut config = Config::default();
+    // The view mode is named on the tab: show the tab bar (hidden by default).
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.line_wrap = true;
     let mut harness =
         EditorTestHarness::with_config_and_working_dir(WIDTH, HEIGHT, config, root).unwrap();
@@ -155,7 +156,7 @@ fn toggle_dual_opens_and_closes_the_preview() {
 
     run(&mut h, TOGGLE_DUAL);
     h.wait_until(|h| {
-        let tabs = h.screen_row_text(1);
+        let tabs = h.get_tab_bar();
         dual(h) && tabs.contains("doc.md (Source/Compose)") && tabs.matches("doc.md").count() == 2
     })
     .unwrap();
@@ -284,10 +285,8 @@ fn mode_commands_leave_another_panes_dual_mode_alone() {
 
     // Dual mode in the new (right) pane, then back to the left one.
     run(&mut h, DUAL);
-    h.wait_until(|h| {
-        count(h, "PARA") == 3 && h.screen_row_text(1).contains("doc.md (Source/Compose)")
-    })
-    .unwrap();
+    h.wait_until(|h| count(h, "PARA") == 3 && h.get_tab_bar().contains("doc.md (Source/Compose)"))
+        .unwrap();
     run(&mut h, "Previous Split");
 
     run(&mut h, RENDERED);
@@ -295,7 +294,7 @@ fn mode_commands_leave_another_panes_dual_mode_alone() {
         let (left, _) = halves(h);
         count(h, "PARA") == 3
             && !left.contains("**boldword**")
-            && h.screen_row_text(1).contains("doc.md (Source/Compose)")
+            && h.get_tab_bar().contains("doc.md (Source/Compose)")
     })
     .unwrap();
 }

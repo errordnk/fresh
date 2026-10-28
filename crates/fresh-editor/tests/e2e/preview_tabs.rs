@@ -29,7 +29,7 @@ use std::time::Duration;
 /// The tab bar sits on screen row 1 in the default harness layout
 /// (row 0 is the menu bar, or the top border when the menu bar is
 /// hidden). See `tests/e2e/external_file_save_as_tab.rs` for precedent.
-const TAB_BAR_ROW: u16 = 1;
+const TAB_BAR_ROW: u16 = 0; // the tab bar, shown without the menu bar
 
 /// Column inside the file explorer pane — safely to the right of the
 /// tree glyphs for a 120-wide layout where the explorer is ~30% width.

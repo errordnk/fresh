@@ -26,7 +26,10 @@ fn odin_buffer(content: &str) -> (EditorTestHarness, TempDir) {
     // closing brace the test did not ask for.
     std::fs::write(&path, content).unwrap();
 
-    let mut config = Config::default();
+    // The status bar names the language (not on the default bar).
+    let mut config = crate::common::harness::config_with_status_elements(&[
+        fresh::config::StatusBarElement::Language,
+    ]);
     config.editor.auto_indent = true;
     let mut harness = EditorTestHarness::create(
         90,

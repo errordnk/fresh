@@ -130,7 +130,8 @@ fn harness_paired_by(
     let short: String = (1..=200).map(|i| format!("short {i:04}\n")).collect();
     fs::write(working_dir.join("short.txt"), short).unwrap();
 
-    let mut config = Config::default();
+    // Panes are paired by dragging tabs: show the tab bar (hidden by default).
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.line_wrap = false;
     config.editor.show_horizontal_scrollbar = true;
     let mut harness = EditorTestHarness::with_config_and_working_dir(120, 30, config, working_dir)
@@ -478,7 +479,7 @@ fn pairing_again_after_a_tab_drag_closes_a_pane_syncs_the_new_pair() {
     // The right pane holds two tabs (the file it was split from, and
     // short.txt). Drag both into the left pane; the second drag empties it.
     for name in ["short.txt", "long.txt"] {
-        let tab_row = harness.screen_row_text(1);
+        let tab_row = harness.get_tab_bar();
         let byte = tab_row.rfind(name).expect("the right pane's tab");
         let tab_col = tab_row[..byte].chars().count() as u16;
         harness
@@ -490,7 +491,7 @@ fn pairing_again_after_a_tab_drag_closes_a_pane_syncs_the_new_pair() {
     }
     // A split's panes each carry a close-split button; one pane, none.
     harness
-        .wait_until(|h| !h.screen_row_text(1).contains('□'))
+        .wait_until(|h| !h.get_tab_bar().contains('□'))
         .unwrap();
 
     // Pair the remaining pane (showing long.txt, the last tab dragged) again

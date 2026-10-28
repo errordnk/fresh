@@ -1283,16 +1283,12 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
     // Helper function to verify line numbers match content
     // For CSV data, each line starts with its row number (1,... 2,... etc.)
     // The gutter line number should match the row number at the start of content
-    fn verify_line_numbers_match_content(screen: &str, context: &str) {
+    fn verify_line_numbers_match_content(screen: &str, gutter_width: usize, context: &str) {
         for screen_line in screen.lines() {
-            // Skip non-content lines (menu bar, status bar, empty lines)
-            if !screen_line.contains("│") {
-                continue;
-            }
-
-            if let Some(bar_pos) = screen_line.find('│') {
-                let gutter = &screen_line[..bar_pos];
-                let content = &screen_line[bar_pos + "│".len()..]; // Skip the bar character
+            {
+                // The gutter is the row's first `gutter_width` cells.
+                let gutter: String = screen_line.chars().take(gutter_width).collect();
+                let content: String = screen_line.chars().skip(gutter_width).collect();
 
                 // Extract the line number from gutter
                 let gutter_line_num: Option<u32> = gutter.trim().parse().ok();
@@ -1334,7 +1330,7 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
     eprintln!("=== Screen at top ===\n{}", screen_at_top);
 
     // Verify line numbers match content at top
-    verify_line_numbers_match_content(&screen_at_top, "At top of document");
+    verify_line_numbers_match_content(&screen_at_top, harness.gutter_width(), "At top of document");
 
     // Test 1: Scroll down one line at a time and verify
     for i in 1..=15 {
@@ -1343,7 +1339,11 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
 
         let screen = harness.screen_to_string();
         eprintln!("=== After {} down presses ===\n{}", i, screen);
-        verify_line_numbers_match_content(&screen, &format!("After {} down presses", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("After {} down presses", i),
+        );
     }
 
     // Test 2: Scroll back up and verify - this is key to reproducing #552
@@ -1353,7 +1353,11 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
 
         let screen = harness.screen_to_string();
         eprintln!("=== After {} up presses ===\n{}", i, screen);
-        verify_line_numbers_match_content(&screen, &format!("After {} up presses", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("After {} up presses", i),
+        );
     }
 
     // Test 3: Use PageDown multiple times to scroll more aggressively
@@ -1365,7 +1369,11 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
         harness.render().unwrap();
         let screen = harness.screen_to_string();
         eprintln!("=== After PageDown {} ===\n{}", i, screen);
-        verify_line_numbers_match_content(&screen, &format!("After PageDown {}", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("After PageDown {}", i),
+        );
     }
 
     // Test 4: Use PageUp multiple times
@@ -1376,7 +1384,11 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
         harness.render().unwrap();
         let screen = harness.screen_to_string();
         eprintln!("=== After PageUp {} ===\n{}", i, screen);
-        verify_line_numbers_match_content(&screen, &format!("After PageUp {}", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("After PageUp {}", i),
+        );
     }
 
     // Test 5: Go to end of file and then scroll up
@@ -1386,7 +1398,7 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
     harness.render().unwrap();
     let screen = harness.screen_to_string();
     eprintln!("=== After Ctrl+End ===\n{}", screen);
-    verify_line_numbers_match_content(&screen, "After Ctrl+End");
+    verify_line_numbers_match_content(&screen, harness.gutter_width(), "After Ctrl+End");
 
     // Scroll up from end
     for i in 1..=10 {
@@ -1395,7 +1407,11 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
 
         let screen = harness.screen_to_string();
         eprintln!("=== From end: after {} up presses ===\n{}", i, screen);
-        verify_line_numbers_match_content(&screen, &format!("From end: {} up presses", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("From end: {} up presses", i),
+        );
     }
 
     // Test 6: Go to start and scroll down again
@@ -1405,7 +1421,7 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
     harness.render().unwrap();
     let screen = harness.screen_to_string();
     eprintln!("=== After Ctrl+Home ===\n{}", screen);
-    verify_line_numbers_match_content(&screen, "After Ctrl+Home");
+    verify_line_numbers_match_content(&screen, harness.gutter_width(), "After Ctrl+Home");
 
     // Final scroll down cycle
     for i in 1..=10 {
@@ -1414,7 +1430,11 @@ fn test_line_numbers_correct_with_wrapping_and_scrolling() {
 
         let screen = harness.screen_to_string();
         eprintln!("=== Final cycle: after {} down presses ===\n{}", i, screen);
-        verify_line_numbers_match_content(&screen, &format!("Final down cycle {}", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("Final down cycle {}", i),
+        );
     }
 }
 
@@ -1466,15 +1486,12 @@ fn test_line_numbers_with_pagedown_scrolling() {
     harness.open_file(&csv_path).unwrap();
 
     // Helper function to verify line numbers match content
-    fn verify_line_numbers_match_content(screen: &str, context: &str) {
+    fn verify_line_numbers_match_content(screen: &str, gutter_width: usize, context: &str) {
         for screen_line in screen.lines() {
-            if !screen_line.contains("│") {
-                continue;
-            }
-
-            if let Some(bar_pos) = screen_line.find('│') {
-                let gutter = &screen_line[..bar_pos];
-                let content = &screen_line[bar_pos + "│".len()..];
+            {
+                // The gutter is the row's first `gutter_width` cells.
+                let gutter: String = screen_line.chars().take(gutter_width).collect();
+                let content: String = screen_line.chars().skip(gutter_width).collect();
                 let gutter_line_num: Option<u32> = gutter.trim().parse().ok();
 
                 if let Some(gutter_num) = gutter_line_num {
@@ -1499,7 +1516,7 @@ fn test_line_numbers_with_pagedown_scrolling() {
     harness.render().unwrap();
     let screen = harness.screen_to_string();
     eprintln!("=== Initial screen ===\n{}", screen);
-    verify_line_numbers_match_content(&screen, "Initial");
+    verify_line_numbers_match_content(&screen, harness.gutter_width(), "Initial");
 
     // Press PageDown multiple times - this is the key reproduction for issue #552
     for i in 1..=5 {
@@ -1510,7 +1527,11 @@ fn test_line_numbers_with_pagedown_scrolling() {
 
         let screen = harness.screen_to_string();
         eprintln!("=== After PageDown {} ===\n{}", i, screen);
-        verify_line_numbers_match_content(&screen, &format!("After PageDown {}", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("After PageDown {}", i),
+        );
     }
 
     // Press PageUp to go back
@@ -1522,7 +1543,11 @@ fn test_line_numbers_with_pagedown_scrolling() {
 
         let screen = harness.screen_to_string();
         eprintln!("=== After PageUp {} ===\n{}", i, screen);
-        verify_line_numbers_match_content(&screen, &format!("After PageUp {}", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("After PageUp {}", i),
+        );
     }
 }
 
@@ -1572,15 +1597,12 @@ fn test_line_numbers_single_pagedown_narrow_terminal() {
     harness.open_file(&csv_path).unwrap();
 
     // Helper function to verify line numbers match content
-    fn verify_line_numbers_match_content(screen: &str, context: &str) {
+    fn verify_line_numbers_match_content(screen: &str, gutter_width: usize, context: &str) {
         for screen_line in screen.lines() {
-            if !screen_line.contains("│") {
-                continue;
-            }
-
-            if let Some(bar_pos) = screen_line.find('│') {
-                let gutter = &screen_line[..bar_pos];
-                let content = &screen_line[bar_pos + "│".len()..];
+            {
+                // The gutter is the row's first `gutter_width` cells.
+                let gutter: String = screen_line.chars().take(gutter_width).collect();
+                let content: String = screen_line.chars().skip(gutter_width).collect();
                 let gutter_line_num: Option<u32> = gutter.trim().parse().ok();
 
                 if let Some(gutter_num) = gutter_line_num {
@@ -1604,7 +1626,7 @@ fn test_line_numbers_single_pagedown_narrow_terminal() {
 
     harness.render().unwrap();
     let screen = harness.screen_to_string();
-    verify_line_numbers_match_content(&screen, "Initial");
+    verify_line_numbers_match_content(&screen, harness.gutter_width(), "Initial");
 
     // A SINGLE PageDown should not cause line number desync
     harness
@@ -1613,7 +1635,7 @@ fn test_line_numbers_single_pagedown_narrow_terminal() {
     harness.render().unwrap();
 
     let screen = harness.screen_to_string();
-    verify_line_numbers_match_content(&screen, "After single PageDown");
+    verify_line_numbers_match_content(&screen, harness.gutter_width(), "After single PageDown");
 
     // Multiple PageDown presses should also keep line numbers correct
     for i in 2..=5 {
@@ -1622,7 +1644,11 @@ fn test_line_numbers_single_pagedown_narrow_terminal() {
             .unwrap();
         harness.render().unwrap();
         let screen = harness.screen_to_string();
-        verify_line_numbers_match_content(&screen, &format!("After PageDown #{}", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("After PageDown #{}", i),
+        );
     }
 
     // And PageUp should also work correctly
@@ -1632,7 +1658,11 @@ fn test_line_numbers_single_pagedown_narrow_terminal() {
             .unwrap();
         harness.render().unwrap();
         let screen = harness.screen_to_string();
-        verify_line_numbers_match_content(&screen, &format!("After PageUp #{}", i));
+        verify_line_numbers_match_content(
+            &screen,
+            harness.gutter_width(),
+            &format!("After PageUp #{}", i),
+        );
     }
 }
 
@@ -2327,12 +2357,7 @@ fn test_wrap_column_counts_text_columns_not_gutter() {
         .iter()
         .position(|row| row.contains('a'))
         .unwrap_or_else(|| panic!("the line is not drawn:\n{screen}"));
-    let text_of = |row: &str| {
-        row.split_once('│')
-            .map_or("", |(_, t)| t)
-            .trim()
-            .to_string()
-    };
+    let text_of = |row: &str| harness.split_gutter(row).1.trim().to_string();
     assert_eq!(
         text_of(rows[first]),
         "a".repeat(40),

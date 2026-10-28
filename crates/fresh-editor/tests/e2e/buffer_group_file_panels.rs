@@ -103,13 +103,13 @@ fn count(h: &EditorTestHarness, text: &str) -> usize {
 
 /// The group's tab and the file's own tab, both in the pane's tab bar.
 fn tabs_show_group_and_file(h: &EditorTestHarness) -> bool {
-    let tabs = h.screen_row_text(1);
+    let tabs = h.get_tab_bar();
     tabs.contains("PAIR") && tabs.contains("a.txt")
 }
 
 /// The screen column `text` starts at in the tab bar, if it is there.
 fn tab_col(h: &EditorTestHarness, text: &str) -> Option<u16> {
-    let tabs = h.screen_row_text(1);
+    let tabs = h.get_tab_bar();
     let byte = tabs.find(text)?;
     Some(tabs[..byte].chars().count() as u16)
 }
@@ -142,7 +142,7 @@ fn closing_the_group_leaves_the_file_open() {
     run(&mut h, "fpanel: Close");
     h.wait_until(|h| {
         count(h, "row 001") == 1
-            && !h.screen_row_text(1).contains("PAIR")
+            && !h.get_tab_bar().contains("PAIR")
             && h.screen_to_string().contains("fpanel-closed-pair-1")
     })
     .unwrap();
@@ -157,7 +157,7 @@ fn closing_the_file_closes_its_group() {
     run(&mut h, "fpanel: Close File");
     h.wait_until(|h| {
         count(h, "row 001") == 0
-            && !h.screen_row_text(1).contains("PAIR")
+            && !h.get_tab_bar().contains("PAIR")
             && h.screen_to_string().contains("fpanel-closed-pair-1")
     })
     .unwrap();
@@ -191,7 +191,7 @@ fn the_pane_and_its_panels_keep_the_place_in_the_file() {
     h.send_key(KeyCode::Home, KeyModifiers::CONTROL).unwrap();
     h.wait_until(|h| count(h, "row 001") == 2).unwrap();
     run(&mut h, "fpanel: Close");
-    h.wait_until(|h| count(h, "row 001") == 1 && !h.screen_row_text(1).contains("PAIR"))
+    h.wait_until(|h| count(h, "row 001") == 1 && !h.get_tab_bar().contains("PAIR"))
         .unwrap();
 }
 
@@ -201,7 +201,8 @@ fn the_pane_and_its_panels_keep_the_place_in_the_file() {
 /// suggestion on the row after.
 #[test]
 fn a_popup_at_the_caret_opens_under_the_panels_caret() {
-    let mut config = Config::default();
+    // The group and its file are tabs: show the tab bar (hidden by default).
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.completion_popup_auto_show = true;
     let (mut h, _tmp) = setup_with(config);
     open_pair(&mut h);
@@ -253,7 +254,7 @@ fn closing_the_files_tab_asks_about_unsaved_changes() {
     h.type_text("XYZ").unwrap();
     h.wait_until(|h| count(h, "XYZalpha") == 2).unwrap();
 
-    let tabs = h.screen_row_text(1);
+    let tabs = h.get_tab_bar();
     let name = tabs.find("a.txt").unwrap();
     let close = name + tabs[name..].find('×').unwrap();
     h.mouse_click(tabs[..close].chars().count() as u16, 1)
@@ -281,7 +282,7 @@ fn closing_the_group_returns_to_its_file() {
     h.wait_until(|h| {
         count(h, "row 001") == 1
             && !h.screen_to_string().contains("bee bee bee")
-            && !h.screen_row_text(1).contains("PAIR")
+            && !h.get_tab_bar().contains("PAIR")
     })
     .unwrap();
 }
@@ -295,13 +296,13 @@ fn a_file_moved_to_another_workspace_closes_its_group() {
     open_pair(&mut h);
 
     run(&mut h, "Extract Tab to New Workspace");
-    h.wait_until(|h| count(h, "row 001") == 1 && !h.screen_row_text(1).contains("PAIR"))
+    h.wait_until(|h| count(h, "row 001") == 1 && !h.get_tab_bar().contains("PAIR"))
         .unwrap();
 
     // The window it left: no group tab there either.
     run(&mut h, "Previous Window");
     h.wait_until(|h| {
-        let tabs = h.screen_row_text(1);
+        let tabs = h.get_tab_bar();
         !tabs.contains("a.txt") && !tabs.contains("PAIR")
     })
     .unwrap();
@@ -344,7 +345,7 @@ fn pair_in_a_split_beside_another_file(h: &mut EditorTestHarness, tmp: &tempfile
 /// Close the file's tab with its × and answer the unsaved-changes dialog
 /// with `key`.
 fn close_the_files_tab_answering(h: &mut EditorTestHarness, key: char) {
-    let tabs = h.screen_row_text(1);
+    let tabs = h.get_tab_bar();
     let name = tabs.find("a.txt").unwrap();
     let close = name + tabs[name..].find('×').unwrap();
     h.mouse_click(tabs[..close].chars().count() as u16, 1)
@@ -356,7 +357,7 @@ fn close_the_files_tab_answering(h: &mut EditorTestHarness, key: char) {
 /// The left pane, emptied by closing the file, is gone with the group: the
 /// right pane is alone on screen. Its tab bar has no separator through it.
 fn only_the_other_file_is_left(h: &EditorTestHarness) -> bool {
-    let tabs = h.screen_row_text(1);
+    let tabs = h.get_tab_bar();
     !tabs.contains('│')
         && !tabs.contains("PAIR")
         && !tabs.contains("a.txt")

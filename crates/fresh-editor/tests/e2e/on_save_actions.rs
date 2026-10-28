@@ -736,7 +736,10 @@ fn test_trim_on_save_preserves_crlf_and_no_revert() {
     // whitespace on the first two content lines so the trim does real work.
     std::fs::write(&file_path, b"hello  \r\nworld\t\r\n\r\n\r\n").unwrap();
 
-    let mut config = Config::default();
+    // The line ending is not on the default status bar; put it there.
+    let mut config = crate::common::harness::config_with_status_elements(&[
+        fresh::config::StatusBarElement::LineEnding,
+    ]);
     config.editor.trim_trailing_whitespace_on_save = true;
     config.editor.default_line_ending = LineEndingOption::Crlf;
 

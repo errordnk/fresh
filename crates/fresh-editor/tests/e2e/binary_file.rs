@@ -358,7 +358,7 @@ fn test_binary_file_scrolling_no_artifacts() {
     let initial_screen = harness.vt100_screen_to_string();
 
     // Validate initial gutter format
-    validate_gutter_format(&initial_screen, "initial");
+    validate_gutter_format(&initial_screen, harness.gutter_width(), "initial");
 
     // Verify test backend matches VT100 output
     harness.assert_test_matches_real();
@@ -370,7 +370,11 @@ fn test_binary_file_scrolling_no_artifacts() {
             .unwrap();
         harness.render_real().unwrap();
         let screen = harness.vt100_screen_to_string();
-        validate_gutter_format(&screen, &format!("after PageDown #{}", i + 1));
+        validate_gutter_format(
+            &screen,
+            harness.gutter_width(),
+            &format!("after PageDown #{}", i + 1),
+        );
         harness.assert_test_matches_real();
     }
 
@@ -381,7 +385,11 @@ fn test_binary_file_scrolling_no_artifacts() {
             .unwrap();
         harness.render_real().unwrap();
         let screen = harness.vt100_screen_to_string();
-        validate_gutter_format(&screen, &format!("after PageUp #{}", i + 1));
+        validate_gutter_format(
+            &screen,
+            harness.gutter_width(),
+            &format!("after PageUp #{}", i + 1),
+        );
         harness.assert_test_matches_real();
     }
 
@@ -395,7 +403,7 @@ fn test_binary_file_scrolling_no_artifacts() {
     let final_screen = harness.vt100_screen_to_string();
 
     // Validate final gutter format
-    validate_gutter_format(&final_screen, "final");
+    validate_gutter_format(&final_screen, harness.gutter_width(), "final");
     harness.assert_test_matches_real();
 
     // Compare screens cell by cell for exact match
@@ -448,13 +456,14 @@ fn compare_screens_cell_by_cell(initial: &str, final_screen: &str, width: usize,
     }
 }
 
-/// Helper to validate gutter format in screen output
-fn validate_gutter_format(screen: &str, context: &str) {
+/// Helper to validate gutter format in screen output: the first
+/// `gutter_width` cells of every text row are the gutter.
+fn validate_gutter_format(screen: &str, gutter_width: usize, context: &str) {
     let lines: Vec<&str> = screen.lines().collect();
 
-    // Skip menu bar (line 0), tab bar (line 1), and check content lines
-    // Also skip status bar and prompt line at the bottom
-    let content_start = 2;
+    // Check the content lines; skip the status bar and prompt line at the
+    // bottom (the menu bar and tab bar are hidden)
+    let content_start = 0;
     let content_end = lines.len().saturating_sub(2);
 
     for (i, line) in lines.iter().enumerate() {
@@ -467,21 +476,9 @@ fn validate_gutter_format(screen: &str, context: &str) {
             continue;
         }
 
-        // Each content line should have a gutter separator "│"
-        let bar_pos = line.find('│');
-        assert!(
-            bar_pos.is_some(),
-            "{}: Line {} is missing gutter separator │.\nLine: '{}'\n\nFull screen:\n{}",
-            context,
-            i,
-            line,
-            screen
-        );
+        let before_bar: String = line.chars().take(gutter_width).collect();
 
-        let bar_pos = bar_pos.unwrap();
-        let before_bar = &line[..bar_pos];
-
-        // Before the bar should only contain spaces, digits (line number),
+        // The gutter should only contain spaces, digits (line number),
         // and fold indicators (▾ uncollapsed / ▸ collapsed / ● diagnostic).
         let invalid_chars: Vec<char> = before_bar
             .chars()

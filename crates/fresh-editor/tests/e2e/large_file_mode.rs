@@ -728,14 +728,9 @@ fn test_byte_offset_gutter_and_scan() {
     // === Test 1: Gutter shows byte offsets (pure numeric, no ~ prefix) ===
     let screen = harness.screen_to_string();
     // The first line should show byte offset 0 in the gutter
-    let has_byte_offset = screen.lines().any(|line| {
-        if let Some(before_sep) = line.split('│').next() {
-            let trimmed = before_sep.trim();
-            trimmed == "0" || (trimmed.chars().all(|c| c.is_ascii_digit()) && !trimmed.is_empty())
-        } else {
-            false
-        }
-    });
+    let has_byte_offset = screen
+        .lines()
+        .any(|line| harness.row_line_number(line).is_some());
     assert!(
         has_byte_offset,
         "Gutter should show byte offsets for large files without line scan.\nScreen:\n{}",

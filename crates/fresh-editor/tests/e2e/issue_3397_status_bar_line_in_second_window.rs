@@ -26,8 +26,8 @@ fn line_under_cursor(harness: &mut EditorTestHarness) -> usize {
     let (_, y) = harness.screen_cursor_position();
     let screen = harness.screen_to_string();
     let row = screen.lines().nth(y as usize).unwrap();
-    row.split_once('│')
-        .and_then(|(gutter, _)| gutter.trim().parse().ok())
+    harness
+        .row_line_number(row)
         .unwrap_or_else(|| panic!("no line number on the cursor's row {y}:\n{screen}"))
 }
 

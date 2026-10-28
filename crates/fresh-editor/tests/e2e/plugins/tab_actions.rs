@@ -13,14 +13,13 @@ fn tab_actions_harness() -> (EditorTestHarness, tempfile::TempDir) {
     copy_plugin(&plugins_dir, "tab_actions");
     copy_plugin_lib(&plugins_dir);
 
-    let mut harness =
-        EditorTestHarness::with_config_and_working_dir(
-            80,
-            24,
-            crate::common::harness::config_with_tab_bar(),
-            project_root,
-        )
-            .unwrap();
+    let mut harness = EditorTestHarness::with_config_and_working_dir(
+        80,
+        24,
+        crate::common::harness::config_with_tab_bar(),
+        project_root,
+    )
+    .unwrap();
 
     harness.render().unwrap();
 

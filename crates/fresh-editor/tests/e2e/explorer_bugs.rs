@@ -1331,7 +1331,12 @@ fn test_refresh_resets_cursor_to_root_when_path_disappears() {
 /// auto-save or an incidental Ctrl+S).
 #[test]
 fn test_delete_closes_open_buffer_for_deleted_file() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project_root = harness.project_dir().unwrap();
     fs::write(project_root.join("victim.txt"), "v").unwrap();
     fs::write(project_root.join("bystander.txt"), "b").unwrap();
@@ -1350,7 +1355,7 @@ fn test_delete_closes_open_buffer_for_deleted_file() {
         .unwrap();
 
     // Precondition: the tab bar (row 1) now shows victim.txt.
-    let tab_bar_before = harness.screen_row_text(1);
+    let tab_bar_before = harness.get_tab_bar();
     assert!(
         tab_bar_before.contains("victim.txt"),
         "precondition: victim.txt should be open in a tab. Tab bar: {:?}",
@@ -1377,7 +1382,7 @@ fn test_delete_closes_open_buffer_for_deleted_file() {
     // The deleted file's tab must be closed. Inspect only the tab bar
     // row so a leftover status line or title doesn't create a false
     // positive.
-    let tab_bar_after = harness.screen_row_text(1);
+    let tab_bar_after = harness.get_tab_bar();
     assert!(
         !tab_bar_after.contains("victim.txt"),
         "tab for deleted file must be closed. Tab bar: {:?}",

@@ -38,7 +38,11 @@ fn create_harness() -> EditorTestHarness {
         30,
         HarnessOptions::new()
             .with_project_root()
-            .with_full_grammar_registry(),
+            .with_full_grammar_registry()
+            // The default status bar has no language name; put it there.
+            .with_config(crate::common::harness::config_with_status_elements(&[
+                fresh::config::StatusBarElement::Language,
+            ])),
     )
     .unwrap()
 }
@@ -363,7 +367,10 @@ fn test_remote_h_header_beside_cpp_source_highlights_as_cpp() {
         30,
         HarnessOptions::new()
             .with_full_grammar_registry()
-            .with_filesystem(fs),
+            .with_filesystem(fs)
+            .with_config(crate::common::harness::config_with_status_elements(&[
+                fresh::config::StatusBarElement::Language,
+            ])),
     )
     .unwrap();
 

@@ -26,7 +26,7 @@ fn gutter_lines(harness: &EditorTestHarness) -> Vec<usize> {
     let screen = harness.screen_to_string();
     screen
         .lines()
-        .filter_map(|row| row.split_once('│')?.0.trim().parse().ok())
+        .filter_map(|row| harness.row_line_number(row))
         .collect()
 }
 

@@ -1337,7 +1337,12 @@ fn test_scroll_allows_cursor_to_top() {
 /// Test Feature 6: Editor tabs should be above editor area only, not above file explorer
 #[test]
 fn test_tabs_above_editor_area_only() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project_root = harness.project_dir().unwrap();
 
     // Create and open multiple files to have tabs

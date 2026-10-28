@@ -144,16 +144,16 @@ fn test_viewport_uses_full_area_after_startup_resize() {
         println!("Row {:2}: {:?}", i, line);
     }
 
-    // Count how many content lines are visible (lines with " │ " separator)
+    // Count how many content lines are visible (rows with a gutter line number)
     // This filters out tab bar, status bar, etc.
     let content_lines: Vec<&str> = screen_lines
         .iter()
-        .filter(|line| line.contains(" │ "))
+        .filter(|line| harness.row_line_number(line).is_some())
         .copied()
         .collect();
 
     println!(
-        "\nContent lines with ' │ ' separator: {}",
+        "\nContent lines with a line number: {}",
         content_lines.len()
     );
     for (i, line) in content_lines.iter().enumerate() {
@@ -205,7 +205,7 @@ fn test_viewport_updates_after_resize_with_open_file() {
     let screen_before = harness.screen_to_string();
     let content_lines_before: Vec<&str> = screen_before
         .lines()
-        .filter(|line| line.contains(" │ "))
+        .filter(|line| harness.row_line_number(line).is_some())
         .collect();
 
     println!(
@@ -220,7 +220,7 @@ fn test_viewport_updates_after_resize_with_open_file() {
     let screen_after = harness.screen_to_string();
     let content_lines_after: Vec<&str> = screen_after
         .lines()
-        .filter(|line| line.contains(" │ "))
+        .filter(|line| harness.row_line_number(line).is_some())
         .collect();
 
     println!(

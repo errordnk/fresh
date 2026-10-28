@@ -1012,7 +1012,7 @@ fn close_with_save_needing_sudo_closes_only_after_the_save() {
     close_unwritable_file_with_save(&mut harness, dir.path());
 
     // While sudo is being asked about, the tab and its edits are still there.
-    let tabs = harness.screen_row_text(1);
+    let tabs = harness.get_tab_bar();
     assert!(
         tabs.contains("notes.txt"),
         "the tab must stay open until the save is done; tab bar: {tabs:?}"
@@ -1028,7 +1028,7 @@ fn close_with_save_needing_sudo_closes_only_after_the_save() {
         "modified original content\n",
         "the sudo save writes the closed buffer's content"
     );
-    let tabs = harness.screen_row_text(1);
+    let tabs = harness.get_tab_bar();
     assert!(
         !tabs.contains("notes.txt"),
         "once saved, the tab closes; tab bar: {tabs:?}"

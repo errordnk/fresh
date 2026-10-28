@@ -426,10 +426,15 @@ fn a_failed_remote_reconnect_shows_disconnected_on_the_status_line() -> anyhow::
     // glanceable. Without the derivation branch in `status_bar.rs` the indicator
     // would fall back to "Local" and the failure would be invisible.
     let temp = tempfile::tempdir()?;
+    // The remote indicator is not on the default status bar; put it there.
     let mut harness = EditorTestHarness::create(
         120,
         30,
-        HarnessOptions::new().with_working_dir(temp.path().to_path_buf()),
+        HarnessOptions::new()
+            .with_working_dir(temp.path().to_path_buf())
+            .with_config(crate::common::harness::config_with_status_elements(&[
+                fresh::config::StatusBarElement::RemoteIndicator,
+            ])),
     )?;
 
     // The async reconnect path (`RemoteAttachFailed` for an existing window)

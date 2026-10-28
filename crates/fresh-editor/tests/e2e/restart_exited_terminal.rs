@@ -35,7 +35,9 @@ fn pty_available() -> bool {
 }
 
 fn terminal_config() -> Config {
-    let mut config = Config::default();
+    // The terminal is told apart by its tab: show the tab bar (hidden by
+    // default).
+    let mut config = crate::common::harness::config_with_tab_bar();
     // Keep assertions off terminal render timing: the tests wait for their
     // marker text rather than for a jump-to-end scroll.
     config.terminal.jump_to_end_on_output = false;
@@ -104,7 +106,7 @@ fn spawn_agent_terminal(harness: &mut EditorTestHarness, launch: &[&str], resume
 /// "the restart reused this buffer" versus "it opened another terminal".
 fn terminal_tabs(harness: &EditorTestHarness, title: &str) -> usize {
     // Row 1 is the tab bar (row 0 is the menu bar).
-    harness.screen_row_text(1).matches(title).count()
+    harness.get_tab_bar().matches(title).count()
 }
 
 /// Assert the command palette *offers* `command` for `query`, then dismiss it.
