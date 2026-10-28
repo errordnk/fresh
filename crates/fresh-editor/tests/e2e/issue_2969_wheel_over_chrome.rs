@@ -69,6 +69,8 @@ fn chrome_rows(screen: &str) -> Vec<(&'static str, u16)> {
 fn status_bar_row(screen: &str) -> u16 {
     screen
         .lines()
+        .collect::<Vec<_>>()
+        .iter()
         .rposition(|line| {
             line.split_whitespace()
                 .last()

@@ -2986,9 +2986,13 @@ impl EditorTestHarness {
     /// end (both 1-based), or `None` when the bar does not end with one.
     pub fn status_position(&self) -> Option<(usize, usize)> {
         let bar = self.get_status_bar();
-        let last = bar.split_whitespace().last()?;
-        let (line, col) = last.split_once(':')?;
-        Some((line.parse().ok()?, col.parse().ok()?))
+        let on_bar = bar.split_whitespace().last().and_then(|last| {
+            let (line, col) = last.split_once(':')?;
+            Some((line.parse().ok()?, col.parse().ok()?))
+        });
+        // A prompt's option row (the search bar's toggles) pushes the status
+        // bar up a row: then it is the lowest row that ends in `line:col`.
+        on_bar.or_else(|| status_position_in(&self.screen_to_string()))
     }
 
     /// The byte offset the status bar shows in place of `line:col` while a
