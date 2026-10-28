@@ -141,6 +141,14 @@ pub fn editor_tick(
     if editor.check_paste_deadline() {
         needs_render = true;
     }
+    // A status message (Copied, Saved, ...) goes away after its time is up.
+    let message_seconds = editor.config().editor.status_message_seconds;
+    if editor
+        .active_window_mut()
+        .expire_status_message(message_seconds)
+    {
+        needs_render = true;
+    }
 
     let async_messages = {
         let _s = tracing::info_span!("process_async_messages").entered();

@@ -26,6 +26,7 @@ use super::msg::{UiFact, UiMsg};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Side {
     Left,
+    Center,
     Right,
 }
 
@@ -33,6 +34,7 @@ impl Side {
     pub fn name(self) -> &'static str {
         match self {
             Side::Left => "left",
+            Side::Center => "center",
             Side::Right => "right",
         }
     }
@@ -66,6 +68,9 @@ impl Item {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct StatusBar {
     pub left: Vec<Item>,
+    /// Centered on the bar while any of it has text; with nothing to show it
+    /// takes no room and the sides keep the whole row.
+    pub center: Vec<Item>,
     pub right: Vec<Item>,
     /// Drawn between elements, verbatim from config. Empty disables
     /// separators and consumes no width — which layout gets for free, because
@@ -83,6 +88,7 @@ pub struct StatusBar {
 pub fn item_key(side: Side, index: usize) -> Key {
     let tag = match side {
         Side::Left => "status_left",
+        Side::Center => "status_center",
         Side::Right => "status_right",
     };
     Key::Pair(tag.into(), index as u64)
@@ -115,7 +121,7 @@ fn element(it: &Item, key: Key, side: Side) -> Node<UiMsg> {
     // right element too wide for the whole row is not a truncation decision,
     // it is a bar with nothing to show.
     .elide(match side {
-        Side::Left => Elide::Tail,
+        Side::Left | Side::Center => Elide::Tail,
         Side::Right => Elide::None,
     });
     // **On whatever the row's child turns out to be.** A row reads `priority`
@@ -123,7 +129,7 @@ fn element(it: &Item, key: Key, side: Side) -> Node<UiMsg> {
     // wrapper — priority set on the runs inside it would be read by nobody and
     // the right side would quietly stop being reserved.
     let prio = match side {
-        Side::Left => yields_last::LEFT,
+        Side::Left | Side::Center => yields_last::LEFT,
         Side::Right => yields_last::RIGHT,
     };
     // What a press on this element means: a built-in indicator names its id, a
@@ -187,7 +193,7 @@ fn separator(bar: &StatusBar, side: Side) -> Node<UiMsg> {
     text_runs([Run::themed(bar.separator.clone(), bar.sep_theme.clone())])
         .h(Sizing::Cells(1))
         .priority(match side {
-            Side::Left => yields_last::LEFT,
+            Side::Left | Side::Center => yields_last::LEFT,
             Side::Right => yields_last::RIGHT,
         })
 }
@@ -209,21 +215,41 @@ pub fn status_bar(bar: &StatusBar) -> Node<UiMsg> {
     fresh_ui::memo(bar.clone(), build)
 }
 
-fn build(bar: &StatusBar) -> Node<UiMsg> {
-    let mut kids: Vec<Node<UiMsg>> = Vec::new();
-    for (i, it) in bar.left.iter().enumerate() {
+fn side_kids(bar: &StatusBar, side: Side, items: &[Item]) -> Vec<Node<UiMsg>> {
+    let mut kids = Vec::new();
+    for (i, it) in items.iter().enumerate() {
         if i > 0 {
-            kids.push(separator(bar, Side::Left));
+            kids.push(separator(bar, side));
         }
-        kids.push(element(it, key_of(Side::Left, i, it), Side::Left));
+        kids.push(element(it, key_of(side, i, it), side));
     }
-    // The gap, which closes completely on a bar too narrow for both sides.
-    kids.push(row().flex(1));
-    for (i, it) in bar.right.iter().enumerate() {
-        if i > 0 {
-            kids.push(separator(bar, Side::Right));
-        }
-        kids.push(element(it, key_of(Side::Right, i, it), Side::Right));
+    kids
+}
+
+fn build(bar: &StatusBar) -> Node<UiMsg> {
+    let has_center = bar.center.iter().any(|it| !it.text().trim().is_empty());
+    let mut kids: Vec<Node<UiMsg>> = Vec::new();
+    if has_center {
+        // Three parts. The middle is a fixed share of the row with its text
+        // centered in it, and the sides split the rest evenly, so the middle
+        // sits at the bar's midpoint.
+        let mut left = side_kids(bar, Side::Left, &bar.left);
+        left.push(row().flex(1));
+        kids.push(row().flex(1).children(left));
+
+        let mut mid = vec![row().flex(1)];
+        mid.extend(side_kids(bar, Side::Center, &bar.center));
+        mid.push(row().flex(1));
+        kids.push(row().w(Sizing::Pct(40)).children(mid));
+
+        let mut right = vec![row().flex(1)];
+        right.extend(side_kids(bar, Side::Right, &bar.right));
+        kids.push(row().flex(1).children(right));
+    } else {
+        kids.extend(side_kids(bar, Side::Left, &bar.left));
+        // The gap, which closes completely on a bar too narrow for both sides.
+        kids.push(row().flex(1));
+        kids.extend(side_kids(bar, Side::Right, &bar.right));
     }
     // **The row claims its own gaps.** A press between elements means
     // nothing, and letting it through would put the caret in the buffer
@@ -277,6 +303,12 @@ fn sides(bar: &StatusBar) -> impl Iterator<Item = (Side, usize, &Item)> {
         .iter()
         .enumerate()
         .map(|(i, it)| (Side::Left, i, it))
+        .chain(
+            bar.center
+                .iter()
+                .enumerate()
+                .map(|(i, it)| (Side::Center, i, it)),
+        )
         .chain(
             bar.right
                 .iter()
@@ -432,6 +464,7 @@ mod tests {
     fn bar_of(left: Vec<Item>, right: Vec<Item>) -> StatusBar {
         StatusBar {
             left,
+            center: Vec::new(),
             right,
             separator: " | ".to_string(),
             base_theme: base(),

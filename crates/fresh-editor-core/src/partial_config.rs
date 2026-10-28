@@ -223,6 +223,7 @@ pub struct PartialEditorConfig {
     pub show_tab_bar: Option<bool>,
     pub code_folding: Option<bool>,
     pub gutter_indicators: Option<bool>,
+    pub status_message_seconds: Option<u32>,
     pub show_status_bar: Option<bool>,
     pub status_bar: Option<crate::config::StatusBarConfig>,
     pub search: Option<PartialSearchConfig>,
@@ -352,6 +353,7 @@ impl Merge for PartialEditorConfig {
         self.show_tab_bar.merge_from(&other.show_tab_bar);
         self.code_folding.merge_from(&other.code_folding);
         self.gutter_indicators.merge_from(&other.gutter_indicators);
+        self.status_message_seconds.merge_from(&other.status_message_seconds);
         self.show_status_bar.merge_from(&other.show_status_bar);
         if other.status_bar.is_some() {
             self.status_bar = other.status_bar.clone();
@@ -746,6 +748,7 @@ impl From<&crate::config::EditorConfig> for PartialEditorConfig {
             show_tab_bar: Some(cfg.show_tab_bar),
             code_folding: Some(cfg.code_folding),
             gutter_indicators: Some(cfg.gutter_indicators),
+            status_message_seconds: Some(cfg.status_message_seconds),
             show_status_bar: Some(cfg.show_status_bar),
             status_bar: Some(cfg.status_bar.clone()),
             search: Some(PartialSearchConfig::from(&cfg.search)),
@@ -927,6 +930,7 @@ impl PartialEditorConfig {
             show_tab_bar: self.show_tab_bar.unwrap_or(defaults.show_tab_bar),
             code_folding: self.code_folding.unwrap_or(defaults.code_folding),
             gutter_indicators: self.gutter_indicators.unwrap_or(defaults.gutter_indicators),
+            status_message_seconds: self.status_message_seconds.unwrap_or(defaults.status_message_seconds),
             show_status_bar: self.show_status_bar.unwrap_or(defaults.show_status_bar),
             status_bar: self
                 .status_bar

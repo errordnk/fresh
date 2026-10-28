@@ -68,6 +68,7 @@
         "show_tab_bar": false,
         "code_folding": false,
         "gutter_indicators": false,
+        "status_message_seconds": 0,
         "show_status_bar": true,
         "status_bar": {
           "left": [
@@ -544,7 +545,7 @@
           "type": "integer",
           "format": "uint32",
           "minimum": 0,
-          "default": 5,
+          "default": 0,
           "x-section": "Display"
         },
         "menu_bar_mnemonics": {
@@ -569,6 +570,14 @@
           "description": "Reserve a column left of the line numbers for indicators (diagnostics,\nfold arrows, plugin markers such as git changes). Default: false",
           "type": "boolean",
           "default": false,
+          "x-section": "Display"
+        },
+        "status_message_seconds": {
+          "description": "How long (seconds) a status-bar message such as \"Copied\" or \"Saved\" stays\non screen. `0` (default) keeps it until the next message.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0,
+          "default": 0,
           "x-section": "Display"
         },
         "show_status_bar": {

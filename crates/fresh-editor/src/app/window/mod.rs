@@ -461,6 +461,11 @@ pub struct Window {
     /// messages are naturally invisible.
     pub status_message: Option<String>,
 
+    /// The status message the expiry timer is counting for, and when it first
+    /// appeared. Messages are set from many places, so the timer follows the text
+    /// itself rather than the setters.
+    pub status_message_seen: Option<(String, std::time::Instant)>,
+
     /// Plugin-provided status message (displayed alongside the core
     /// status, also per-window).
     pub plugin_status_message: Option<String>,
@@ -2557,6 +2562,7 @@ impl Window {
             terminal_fg_cache: HashMap::new(),
             event_logs: HashMap::new(),
             status_message: None,
+            status_message_seen: None,
             plugin_status_message: None,
             prompt: None,
             bridge,
@@ -2772,6 +2778,43 @@ impl Window {
     /// Clear this window's status-bar message.
     pub fn clear_status_message(&mut self) {
         self.status_message = None;
+        self.status_message_seen = None;
+    }
+
+    /// Clear the status message once it has been up for `seconds` (0 = never).
+    /// Returns true when it was cleared.
+    pub fn expire_status_message(&mut self, seconds: u32) -> bool {
+        let Some(current) = self.status_message.as_ref() else {
+            self.status_message_seen = None;
+            return false;
+        };
+        let now = std::time::Instant::now();
+        let first_seen = match &self.status_message_seen {
+            Some((text, at)) if text == current => *at,
+            _ => {
+                self.status_message_seen = Some((current.clone(), now));
+                now
+            }
+        };
+        if seconds == 0
+            || now.duration_since(first_seen) < std::time::Duration::from_secs(u64::from(seconds))
+        {
+            return false;
+        }
+        self.clear_status_message();
+        true
+    }
+
+    /// When the current status message is due to disappear.
+    pub fn status_message_deadline(&self, seconds: u32) -> Option<std::time::Instant> {
+        if seconds == 0 || self.status_message.is_none() {
+            return None;
+        }
+        match &self.status_message_seen {
+            Some((_, at)) => Some(*at + std::time::Duration::from_secs(u64::from(seconds))),
+            // Not seen by a tick yet: come back promptly to start its clock.
+            None => Some(std::time::Instant::now()),
+        }
     }
 
     /// Resolve the effective (split, buffer) pair for the currently-

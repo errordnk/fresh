@@ -299,6 +299,9 @@ impl Editor {
         // exactly when the timeout needs to fire, so a hung clipboard
         // owner can't block the UI past `PASTE_ASYNC_DEADLINE`.
         let paste_deadline = self.next_paste_deadline();
+        let message_deadline = self
+            .active_window()
+            .status_message_deadline(self.config().editor.status_message_seconds);
         // Note: the terminal-title poll deadline is intentionally NOT folded
         // in here. This deadline path caps the loop's wait to one frame
         // (~16ms) for smooth animation, which would turn the ~1s title poll
@@ -341,6 +344,7 @@ impl Editor {
             macro_replay_deadline,
             move_preview_deadline,
             paste_deadline,
+            message_deadline,
             wheel_deadline,
             drag_deadline,
             highlight_deadline,

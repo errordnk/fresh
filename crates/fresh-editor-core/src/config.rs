@@ -1015,46 +1015,23 @@ impl schemars::JsonSchema for StatusBarElement {
     }
 }
 
+fn default_status_message_seconds() -> u32 {
+    0
+}
+
 fn default_status_bar_left() -> Vec<StatusBarElement> {
-    // `{trust}` leads: the workspace-trust state is the first thing on the
-    // bottom-left, so whether repo-controlled execution is gated is always
-    // visible (the "restricted mode is always visible" guarantee). `{remote}`
-    // follows as the next persistent, clickable control — the bottom-left is
-    // where users learn to look for both from VS Code. Both are
-    // mouse-clickable and key-bindable.
-    //
-    // The filename is intentionally omitted: the active file is already
-    // shown in the tab bar, so repeating it on the status bar is redundant.
-    vec![
-        StatusBarElement::WorkspaceTrust,
-        StatusBarElement::RemoteIndicator,
-        // Renders only while the active buffer is a terminal whose process
-        // quit, so it costs nothing the rest of the time — but when an agent
-        // dies it sits beside the other two persistent, clickable controls
-        // where users already look.
-        StatusBarElement::TerminalRestart,
-        StatusBarElement::Cursor,
-        StatusBarElement::Diagnostics,
-        StatusBarElement::CursorCount,
-        StatusBarElement::Messages,
-    ]
+    // The file name, with a `*` after it while the buffer has unsaved changes.
+    vec![StatusBarElement::Filename]
+}
+
+fn default_status_bar_center() -> Vec<StatusBarElement> {
+    // Transient messages: Copied, Saved, errors, ...
+    vec![StatusBarElement::Messages]
 }
 
 fn default_status_bar_right() -> Vec<StatusBarElement> {
-    vec![
-        // `{read_only}` leads the right cluster: it renders only while the
-        // buffer is read-only, giving the documented `[RO]` indicator a
-        // standing home even though `{filename}` (its other host) is omitted
-        // from the default layout.
-        StatusBarElement::ReadOnly,
-        StatusBarElement::LineEnding,
-        StatusBarElement::Encoding,
-        StatusBarElement::Language,
-        StatusBarElement::Lsp,
-        StatusBarElement::Warnings,
-        StatusBarElement::Update,
-        StatusBarElement::Palette,
-    ]
+    // `line:column`
+    vec![StatusBarElement::CursorCompact]
 }
 
 /// Which elements appear in the status bar, split into a left and a right
@@ -1064,13 +1041,19 @@ fn default_status_bar_right() -> Vec<StatusBarElement> {
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct StatusBarConfig {
     /// Elements on the left side of the status bar.
-    /// Default: ["{trust}", "{remote}", "{terminal_restart}", "{cursor}", "{diagnostics}", "{cursor_count}", "{messages}"]
+    /// Default: ["{filename}"]
     #[serde(default = "default_status_bar_left")]
     #[schemars(extend("x-section" = "Status Bar", "x-dual-list-sibling" = "/editor/status_bar/right", "x-dynamically-extendable-status-bar-elements" = true))]
     pub left: Vec<StatusBarElement>,
 
+    /// Elements in the middle of the status bar (centered on the bar).
+    /// Default: ["{messages}"]
+    #[serde(default = "default_status_bar_center")]
+    #[schemars(extend("x-section" = "Status Bar"))]
+    pub center: Vec<StatusBarElement>,
+
     /// Elements on the right side of the status bar.
-    /// Default: ["{read_only}", "{line_ending}", "{encoding}", "{language}", "{lsp}", "{warnings}", "{update}", "{palette}"]
+    /// Default: ["{cursor:compact}"]
     #[serde(default = "default_status_bar_right")]
     #[schemars(extend("x-section" = "Status Bar", "x-dual-list-sibling" = "/editor/status_bar/left", "x-dynamically-extendable-status-bar-elements" = true))]
     pub right: Vec<StatusBarElement>,
@@ -1111,6 +1094,7 @@ impl Default for StatusBarConfig {
     fn default() -> Self {
         Self {
             left: default_status_bar_left(),
+            center: default_status_bar_center(),
             right: default_status_bar_right(),
             separator: default_status_bar_separator(),
         }
@@ -1237,6 +1221,12 @@ pub struct EditorConfig {
     #[serde(default = "default_false")]
     #[schemars(extend("x-section" = "Display"))]
     pub gutter_indicators: bool,
+
+    /// How long (seconds) a status-bar message such as "Copied" or "Saved" stays
+    /// on screen. `0` (default) keeps it until the next message.
+    #[serde(default = "default_status_message_seconds")]
+    #[schemars(extend("x-section" = "Display"))]
+    pub status_message_seconds: u32,
 
     /// Show the status bar at the bottom. Can be toggled at any time.
     /// Default: true
@@ -1874,6 +1864,7 @@ impl Default for EditorConfig {
             show_tab_bar: false,
             code_folding: false,
             gutter_indicators: false,
+            status_message_seconds: default_status_message_seconds(),
             show_status_bar: true,
             status_bar: StatusBarConfig::default(),
             search: SearchConfig::default(),

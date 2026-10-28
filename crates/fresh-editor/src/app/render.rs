@@ -6331,6 +6331,7 @@ impl Editor {
                 };
 
                 let left = StatusBarRenderer::render_side(&config.left, &mut status_ctx);
+                let center = StatusBarRenderer::render_side(&config.center, &mut status_ctx);
                 let mut right = StatusBarRenderer::render_side(&config.right, &mut status_ctx);
 
                 // **Which right-hand elements survive** — a content decision, made
@@ -6368,6 +6369,7 @@ impl Editor {
                 // falls are layout's (`sb::yields_last`, `Elide::Tail`).
                 sb::StatusBar {
                     left,
+                    center,
                     right,
                     separator: config.separator.clone(),
                     base_theme: pair("ui.status_bar_fg", "ui.status_bar_bg"),

@@ -420,7 +420,7 @@ impl StatusBarRenderer {
         match element {
             StatusBarElement::Filename => {
                 let modified = if ctx.state.buffer.is_modified() {
-                    " [+]"
+                    " *"
                 } else {
                     ""
                 };
