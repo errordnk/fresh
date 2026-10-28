@@ -192,7 +192,8 @@ pub(crate) enum SaveProgress {
     Saved,
     /// A prompt is open that the save waits on (save with sudo, create the
     /// missing directory): nothing is written yet, and the prompt's answer
-    /// decides whether anything will be.
+    /// decides whether anything will be. Also a save `editor.autosudo` did
+    /// without asking, which closes the buffer itself when asked to.
     Pending,
 }
 
@@ -232,6 +233,15 @@ impl Editor {
             Err(e) => match e.downcast::<SudoSaveRequired>() {
                 // The prompt takes the temp file over: it lives as long as
                 // the prompt does, and is deleted however the prompt ends.
+                Ok(info) if self.config().editor.autosudo => {
+                    // `editor.autosudo`: write with sudo without asking. Done
+                    // here and now, but reported as Pending: on success the
+                    // sudo save has closed the buffer itself when asked to,
+                    // and on failure the caller must not close it either.
+                    let buffer_id = self.active_buffer();
+                    self.sudo_save(&info, buffer_id, close_after_save);
+                    Ok(SaveProgress::Pending)
+                }
                 Ok(info) => {
                     let body = t!("prompt.sudo_save_confirm").to_string();
                     let confirm = crate::view::confirm::Confirm::new(

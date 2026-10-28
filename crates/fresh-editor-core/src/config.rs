@@ -1228,6 +1228,12 @@ pub struct EditorConfig {
     #[schemars(extend("x-section" = "Display"))]
     pub status_message_seconds: u32,
 
+    /// Save a file you have no write permission for with sudo straight away,
+    /// without asking first (like micro's `autosu`). Default: false
+    #[serde(default = "default_false")]
+    #[schemars(extend("x-section" = "Recovery"))]
+    pub autosudo: bool,
+
     /// Show the status bar at the bottom. Can be toggled at any time.
     /// Default: true
     #[serde(default = "default_true")]
@@ -1865,6 +1871,7 @@ impl Default for EditorConfig {
             code_folding: false,
             gutter_indicators: false,
             status_message_seconds: default_status_message_seconds(),
+            autosudo: false,
             show_status_bar: true,
             status_bar: StatusBarConfig::default(),
             search: SearchConfig::default(),

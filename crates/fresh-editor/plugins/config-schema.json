@@ -69,6 +69,7 @@
         "code_folding": false,
         "gutter_indicators": false,
         "status_message_seconds": 0,
+        "autosudo": false,
         "show_status_bar": true,
         "status_bar": {
           "left": [
@@ -579,6 +580,12 @@
           "minimum": 0,
           "default": 0,
           "x-section": "Display"
+        },
+        "autosudo": {
+          "description": "Save a file you have no write permission for with sudo straight away,\nwithout asking first (like micro's `autosu`). Default: false",
+          "type": "boolean",
+          "default": false,
+          "x-section": "Recovery"
         },
         "show_status_bar": {
           "description": "Show the status bar at the bottom. Can be toggled at any time.\nDefault: true",

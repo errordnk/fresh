@@ -350,65 +350,7 @@ impl Editor {
                 if input_lower == "y" || input_lower == "yes" {
                     // Hide prompt before starting blocking command to clear the line
                     self.cancel_prompt();
-
-                    let mtime = |this: &Self| {
-                        this.authority()
-                            .filesystem
-                            .metadata(&info.dest_path)
-                            .ok()
-                            .and_then(|m| m.modified)
-                    };
-                    let mtime_before = mtime(self);
-
-                    // Read temp file and write via sudo (works for both local and remote)
-                    let result = (|| -> anyhow::Result<()> {
-                        let data = info.read_content()?;
-                        self.authority().filesystem.sudo_write(
-                            &info.dest_path,
-                            &data,
-                            info.mode,
-                            info.uid,
-                            info.gid,
-                        )?;
-                        // The file now holds the full content, so a copy an
-                        // earlier interrupted in-place attempt staged for it
-                        // is obsolete.
-                        crate::model::buffer::save::resolve_inplace_write_recovery(
-                            &*self.authority().filesystem,
-                            &self.dir_context.recovery_dir(),
-                            &info.dest_path,
-                        );
-                        Ok(())
-                    })();
-
-                    match result {
-                        Ok(_) => self.finish_sudo_save(
-                            buffer_id,
-                            info.dest_path.clone(),
-                            close_after_save,
-                        ),
-                        Err(e) => {
-                            tracing::warn!("Sudo save failed: {}", e);
-                            // `sudo tee` truncates and then writes, and the
-                            // chmod/chown come after: failing part-way, it
-                            // changed the file. That change is our own, not
-                            // someone else's (see `Window::torn_by_own_write`).
-                            // Nothing changed if it failed before writing
-                            // (sudo refused the password, say).
-                            if let Some(after) =
-                                mtime(self).filter(|after| Some(*after) != mtime_before)
-                            {
-                                if let Some(state) = self.buffers_mut().get_mut(&buffer_id) {
-                                    state
-                                        .buffer
-                                        .record_torn_write(info.dest_path.clone(), after);
-                                }
-                            }
-                            self.set_status_message(
-                                t!("prompt.sudo_save_failed", error = e.to_string()).to_string(),
-                            );
-                        }
-                    }
+                    self.sudo_save(&info, buffer_id, close_after_save);
                 } else {
                     self.set_status_message(t!("buffer.save_cancelled").to_string());
                 }
@@ -1403,6 +1345,67 @@ impl Editor {
             }
         } else {
             self.set_status_message(t!("register.not_specified").to_string());
+        }
+    }
+
+    /// Write the content a failed save staged in `info` to its file with
+    /// sudo, then mark `buffer_id` saved (and close it when
+    /// `close_after_save`). Reports a failure in the status bar.
+    pub(crate) fn sudo_save(
+        &mut self,
+        info: &crate::model::buffer::SudoSaveRequired,
+        buffer_id: BufferId,
+        close_after_save: bool,
+    ) {
+        let mtime = |this: &Self| {
+            this.authority()
+                .filesystem
+                .metadata(&info.dest_path)
+                .ok()
+                .and_then(|m| m.modified)
+        };
+        let mtime_before = mtime(self);
+
+        // Read temp file and write via sudo (works for both local and remote)
+        let result = (|| -> anyhow::Result<()> {
+            let data = info.read_content()?;
+            self.authority().filesystem.sudo_write(
+                &info.dest_path,
+                &data,
+                info.mode,
+                info.uid,
+                info.gid,
+            )?;
+            // The file now holds the full content, so a copy an earlier
+            // interrupted in-place attempt staged for it is obsolete.
+            crate::model::buffer::save::resolve_inplace_write_recovery(
+                &*self.authority().filesystem,
+                &self.dir_context.recovery_dir(),
+                &info.dest_path,
+            );
+            Ok(())
+        })();
+
+        match result {
+            Ok(_) => self.finish_sudo_save(buffer_id, info.dest_path.clone(), close_after_save),
+            Err(e) => {
+                tracing::warn!("Sudo save failed: {}", e);
+                // `sudo tee` truncates and then writes, and the chmod/chown
+                // come after: failing part-way, it changed the file. That
+                // change is our own, not someone else's (see
+                // `Window::torn_by_own_write`). Nothing changed if it failed
+                // before writing (sudo refused the password, say).
+                if let Some(after) = mtime(self).filter(|after| Some(*after) != mtime_before) {
+                    if let Some(state) = self.buffers_mut().get_mut(&buffer_id) {
+                        state
+                            .buffer
+                            .record_torn_write(info.dest_path.clone(), after);
+                    }
+                }
+                self.set_status_message(
+                    t!("prompt.sudo_save_failed", error = e.to_string()).to_string(),
+                );
+            }
         }
     }
 
