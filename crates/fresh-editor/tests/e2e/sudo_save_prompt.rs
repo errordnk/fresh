@@ -971,6 +971,15 @@ fn quit_with_auto_save_names_the_file_it_could_not_save() {
     harness.assert_screen_contains("notes.txt — could not be saved");
 }
 
+/// The default config with the menu bar and the tab bar shown (both hidden
+/// by default), so row 1 is the tab bar the close tests read.
+fn config_with_tab_bar() -> Config {
+    let mut config = Config::default();
+    config.editor.show_menu_bar = true;
+    config.editor.show_tab_bar = true;
+    config
+}
+
 /// Close `notes.txt` (the edited, sudo-only file) with its tab's Save, with
 /// a second file open so another buffer becomes active behind the prompt.
 fn close_unwritable_file_with_save(harness: &mut EditorTestHarness, dir: &Path) {
@@ -999,7 +1008,7 @@ fn close_unwritable_file_with_save(harness: &mut EditorTestHarness, dir: &Path) 
 /// buffer was active by then* as saved to notes.txt.
 #[test]
 fn close_with_save_needing_sudo_closes_only_after_the_save() {
-    let (mut harness, dir, file_path) = dirty_unwritable_file(Config::default());
+    let (mut harness, dir, file_path) = dirty_unwritable_file(config_with_tab_bar());
     close_unwritable_file_with_save(&mut harness, dir.path());
 
     // While sudo is being asked about, the tab and its edits are still there.
@@ -1037,7 +1046,7 @@ fn close_with_save_needing_sudo_closes_only_after_the_save() {
 /// edits: nothing was saved, so nothing may be dropped.
 #[test]
 fn close_with_save_needing_sudo_cancelled_keeps_the_edits() {
-    let (mut harness, dir, file_path) = dirty_unwritable_file(Config::default());
+    let (mut harness, dir, file_path) = dirty_unwritable_file(config_with_tab_bar());
     close_unwritable_file_with_save(&mut harness, dir.path());
 
     harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();
@@ -1168,7 +1177,8 @@ fn a_retry_after_a_large_files_sudo_save_failed_part_way_is_refused() {
     });
     let mut config = Config::default();
     config.editor.large_file_threshold_bytes = 1024;
-    // Wide enough for the whole refusal, which names the file's full path.
+    // Wide enough for the whole refusal, which names the file's full path,
+    // in the status bar's middle part (40% of the row).
     let path_len = file_path
         .canonicalize()
         .unwrap()
@@ -1176,7 +1186,7 @@ fn a_retry_after_a_large_files_sudo_save_failed_part_way_is_refused() {
         .to_string()
         .len() as u16;
     let mut harness = EditorTestHarness::create(
-        400 + path_len,
+        1000 + 3 * path_len,
         24,
         HarnessOptions::new()
             .with_config(config)
