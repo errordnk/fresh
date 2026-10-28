@@ -562,6 +562,31 @@ fn auto_save_needing_sudo_leaves_no_temp_file() {
     );
 }
 
+/// With `editor.autosudo` a save that needs sudo writes the file straight
+/// away, without the prompt, and leaves the buffer saved.
+#[test]
+fn autosudo_saves_without_prompt() {
+    let mut config = Config::default();
+    config.editor.autosudo = true;
+    let (mut harness, dir, file_path) = dirty_unwritable_file(config);
+
+    harness
+        .send_key(KeyCode::Char('s'), KeyModifiers::CONTROL)
+        .unwrap();
+    harness.render().unwrap();
+
+    harness.assert_screen_not_contains("Save with sudo");
+    assert_eq!(
+        std::fs::read_to_string(&file_path).unwrap(),
+        "modified original content\n"
+    );
+    assert!(!harness.editor().active_state().buffer.is_modified());
+    assert_eq!(
+        leftover_temp_files(dir.path()),
+        Vec::<std::ffi::OsString>::new()
+    );
+}
+
 /// Same for Save All, which doesn't prompt for sudo either.
 #[test]
 fn save_all_needing_sudo_leaves_no_temp_file() {
