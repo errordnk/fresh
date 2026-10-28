@@ -66,7 +66,9 @@ fn setup() -> (EditorTestHarness, tempfile::TempDir) {
     setup_with(Config::default())
 }
 
-fn setup_with(config: Config) -> (EditorTestHarness, tempfile::TempDir) {
+fn setup_with(mut config: Config) -> (EditorTestHarness, tempfile::TempDir) {
+    // The group and its file are tabs: show the tab bar (hidden by default).
+    config.editor.show_tab_bar = true;
     let temp = tempfile::TempDir::new().unwrap();
     let root = temp.path().join("work");
     let plugins_dir = root.join("plugins");
@@ -201,8 +203,7 @@ fn the_pane_and_its_panels_keep_the_place_in_the_file() {
 /// suggestion on the row after.
 #[test]
 fn a_popup_at_the_caret_opens_under_the_panels_caret() {
-    // The group and its file are tabs: show the tab bar (hidden by default).
-    let mut config = crate::common::harness::config_with_tab_bar();
+    let mut config = Config::default();
     config.editor.completion_popup_auto_show = true;
     let (mut h, _tmp) = setup_with(config);
     open_pair(&mut h);

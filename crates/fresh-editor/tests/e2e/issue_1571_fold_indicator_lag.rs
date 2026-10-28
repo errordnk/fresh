@@ -73,7 +73,9 @@ fn test_fold_indicator_follows_insert_before_fold() {
     let content = "fn main() {\n    let x = 1;\n    let y = 2;\n    let z = 3;\n}\n";
     std::fs::write(&file_path, content).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(80, 24, crate::common::harness::config_with_folding())
+            .unwrap();
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 
@@ -166,7 +168,9 @@ fn test_fold_indicator_follows_delete_before_fold() {
     let content = "\nfn main() {\n    let x = 1;\n    let y = 2;\n    let z = 3;\n}\n";
     std::fs::write(&file_path, content).unwrap();
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(80, 24, crate::common::harness::config_with_folding())
+            .unwrap();
     harness.open_file(&file_path).unwrap();
     harness.render().unwrap();
 

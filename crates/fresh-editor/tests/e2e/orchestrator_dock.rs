@@ -135,9 +135,13 @@ fn set_view(h: &mut EditorTestHarness, want: &str) {
 #[test]
 fn dock_renders_as_left_column_beside_chrome() {
     let (_tmp, root) = setup_project("alphaproj");
-    let mut h =
-        EditorTestHarness::with_config_and_working_dir(120, 32, Default::default(), root.clone())
-            .unwrap();
+    let mut h = EditorTestHarness::with_config_and_working_dir(
+        120,
+        32,
+        crate::common::harness::config_with_menu_and_tab_bar(),
+        root.clone(),
+    )
+    .unwrap();
     h.render().unwrap();
     open_dock(&mut h);
 
@@ -982,9 +986,13 @@ fn col_in_row(h: &EditorTestHarness, row: u16, needle: &str) -> usize {
 #[test]
 fn dock_right_border_drag_resizes_and_persists() {
     let (_tmp, root) = setup_project("alphaproj");
-    let mut h =
-        EditorTestHarness::with_config_and_working_dir(120, 32, Default::default(), root.clone())
-            .unwrap();
+    let mut h = EditorTestHarness::with_config_and_working_dir(
+        120,
+        32,
+        crate::common::harness::config_with_menu_and_tab_bar(),
+        root.clone(),
+    )
+    .unwrap();
     h.editor_mut()
         .create_window_at(root.join("wt-beta"), "beta".to_string());
     h.render().unwrap();

@@ -1068,7 +1068,9 @@ fn test_tab_close_button_hover_changes_color() {
     use crate::common::harness::layout;
     use ratatui::style::Color;
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(80, 24, crate::common::harness::config_with_tab_bar())
+            .unwrap();
 
     // Create a second buffer so we have two tabs
     harness.new_buffer().unwrap();
@@ -1137,7 +1139,9 @@ fn test_tab_hover_position_accuracy() {
     use crate::common::harness::layout;
     use ratatui::style::Color;
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(80, 24, crate::common::harness::config_with_tab_bar())
+            .unwrap();
 
     // Create two buffers
     harness.new_buffer().unwrap();
@@ -1479,7 +1483,9 @@ fn test_tab_hover_with_real_files() {
     use crate::common::harness::layout;
     use ratatui::style::Color;
 
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(80, 24, crate::common::harness::config_with_tab_bar())
+            .unwrap();
 
     // Load real files (creates line numbers, actual filename in tab)
     let fixture1 = TestFixture::new("test1.txt", "Hello from file 1\nLine 2\n").unwrap();

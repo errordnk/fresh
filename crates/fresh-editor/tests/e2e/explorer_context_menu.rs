@@ -6,20 +6,22 @@ use std::fs;
 //
 // Terminal: 100 × 30.  Default explorer width = 30 % × 100 = 30 cols.
 // Layout (rows):
-//   0      – menu bar
-//   1–28   – main content (explorer left, editor right)
-//   29     – status bar
+//   0–27   – main content (explorer left, editor right; no menu bar)
+//   28     – status bar
+//   29     – prompt line
 //
-// Explorer area: x = 0, width = 30, y = 1, height = 27.
-//   Row 1 is the title bar (skipped for content clicks).
-//   Content rows start at 2.
+// Explorer area: x = 0, width = 30, y = 0.
+//   Row 0 is the title bar (skipped for content clicks).
+//   Content rows start at 1.
 //
 // A safe right-click inside the explorer content area:
 const EXPLORER_COL: u16 = 10;
 // Past the last entry of a small fixture, so it is the blank area: the root's.
 const EXPLORER_ROW: u16 = 5;
-// Row 2 is the project root, row 3 the first child under it.
-const ENTRY_ROW: u16 = 3;
+// The explorer's title row.
+const TITLE_ROW: u16 = 0;
+// Row 1 is the project root, row 2 the first child under it.
+const ENTRY_ROW: u16 = 2;
 
 // The "Paste" item is present in every mode of the context menu (single,
 // multi-selection, root).  Matching on " Paste " — with surrounding
@@ -120,8 +122,8 @@ fn test_left_click_outside_closes_menu() {
 #[test]
 fn test_right_click_title_row_no_menu() {
     let mut h = harness_with_explorer();
-    // Row 1 is the title / header row — content check skips it.
-    h.mouse_right_click(EXPLORER_COL, 1).unwrap();
+    // The title / header row — content check skips it.
+    h.mouse_right_click(EXPLORER_COL, TITLE_ROW).unwrap();
 
     assert!(
         !context_menu_visible(&h),
@@ -158,9 +160,9 @@ fn test_right_click_selects_node() {
     h.wait_for_file_explorer().unwrap();
     h.wait_for_file_explorer_item("target.txt").unwrap();
 
-    // The file should appear at content row 3 (row 1 = title, row 2 = root
-    // node, row 3 = first child).  Right-click it.
-    h.mouse_right_click(EXPLORER_COL, 3).unwrap();
+    // The file should appear at content row 2 (row 0 = title, row 1 = root
+    // node, row 2 = first child).  Right-click it.
+    h.mouse_right_click(EXPLORER_COL, ENTRY_ROW).unwrap();
 
     // The context menu opens (confirming a node was found at that row).
     assert!(
@@ -183,12 +185,12 @@ fn test_context_menu_copy_action() {
     h.wait_for_file_explorer_item("file_to_copy").unwrap();
 
     // Right-click selects the node and opens the context menu.
-    // file_to_copy.txt is at content row index 1 → screen row 3.
-    let file_row = 3u16;
+    // file_to_copy.txt is at content row index 1 → screen row ENTRY_ROW.
+    let file_row = ENTRY_ROW;
     h.mouse_right_click(EXPLORER_COL, file_row).unwrap();
 
-    // Menu opens at (EXPLORER_COL, file_row + 1) = (10, 4).
-    // Copy is item index 4: border(4) + 1 + 4 = row 9.
+    // Menu opens at (EXPLORER_COL, file_row + 1).
+    // Copy is item index 4: menu_y + 1 (border) + 4.
     let menu_y = file_row + 1;
     let copy_row = menu_y + 1 + 4;
     h.mouse_click(EXPLORER_COL + 2, copy_row).unwrap();
@@ -215,10 +217,10 @@ fn test_context_menu_cut_action() {
     // Right-click to open context menu, then click Cut (4th item, index 3).
     // menu opens at (EXPLORER_COL, row + 1); with border, Cut is at menu_y + 1 + 3.
     // EXPLORER_ROW + 1 = menu_y; Cut row = menu_y + 4.
-    let menu_y = 3 + 1u16; // right-click row 3, menu at row+1
+    let menu_y = ENTRY_ROW + 1; // right-click the entry row, menu at row+1
     let cut_row = menu_y + 1 + 3; // border row + 3 items before Cut
 
-    h.mouse_right_click(EXPLORER_COL, 3).unwrap();
+    h.mouse_right_click(EXPLORER_COL, ENTRY_ROW).unwrap();
     h.mouse_click(EXPLORER_COL + 2, cut_row).unwrap();
 
     h.assert_screen_contains("Marked for cut:");
@@ -304,14 +306,14 @@ fn test_context_menu_delete_action() {
     h.wait_for_file_explorer().unwrap();
     h.wait_for_file_explorer_item("to_delete").unwrap();
 
-    // Navigate to the file (root → to_delete.txt at row 3).
+    // Navigate to the file (root → to_delete.txt at ENTRY_ROW).
     h.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
 
     // Delete is item index 6: menu_y + 1 + 6 = menu_y + 7.
-    let menu_y = 3 + 1u16;
+    let menu_y = ENTRY_ROW + 1;
     let delete_row = menu_y + 1 + 6;
 
-    h.mouse_right_click(EXPLORER_COL, 3).unwrap();
+    h.mouse_right_click(EXPLORER_COL, ENTRY_ROW).unwrap();
     h.mouse_click(EXPLORER_COL + 2, delete_row).unwrap();
 
     // Should show delete confirmation prompt.
@@ -352,10 +354,10 @@ fn test_context_menu_rename_action() {
     h.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
 
     // Rename is item index 2: menu_y + 1 + 2 = menu_y + 3.
-    let menu_y = 3 + 1u16;
+    let menu_y = ENTRY_ROW + 1;
     let rename_row = menu_y + 1 + 2;
 
-    h.mouse_right_click(EXPLORER_COL, 3).unwrap();
+    h.mouse_right_click(EXPLORER_COL, ENTRY_ROW).unwrap();
     h.mouse_click(EXPLORER_COL + 2, rename_row).unwrap();
 
     // Should show the rename prompt with its "Rename to:" label.
@@ -514,7 +516,7 @@ fn test_context_menu_grabs_keyboard_printable_keys() {
     h.wait_for_file_explorer_item("alpha.txt").unwrap();
 
     // Open the context menu on a file row.
-    h.mouse_right_click(EXPLORER_COL, 3).unwrap();
+    h.mouse_right_click(EXPLORER_COL, ENTRY_ROW).unwrap();
     assert!(context_menu_visible(&h), "context menu should open");
 
     // Type printable characters while the menu is open.
@@ -621,13 +623,13 @@ fn test_multi_selection_hides_create_and_rename() {
     h.wait_for_file_explorer().unwrap();
     h.wait_for_file_explorer_item("alpha.txt").unwrap();
 
-    // Navigate to alpha.txt (row 2 = root node, row 3 = first file).
+    // Navigate to alpha.txt (row 1 = root node, row 2 = first file).
     h.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     // Space toggles the current node into multi-selection.
     h.send_key(KeyCode::Char(' '), KeyModifiers::NONE).unwrap();
     h.render().unwrap();
 
-    h.mouse_right_click(EXPLORER_COL, 3).unwrap();
+    h.mouse_right_click(EXPLORER_COL, ENTRY_ROW).unwrap();
 
     assert!(
         context_menu_visible(&h),
@@ -765,8 +767,8 @@ fn test_new_directory_prompt_wording() {
 
 // ── root node protection ──────────────────────────────────────────────────────
 
-// Root is always the first content row (row 2): title bar is row 1.
-const ROOT_ROW: u16 = 2;
+// Root is always the first content row (row 1): title bar is row 0.
+const ROOT_ROW: u16 = 1;
 
 /// Right-clicking the project root shows only New File, New Directory, Paste —
 /// Cut, Copy, Rename, and Delete are hidden (VS Code parity).

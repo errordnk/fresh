@@ -397,21 +397,19 @@ struct PaneRow {
 /// column holding `│` on every row of the source pane's gutter's right.
 fn pane_rows(h: &EditorTestHarness) -> Vec<PaneRow> {
     // Padded back to the full width: the screen's rows come trimmed.
-    let rows: Vec<Vec<char>> = (0..SYNC_HEIGHT)
+    let (first, last) = h.content_area_rows();
+    let rows: Vec<Vec<char>> = (first as u16..=last as u16)
         .map(|r| {
             let mut row: Vec<char> = h.screen_row_text(r).chars().collect();
             row.resize(SYNC_WIDTH as usize, ' ');
             row
         })
         .collect();
-    // Content rows carry the gutter: a line number (or, past the end of the
-    // file, spaces), then `│`, in the first few columns.
+    // Content rows carry the source pane's gutter: a line number (or, on a
+    // wrapped or filler row, spaces) in its first `gutter_width` columns.
+    let width = h.gutter_width();
     let gutter = |row: &[char]| -> Option<usize> {
-        let at = row.iter().take(8).position(|c| *c == '│')?;
-        row[..at]
-            .iter()
-            .all(|c| c.is_ascii_digit() || *c == ' ')
-            .then_some(at)
+        (width > 0 && row[..width].iter().all(|c| c.is_ascii_digit() || *c == ' ')).then_some(width)
     };
     let content: Vec<&Vec<char>> = rows.iter().filter(|r| gutter(r).is_some()).collect();
     let Some(divider) = (SYNC_WIDTH as usize / 3..SYNC_WIDTH as usize * 2 / 3)
@@ -427,7 +425,7 @@ fn pane_rows(h: &EditorTestHarness) -> Vec<PaneRow> {
             PaneRow {
                 source_line: number.trim().parse().ok(),
                 // Up to the source pane's scrollbar column, just left of the divider.
-                source: row[g + 1..divider - 1].iter().collect(),
+                source: row[g..divider - 1].iter().collect(),
                 preview: row[divider + 1..row.len() - 1].iter().collect(),
             }
         })

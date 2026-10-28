@@ -1595,7 +1595,7 @@ fn test_search_replace_undo_marks_buffer_as_modified() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         160,
         40,
-        Default::default(),
+        crate::common::harness::config_with_tab_bar(),
         project_root.clone(),
     )
     .unwrap();
@@ -1681,7 +1681,7 @@ fn test_search_replace_tab_x_button_closes_whole_split() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         160,
         40,
-        Default::default(),
+        crate::common::harness::config_with_tab_bar(),
         project_root.clone(),
     )
     .unwrap();
@@ -1784,7 +1784,7 @@ fn test_search_replace_close_buffer_after_replace_closes_split() {
     let mut harness = EditorTestHarness::with_config_and_working_dir(
         160,
         40,
-        Default::default(),
+        crate::common::harness::config_with_tab_bar(),
         project_root.clone(),
     )
     .unwrap();
@@ -1856,9 +1856,13 @@ fn test_search_replace_panel_not_duplicated_in_tabs() {
     create_test_files(&project_root);
 
     let start_file = project_root.join("alpha.txt");
-    let mut harness =
-        EditorTestHarness::with_config_and_working_dir(160, 40, Default::default(), project_root)
-            .unwrap();
+    let mut harness = EditorTestHarness::with_config_and_working_dir(
+        160,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+        project_root,
+    )
+    .unwrap();
     harness.open_file(&start_file).unwrap();
     harness.render().unwrap();
 

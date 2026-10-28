@@ -75,7 +75,7 @@ fn helper() {
 
     // --- Session 1: open file, fold `fn helper()`, shut down cleanly.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_folding();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -130,7 +130,7 @@ fn helper() {
 
     // --- Session 2: restore and check where the fold lands.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_folding();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(

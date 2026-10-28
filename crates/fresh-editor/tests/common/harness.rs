@@ -542,6 +542,15 @@ pub fn config_with_tab_bar() -> Config {
     config
 }
 
+/// A default config with code folding on and the gutter's indicator column
+/// shown, where the fold arrows are drawn (both are off by default).
+pub fn config_with_folding() -> Config {
+    let mut config = Config::default();
+    config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
+    config
+}
+
 /// A default config whose cursor stays on the line's text (`virtual_space`
 /// off): Right at the end of a line goes to the next one. For tests of that
 /// classic movement; by default the cursor may go past the end of a line.

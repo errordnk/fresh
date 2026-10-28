@@ -229,7 +229,12 @@ fn test_split_with_file_operations() {
     // ellipsis-truncated at 80 cols. The wider terminal also
     // gives both split panes room to render their tab titles
     // (file1.txt / file2.txt) without truncation.
-    let mut harness = EditorTestHarness::with_temp_project(120, 24).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        24,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project_dir = harness.project_dir().unwrap();
     let file1 = project_dir.join("file1.txt");
     let file2 = project_dir.join("file2.txt");
@@ -307,7 +312,12 @@ fn test_toggle_maximize_split() {
 /// Test toggle maximize split to unmaximize via command palette
 #[test]
 fn test_toggle_unmaximize_split() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 40).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        40,
+        crate::common::harness::config_with_tab_bar(),
+    )
+    .unwrap();
     let project_dir = harness.project_dir().unwrap();
     let file1 = project_dir.join("file1.txt");
     let file2 = project_dir.join("file2.txt");

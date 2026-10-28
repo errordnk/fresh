@@ -24,6 +24,15 @@ use ratatui::style::Modifier;
 ///
 /// Returns the harness and the temp dir (kept alive for the test's duration).
 fn composed(content: &str, width: u16, height: u16) -> (EditorTestHarness, tempfile::TempDir) {
+    composed_with(content, width, height, Default::default())
+}
+
+fn composed_with(
+    content: &str,
+    width: u16,
+    height: u16,
+    config: fresh::config::Config,
+) -> (EditorTestHarness, tempfile::TempDir) {
     init_tracing_from_env();
 
     let temp_dir = tempfile::TempDir::new().unwrap();
@@ -38,13 +47,9 @@ fn composed(content: &str, width: u16, height: u16) -> (EditorTestHarness, tempf
     let md_path = project_root.join("blocks.md");
     std::fs::write(&md_path, content).unwrap();
 
-    let mut harness = EditorTestHarness::with_config_and_working_dir(
-        width,
-        height,
-        Default::default(),
-        project_root,
-    )
-    .unwrap();
+    let mut harness =
+        EditorTestHarness::with_config_and_working_dir(width, height, config, project_root)
+            .unwrap();
     harness.open_file(&md_path).unwrap();
     harness.render().unwrap();
     harness.assert_screen_contains("blocks.md");
@@ -339,7 +344,13 @@ fn test_nested_quote_renders_two_bars() {
 /// check rather than an assertion about an empty gutter.
 #[test]
 fn test_fold_indicators_are_hidden_while_composing() {
-    let (mut harness, _tmp) = composed(LIST_MD, 100, 30);
+    // Fold arrows need folding and the indicator column (both off by default).
+    let (mut harness, _tmp) = composed_with(
+        LIST_MD,
+        100,
+        30,
+        crate::common::harness::config_with_folding(),
+    );
 
     let screen = harness.screen_to_string();
     assert!(

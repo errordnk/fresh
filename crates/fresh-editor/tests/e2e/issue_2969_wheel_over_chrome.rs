@@ -57,12 +57,30 @@ fn chrome_rows(screen: &str) -> Vec<(&'static str, u16)> {
     };
     vec![
         // The menu bar's own labels, the tab bar's close button, and the
-        // status bar's palette hint — each row located by what it draws, so
+        // status bar's `line:col` — each row located by what it draws, so
         // the wheel targets follow the frame instead of hard-coded rows.
         ("menu bar", row_with("menu bar", "File   Edit")),
         ("tab bar", row_with("tab bar", "×")),
-        ("status bar", row_with("status bar", "Palette: Ctrl+P")),
+        ("status bar", status_bar_row(screen)),
     ]
+}
+
+/// The row ending in the status bar's `line:col` readout.
+fn status_bar_row(screen: &str) -> u16 {
+    screen
+        .lines()
+        .rposition(|line| {
+            line.split_whitespace()
+                .last()
+                .and_then(|w| w.split_once(':'))
+                .is_some_and(|(l, c)| l.parse::<u32>().is_ok() && c.parse::<u32>().is_ok())
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "no status bar row (line:col) on screen:
+{screen}"
+            )
+        }) as u16
 }
 
 /// The text of the tab row (the row carrying a tab's close button).

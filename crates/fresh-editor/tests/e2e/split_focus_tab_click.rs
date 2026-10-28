@@ -18,7 +18,9 @@ use crossterm::event::{KeyCode, KeyModifiers};
 
 #[test]
 fn test_split_focus_via_tab_click_cursor_position() {
-    let mut harness = EditorTestHarness::new(120, 30).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(120, 30, crate::common::harness::config_with_tab_bar())
+            .unwrap();
 
     // Step 1: Type "Hello" in the initial buffer
     harness.type_text("Hello").unwrap();

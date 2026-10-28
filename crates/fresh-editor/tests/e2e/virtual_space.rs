@@ -556,7 +556,12 @@ fn run_command(harness: &mut EditorTestHarness, name: &str) {
 /// active buffer only; other buffers keep following the global default.
 #[test]
 fn test_toggle_virtual_space_scopes_to_buffer() {
-    let mut harness = EditorTestHarness::with_temp_project(80, 24).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        80,
+        24,
+        crate::common::harness::config_without_virtual_space(),
+    )
+    .unwrap();
     let dir = harness.project_dir().unwrap().to_path_buf();
     std::fs::write(dir.join("a.txt"), "ab\nxyz").unwrap();
     std::fs::write(dir.join("b.txt"), "cd\nuvw").unwrap();
@@ -605,7 +610,7 @@ fn test_toggle_virtual_space_persists_across_restart() {
         let mut harness = EditorTestHarness::with_config_and_working_dir(
             80,
             24,
-            Config::default(),
+            crate::common::harness::config_without_virtual_space(),
             project_dir.clone(),
         )
         .unwrap();
@@ -620,7 +625,7 @@ fn test_toggle_virtual_space_persists_across_restart() {
         let mut harness = EditorTestHarness::with_config_and_working_dir(
             80,
             24,
-            Config::default(),
+            crate::common::harness::config_without_virtual_space(),
             project_dir.clone(),
         )
         .unwrap();

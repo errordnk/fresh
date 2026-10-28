@@ -37,7 +37,9 @@ fn open_buffer_switcher(harness: &mut EditorTestHarness) {
 
 #[test]
 fn buffer_switcher_lists_virtual_buffers() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(100, 30, crate::common::harness::config_with_tab_bar())
+            .unwrap();
 
     // A plugin panel: a virtual buffer shown as a tab, with no file path.
     let panel = harness
@@ -79,7 +81,9 @@ fn buffer_switcher_lists_virtual_buffers() {
 
 #[test]
 fn buffer_switcher_filters_virtual_buffer_by_name() {
-    let mut harness = EditorTestHarness::new(100, 30).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(100, 30, crate::common::harness::config_with_tab_bar())
+            .unwrap();
 
     // Two virtual panels with distinct names.
     harness

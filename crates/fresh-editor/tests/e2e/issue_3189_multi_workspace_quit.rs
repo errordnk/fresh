@@ -17,7 +17,7 @@
 //! though a clean exit no longer does), and `close_window`, which drops a
 //! workspace's buffers without asking about or preserving what they hold.
 
-use crate::common::harness::{layout, EditorTestHarness};
+use crate::common::harness::EditorTestHarness;
 use crossterm::event::{KeyCode, KeyModifiers};
 use fresh::config::Config;
 use fresh_core::WindowId;
@@ -85,7 +85,7 @@ fn two_workspaces_with_dirty_background(
 /// workspace. Quitting from the clean workspace used to exit with no prompt.
 #[test]
 fn quit_from_clean_workspace_prompts_for_dirty_background_workspace() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     let (mut harness, _file, _recovery_dir, _dirty) = two_workspaces_with_dirty_background(config);
 
@@ -108,7 +108,7 @@ fn quit_from_clean_workspace_prompts_for_dirty_background_workspace() {
 /// The count is a total across workspaces, not the active window's.
 #[test]
 fn quit_prompt_counts_dirty_buffers_across_workspaces() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     let (mut harness, _file, _recovery_dir, _dirty) = two_workspaces_with_dirty_background(config);
 
@@ -134,7 +134,7 @@ fn quit_prompt_counts_dirty_buffers_across_workspaces() {
 /// background workspace's chunk + meta were deleted on the way out.
 #[test]
 fn clean_exit_preserves_recovery_for_dirty_background_workspace() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     let (mut harness, file, recovery_dir, _dirty) = two_workspaces_with_dirty_background(config);
 
@@ -170,7 +170,7 @@ fn clean_exit_preserves_recovery_for_dirty_background_workspace() {
 /// dirty buffer in the background workspace too, not just the active one.
 #[test]
 fn save_and_quit_writes_background_workspace_buffers_to_disk() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     let (mut harness, file, recovery_dir, _dirty) = two_workspaces_with_dirty_background(config);
 
@@ -205,7 +205,7 @@ fn save_and_quit_writes_background_workspace_buffers_to_disk() {
 /// start would resurrect edits the user explicitly threw away.
 #[test]
 fn discard_and_quit_drops_background_workspace_recovery() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     let (mut harness, file, recovery_dir, _dirty) = two_workspaces_with_dirty_background(config);
 
@@ -236,7 +236,7 @@ fn discard_and_quit_drops_background_workspace_recovery() {
 /// widens *which* buffers are considered, it does not make quitting sticky.
 #[test]
 fn quit_still_exits_immediately_when_no_workspace_is_dirty() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     let mut harness = EditorTestHarness::with_temp_project_and_config(120, 24, config).unwrap();
     let project_dir = harness.project_dir().unwrap();
@@ -271,7 +271,7 @@ fn quit_still_exits_immediately_when_no_workspace_is_dirty() {
 /// everything typed since.
 #[test]
 fn periodic_recovery_save_covers_background_workspaces() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     // Every call is past the rate limit, so one call is one full sweep.
     config.editor.auto_recovery_save_interval_secs = 0;
@@ -304,7 +304,7 @@ fn periodic_recovery_save_covers_background_workspaces() {
 /// deletes.
 #[test]
 fn closing_a_workspace_preserves_its_unsaved_content() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     let (mut harness, _file, recovery_dir, dirty_window) =
         two_workspaces_with_dirty_background(config);
@@ -346,7 +346,7 @@ fn closing_a_workspace_preserves_its_unsaved_content() {
 /// where, in exactly the situation where "where" is the whole problem.
 #[test]
 fn quit_prompt_names_the_workspaces_holding_unsaved_work() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     let (mut harness, _file, _recovery_dir, _dirty) = two_workspaces_with_dirty_background(config);
 
@@ -380,7 +380,7 @@ fn quit_prompt_names_the_workspaces_holding_unsaved_work() {
 /// every single-workspace user sees.
 #[test]
 fn quit_prompt_stays_plain_when_all_unsaved_work_is_in_view() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     let mut harness = EditorTestHarness::with_temp_project_and_config(120, 24, config).unwrap();
     let project_dir = harness.project_dir().unwrap();
@@ -423,7 +423,7 @@ fn crash_recovery_restores_each_buffer_into_its_own_workspace() {
     std::fs::create_dir_all(&project).unwrap();
     std::fs::create_dir_all(&other_root).unwrap();
     let dir_context = fresh::config_io::DirectoryContext::for_testing(temp.path());
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     config.editor.auto_recovery_save_interval_secs = 0;
     let launch = |dir: &Path| {
@@ -466,7 +466,7 @@ fn crash_recovery_restores_each_buffer_into_its_own_workspace() {
     let mut harness = launch(&project);
     harness.startup(true, &[]).unwrap();
     harness.assert_screen_contains("ALPHA-EDIT");
-    let tabs = harness.screen_row_text(layout::TAB_BAR_ROW as u16);
+    let tabs = harness.get_tab_bar();
     assert!(
         !tabs.contains("b.txt"),
         "the other workspace's buffer must NOT be pulled into this one by \
@@ -484,7 +484,7 @@ fn crash_recovery_restores_each_buffer_into_its_own_workspace() {
 /// nothing here can decide they are finished with.
 #[test]
 fn quitting_without_visiting_a_workspace_keeps_its_recovery_data() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     config.editor.auto_recovery_save_interval_secs = 0;
     let (mut harness, _file, recovery_dir, _dirty) = two_workspaces_with_dirty_background(config);
@@ -507,17 +507,14 @@ fn quitting_without_visiting_a_workspace_keeps_its_recovery_data() {
 }
 
 fn unnamed_tabs(harness: &EditorTestHarness) -> usize {
-    harness
-        .screen_row_text(layout::TAB_BAR_ROW as u16)
-        .matches("[No Name]")
-        .count()
+    harness.get_tab_bar().matches("[No Name]").count()
 }
 
 /// Switching back to a workspace must not open its unsaved scratch buffer a
 /// second time.
 #[test]
 fn reactivating_a_workspace_does_not_duplicate_its_unnamed_buffers() {
-    let mut config = Config::default();
+    let mut config = crate::common::harness::config_with_tab_bar();
     config.editor.hot_exit = true;
     config.editor.auto_recovery_save_interval_secs = 0;
     let mut harness = EditorTestHarness::with_temp_project_and_config(120, 24, config).unwrap();
@@ -550,7 +547,7 @@ fn reactivating_a_workspace_does_not_duplicate_its_unnamed_buffers() {
         unnamed_tabs(&harness),
         tabs_before,
         "Tabs: {}",
-        harness.screen_row_text(layout::TAB_BAR_ROW as u16)
+        harness.get_tab_bar()
     );
 }
 
@@ -566,7 +563,7 @@ fn unnamed_buffer_is_restored_once_across_restarts() {
     let dir_context = fresh::config_io::DirectoryContext::for_testing(temp_dir.path());
 
     let harness_for = || {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_tab_bar();
         config.editor.hot_exit = true;
         let mut harness = EditorTestHarness::create(
             120,
@@ -608,7 +605,7 @@ fn unnamed_buffer_is_restored_once_across_restarts() {
             unnamed_tabs(&harness),
             1,
             "start {start}. Tabs: {}",
-            harness.screen_row_text(layout::TAB_BAR_ROW as u16)
+            harness.get_tab_bar()
         );
         harness.shutdown(true).unwrap();
     }

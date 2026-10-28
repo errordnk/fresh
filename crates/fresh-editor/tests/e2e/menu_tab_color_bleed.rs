@@ -19,7 +19,12 @@ use crossterm::event::{KeyCode, KeyModifiers};
 /// appear as a different (brighter) shade where it overlaps the tab.
 #[test]
 fn test_active_tab_color_does_not_bleed_through_menu() {
-    let mut harness = EditorTestHarness::new(80, 30).unwrap();
+    let mut harness = EditorTestHarness::with_config(
+        80,
+        30,
+        crate::common::harness::config_with_menu_and_tab_bar(),
+    )
+    .unwrap();
     harness.render().unwrap();
 
     // Verify the active tab is visible on the tab bar (row 1)

@@ -232,21 +232,20 @@ fn soft_wrap_off_draws_one_row_for_a_file_with_no_line_breaks() {
          got {filler} filler rows:\n{screen}"
     );
 
-    // There is no row below the only row, so Down goes as far down as there
-    // is: the end of the line, which here is the end of the file. What it must
-    // never do is land *inside* the line — the reader hands a line this long
-    // back in `MAX_LINE_BYTES` pieces, and a piece boundary is a read budget,
-    // not a row (issue #1806). Repeating it then has nowhere left to go.
+    // There is no row below the only row, so Down stays where it is (the
+    // cursor may sit past a line's end, so the last line is as far down as it
+    // goes). What it must never do is land *inside* the line — the reader
+    // hands a line this long back in `MAX_LINE_BYTES` pieces, and a piece
+    // boundary is a read budget, not a row (issue #1806).
     for _ in 0..5 {
         harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
     }
     harness.render().unwrap();
     let after = harness.screen_to_string();
-    let at_line_end = (1, bytes + 1);
     assert!(
-        harness.status_position() == Some(at_line_end),
-        "Down on the only line should rest at its end ({at_line_end:?}), still on \
-         line 1 and not at a read-budget boundary part-way along it:\n{after}"
+        harness.status_position() == Some((1, 1)),
+        "Down on the only line ({bytes} bytes) should stay at its start, on line 1 \
+         and not at a read-budget boundary part-way along it:\n{after}"
     );
     // And the pane still draws that one logical line as one row.
     let filler_after = after

@@ -123,7 +123,7 @@ fn test_stale_legacy_fold_on_blank_line_is_dropped_on_restore() {
 
     // --- Session 1: fold the `debug` block so the session records a fold.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_folding();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -168,7 +168,7 @@ fn test_stale_legacy_fold_on_blank_line_is_dropped_on_restore() {
 
     // --- Session 2: restore. The stale fold must not swallow `debug {`.
     {
-        let mut config = Config::default();
+        let mut config = crate::common::harness::config_with_folding();
         config.editor.hot_exit = true;
 
         let mut harness = EditorTestHarness::create(
@@ -210,7 +210,9 @@ fn test_stale_legacy_fold_on_blank_line_is_dropped_on_restore() {
 /// `...` that reads as vanished text.
 #[test]
 fn test_collapsed_fold_on_blank_header_keeps_its_line_number_and_arrow() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(80, 24, crate::common::harness::config_with_folding())
+            .unwrap();
     let fixture = TestFixture::new("config.kdl", NIRI_CONFIG).unwrap();
     harness.open_file(&fixture.path).unwrap();
     harness.render().unwrap();
@@ -262,7 +264,9 @@ fn test_collapsed_fold_on_blank_header_keeps_its_line_number_and_arrow() {
 /// folded.
 #[test]
 fn test_deleting_the_fold_header_line_expands_the_fold() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(80, 24, crate::common::harness::config_with_folding())
+            .unwrap();
     let fixture = TestFixture::new("config.kdl", NIRI_CONFIG).unwrap();
     harness.open_file(&fixture.path).unwrap();
     harness.render().unwrap();
@@ -313,7 +317,9 @@ fn test_deleting_the_fold_header_line_expands_the_fold() {
 /// refuses a blank header outright — so this retires the fold too.
 #[test]
 fn test_emptying_the_fold_header_line_expands_the_fold() {
-    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(80, 24, crate::common::harness::config_with_folding())
+            .unwrap();
     let fixture = TestFixture::new("config.kdl", NIRI_CONFIG).unwrap();
     harness.open_file(&fixture.path).unwrap();
     harness.render().unwrap();

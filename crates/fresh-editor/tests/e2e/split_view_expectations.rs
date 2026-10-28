@@ -373,7 +373,9 @@ fn test_split_with_different_files() {
     std::fs::write(&file1, "Content of file 1").unwrap();
     std::fs::write(&file2, "Content of file 2").unwrap();
 
-    let mut harness = EditorTestHarness::new(120, 40).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(120, 40, crate::common::harness::config_with_tab_bar())
+            .unwrap();
 
     // Open first file
     harness.open_file(&file1).unwrap();

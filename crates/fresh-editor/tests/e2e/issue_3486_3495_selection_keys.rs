@@ -225,7 +225,14 @@ fn up_on_the_first_line_moves_to_its_start() {
 #[test]
 fn down_on_the_last_line_moves_to_its_end() {
     let temp_dir = TempDir::new().unwrap();
-    let mut harness = EditorTestHarness::new(100, 20).unwrap();
+    // The clamped cursor: with virtual space (the default) Down on the last
+    // line stays put instead.
+    let mut harness = EditorTestHarness::with_config(
+        100,
+        20,
+        crate::common::harness::config_without_virtual_space(),
+    )
+    .unwrap();
     open_fixture(&mut harness, &temp_dir);
 
     for _ in 0..3 {

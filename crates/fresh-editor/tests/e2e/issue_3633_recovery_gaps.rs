@@ -14,7 +14,7 @@
 //! content files of entries, wherever they sit, so they read the same way
 //! against any store layout.
 
-use crate::common::harness::{layout, EditorTestHarness, HarnessOptions};
+use crate::common::harness::{EditorTestHarness, HarnessOptions};
 use crossterm::event::{KeyCode, KeyModifiers};
 use fresh::config::Config;
 use fresh::config_io::DirectoryContext;
@@ -29,7 +29,9 @@ fn hot_exit_config() -> Config {
     config
 }
 
-fn launch(dir: &Path, dir_context: &DirectoryContext, config: Config) -> EditorTestHarness {
+fn launch(dir: &Path, dir_context: &DirectoryContext, mut config: Config) -> EditorTestHarness {
+    // The restored buffers are read off the tab bar (hidden by default).
+    config.editor.show_tab_bar = true;
     EditorTestHarness::create(
         120,
         24,
@@ -77,7 +79,7 @@ fn backups_holding(dir_context: &DirectoryContext, needle: &str) -> Vec<PathBuf>
 }
 
 fn tab_bar(harness: &EditorTestHarness) -> String {
-    harness.screen_row_text(layout::TAB_BAR_ROW as u16)
+    harness.get_tab_bar()
 }
 
 // =========================================================================

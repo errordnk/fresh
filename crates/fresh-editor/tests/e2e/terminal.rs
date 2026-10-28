@@ -18,6 +18,14 @@ use fresh::services::terminal::TerminalState;
 use portable_pty::{native_pty_system, PtySize};
 
 fn harness_or_skip(width: u16, height: u16) -> Option<EditorTestHarness> {
+    harness_with_config_or_skip(width, height, fresh::config::Config::default())
+}
+
+fn harness_with_config_or_skip(
+    width: u16,
+    height: u16,
+    config: fresh::config::Config,
+) -> Option<EditorTestHarness> {
     if native_pty_system()
         .openpty(PtySize {
             rows: 1,
@@ -31,12 +39,23 @@ fn harness_or_skip(width: u16, height: u16) -> Option<EditorTestHarness> {
         return None;
     }
 
-    EditorTestHarness::new(width, height).ok()
+    EditorTestHarness::with_config(width, height, config).ok()
 }
 
 macro_rules! harness_or_return {
     ($w:expr, $h:expr) => {
         match harness_or_skip($w, $h) {
+            Some(h) => h,
+            None => return,
+        }
+    };
+}
+
+/// [`harness_or_return`] with the given config, e.g. one showing the tab bar
+/// (hidden by default) for the tests that click terminal tabs.
+macro_rules! harness_with_config_or_return {
+    ($w:expr, $h:expr, $config:expr) => {
+        match harness_with_config_or_skip($w, $h, $config) {
             Some(h) => h,
             None => return,
         }
@@ -104,7 +123,8 @@ const WIDE_LINE_CMD: &[u8] = b"printf 'X%.0s' $(seq 1 100); printf '\\x5aEND\\n'
 /// open, and no new buffer would be created.
 #[test]
 fn plus_button_menu_grabs_keyboard_from_active_terminal() {
-    let mut harness = harness_or_return!(120, 30);
+    let mut harness =
+        harness_with_config_or_return!(120, 30, crate::common::harness::config_with_tab_bar());
 
     // Focus an active terminal buffer.
     harness.editor_mut().open_terminal();
@@ -144,7 +164,8 @@ fn plus_button_menu_grabs_keyboard_from_active_terminal() {
 /// the menu would stay open.
 #[test]
 fn tab_context_menu_grabs_keyboard_from_active_terminal() {
-    let mut harness = harness_or_return!(120, 30);
+    let mut harness =
+        harness_with_config_or_return!(120, 30, crate::common::harness::config_with_tab_bar());
 
     harness.editor_mut().open_terminal();
     assert!(harness.editor().is_terminal_mode());
@@ -183,7 +204,8 @@ fn tab_context_menu_grabs_keyboard_from_active_terminal() {
 /// Observes rendered output only: the terminal tab label and the menu text.
 #[test]
 fn tab_context_menu_click_beats_mouse_capturing_terminal() {
-    let mut harness = harness_or_return!(120, 30);
+    let mut harness =
+        harness_with_config_or_return!(120, 30, crate::common::harness::config_with_tab_bar());
 
     // Focus an active (live) terminal buffer.
     harness.editor_mut().open_terminal();
@@ -270,7 +292,8 @@ fn test_open_terminal() {
 /// on rendered output.
 #[test]
 fn test_open_terminal_to_the_right_via_palette() {
-    let mut harness = harness_or_return!(120, 24);
+    let mut harness =
+        harness_with_config_or_return!(120, 24, crate::common::harness::config_with_tab_bar());
 
     // Distinctive content so the editor pane is locatable on screen.
     harness.type_text("EDITORPANE").unwrap();
@@ -421,7 +444,11 @@ fn menu_item_fg(
 /// Disk" confirmation for a file the user never edited.
 #[test]
 fn test_file_menu_disables_save_for_a_terminal_buffer() {
-    let mut harness = harness_or_return!(120, 30);
+    let mut harness = harness_with_config_or_return!(
+        120,
+        30,
+        crate::common::harness::config_with_menu_and_tab_bar()
+    );
 
     // Baseline: an ordinary buffer with unsaved changes — Save renders like
     // New File, i.e. enabled.
@@ -511,7 +538,8 @@ fn test_terminal_mode_toggle() {
 /// Test multiple terminals can be opened
 #[test]
 fn test_multiple_terminals() {
-    let mut harness = harness_or_return!(120, 24);
+    let mut harness =
+        harness_with_config_or_return!(120, 24, crate::common::harness::config_with_tab_bar());
 
     // Open first terminal
     harness.editor_mut().open_terminal();
@@ -2580,7 +2608,8 @@ fn test_terminal_mode_preserved_when_switching_tabs() {
 fn test_close_terminal_tab_in_terminal_mode_via_mouse() {
     use crate::common::harness::layout;
 
-    let mut harness = harness_or_return!(80, 24);
+    let mut harness =
+        harness_with_config_or_return!(80, 24, crate::common::harness::config_with_tab_bar());
 
     // Create a temp file to work with
     let temp_dir = tempfile::TempDir::new().unwrap();

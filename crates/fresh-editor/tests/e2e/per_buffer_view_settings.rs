@@ -38,8 +38,10 @@ fn cursor_line_is_highlighted(harness: &EditorTestHarness, needle: &str) -> bool
         .map(|r| r as u16)
         .find(|r| *r != cursor_row && !harness.get_row_text(*r).trim().is_empty())
         .expect("expected a second content row to compare against");
-    harness.get_cell_style(0, cursor_row).map(|s| s.bg)
-        != harness.get_cell_style(0, other_row).map(|s| s.bg)
+    // The highlight stays out of the gutter: compare the first text column.
+    let text_col = harness.gutter_width() as u16;
+    harness.get_cell_style(text_col, cursor_row).map(|s| s.bg)
+        != harness.get_cell_style(text_col, other_row).map(|s| s.bg)
 }
 
 /// Content rows whose gutter shows the "expanded, foldable" arrow.
@@ -344,7 +346,12 @@ fn test_indentation_guide_current_buffer_persists_across_restart() {
 /// arrows there and nowhere else.
 #[test]
 fn test_fold_indicators_current_buffer_scopes_to_buffer() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 24).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        24,
+        crate::common::harness::config_with_folding(),
+    )
+    .unwrap();
     let dir = harness.project_dir().unwrap().to_path_buf();
     std::fs::write(dir.join("a.rs"), FOLDABLE_SOURCE).unwrap();
     std::fs::write(dir.join("b.rs"), FOLDABLE_SOURCE).unwrap();
@@ -401,7 +408,7 @@ fn test_fold_indicators_current_buffer_persists_across_restart() {
         let mut harness = EditorTestHarness::with_config_and_working_dir(
             120,
             24,
-            Config::default(),
+            crate::common::harness::config_with_folding(),
             project_dir.clone(),
         )
         .unwrap();
@@ -421,7 +428,7 @@ fn test_fold_indicators_current_buffer_persists_across_restart() {
         let mut harness = EditorTestHarness::with_config_and_working_dir(
             120,
             24,
-            Config::default(),
+            crate::common::harness::config_with_folding(),
             project_dir.clone(),
         )
         .unwrap();
@@ -1443,7 +1450,12 @@ fn test_tab_indicators_toggle_independent_of_space_dots() {
 /// splits apart, so the discriminator is the glyph count across the screen.
 #[test]
 fn test_guide_and_fold_pins_scope_to_the_split() {
-    let mut harness = EditorTestHarness::with_temp_project(120, 24).unwrap();
+    let mut harness = EditorTestHarness::with_temp_project_and_config(
+        120,
+        24,
+        crate::common::harness::config_with_folding(),
+    )
+    .unwrap();
     let dir = harness.project_dir().unwrap().to_path_buf();
     std::fs::write(dir.join("a.rs"), FOLDABLE_SOURCE).unwrap();
 

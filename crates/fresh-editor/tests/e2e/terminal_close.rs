@@ -8,6 +8,14 @@ use crossterm::event::{KeyCode, KeyModifiers};
 use portable_pty::{native_pty_system, PtySize};
 
 fn harness_or_skip(width: u16, height: u16) -> Option<EditorTestHarness> {
+    harness_with_config_or_skip(width, height, fresh::config::Config::default())
+}
+
+fn harness_with_config_or_skip(
+    width: u16,
+    height: u16,
+    config: fresh::config::Config,
+) -> Option<EditorTestHarness> {
     if native_pty_system()
         .openpty(PtySize {
             rows: 1,
@@ -21,12 +29,23 @@ fn harness_or_skip(width: u16, height: u16) -> Option<EditorTestHarness> {
         return None;
     }
 
-    EditorTestHarness::new(width, height).ok()
+    EditorTestHarness::with_config(width, height, config).ok()
 }
 
 macro_rules! harness_or_return {
     ($w:expr, $h:expr) => {
         match harness_or_skip($w, $h) {
+            Some(h) => h,
+            None => return,
+        }
+    };
+}
+
+/// [`harness_or_return`] with the given config, e.g. one showing the tab bar
+/// (hidden by default) for the tests that click terminal tabs.
+macro_rules! harness_with_config_or_return {
+    ($w:expr, $h:expr, $config:expr) => {
+        match harness_with_config_or_skip($w, $h, $config) {
             Some(h) => h,
             None => return,
         }
@@ -134,7 +153,8 @@ fn test_close_terminal_as_only_tab_in_split() {
 /// should leave it still visible in split B.
 #[test]
 fn test_close_buffer_in_one_split_leaves_other_split() {
-    let mut harness = harness_or_return!(120, 30);
+    let mut harness =
+        harness_with_config_or_return!(120, 30, crate::common::harness::config_with_tab_bar());
 
     // Disable jump_to_end_on_output
     harness

@@ -65,7 +65,9 @@ fn chrome_left_edge(h: &EditorTestHarness) -> usize {
 
 /// A config whose `autoOpenDock` asks for the dock at every start.
 fn dock_always_config() -> Config {
+    // The chrome's left edge is read off the menu bar (hidden by default).
     let mut config = Config::default();
+    config.editor.show_menu_bar = true;
     config.plugins.insert(
         "orchestrator".into(),
         PluginConfig {
@@ -256,8 +258,10 @@ impl UserConfig {
     /// config rather than resolving layers, so this is what a real launch
     /// would resolve.
     fn launch(&self, root: &std::path::Path, orchestrator_mode: bool) -> EditorTestHarness {
-        let config =
+        let mut config =
             Config::load_from_file(self.dir_context.config_dir.join("config.json")).unwrap();
+        // The chrome's left edge is read off the menu bar (hidden by default).
+        config.editor.show_menu_bar = true;
         let mut options = HarnessOptions::new()
             .with_config(config)
             .with_working_dir(root.to_path_buf())

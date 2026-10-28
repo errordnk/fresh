@@ -52,7 +52,9 @@ fn close_button_pos(harness: &EditorTestHarness) -> (u16, u16) {
 
 #[test]
 fn clicking_close_split_pops_confirmation_not_immediate_close() {
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(100, 24, crate::common::harness::config_with_tab_bar())
+            .unwrap();
     split_vertical(&mut harness);
     assert_eq!(leaf_count(&harness), 2, "precondition: two split panes");
 
@@ -76,7 +78,9 @@ fn clicking_close_split_pops_confirmation_not_immediate_close() {
 
 #[test]
 fn confirming_close_split_closes_the_pane() {
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(100, 24, crate::common::harness::config_with_tab_bar())
+            .unwrap();
     split_vertical(&mut harness);
     assert_eq!(leaf_count(&harness), 2);
 
@@ -101,7 +105,9 @@ fn confirming_close_split_closes_the_pane() {
 
 #[test]
 fn cancelling_close_split_keeps_both_panes() {
-    let mut harness = EditorTestHarness::new(100, 24).unwrap();
+    let mut harness =
+        EditorTestHarness::with_config(100, 24, crate::common::harness::config_with_tab_bar())
+            .unwrap();
     split_vertical(&mut harness);
     assert_eq!(leaf_count(&harness), 2);
 

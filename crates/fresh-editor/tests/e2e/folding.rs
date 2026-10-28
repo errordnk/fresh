@@ -105,10 +105,12 @@ fn find_text_position(harness: &EditorTestHarness, needle: &str) -> (u16, u16) {
     );
 }
 
-/// A harness with code folding on (it is off by default).
+/// A harness with code folding on and the indicator column, where the fold
+/// arrows are drawn, shown (both are off by default).
 fn folding_harness(width: u16, height: u16) -> EditorTestHarness {
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     EditorTestHarness::with_config(width, height, config).unwrap()
 }
 
@@ -569,6 +571,7 @@ fn test_folded_gutter_line_numbers_match_content_during_scroll() -> anyhow::Resu
     //    loop.
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     config.editor.enable_semantic_tokens_full = true;
     config.lsp.insert(
         "rust".to_string(),
@@ -866,6 +869,7 @@ fn gamma() {
     // Lower the large-file threshold so this file triggers large-file mode.
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("byte_fold_target.rs", content).unwrap();
@@ -989,6 +993,7 @@ fn test_gutter_click_folds_correct_block_in_large_file_mode() {
     // Force large-file mode so get_line_number uses byte/est_ll estimation.
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("gutter_click_fold.rs", &content).unwrap();
@@ -1060,6 +1065,7 @@ fn test_indent_folding_works_in_large_file_mode() {
     // Lower the large-file threshold so this small file triggers large-file mode.
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("large_fold.py", &content).unwrap();
@@ -1132,6 +1138,7 @@ fn test_gutter_highlight_correct_at_end_of_large_file() {
     // Force large-file mode
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("gutter_highlight.txt", &content).unwrap();
@@ -1230,6 +1237,7 @@ fn test_fold_indicators_correct_at_end_of_large_file() {
     // Force large-file mode
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("fold_indicator_end.rs", &content).unwrap();
@@ -1352,6 +1360,7 @@ fn test_fold_unfold_at_end_of_large_file_cursor() {
 
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("fold_end_cursor.rs", &content).unwrap();
@@ -1468,6 +1477,7 @@ fn test_fold_unfold_function_body_at_end_of_large_file() {
 
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("fold_body_end.rs", &content).unwrap();
@@ -1574,6 +1584,7 @@ fn test_fold_unfold_at_end_of_large_file_gutter_click() {
 
     let mut config = fresh::config::Config::default();
     config.editor.code_folding = true;
+    config.editor.gutter_indicators = true;
     config.editor.large_file_threshold_bytes = 3;
 
     let fixture = TestFixture::new("fold_end_click.rs", &content).unwrap();
