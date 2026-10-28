@@ -603,7 +603,7 @@ fn is_binary_unprintable(b: u8) -> bool {
 
 /// Check if a character is a control character that should be rendered as `<XX>`.
 /// This applies to ALL files (binary and non-binary) to prevent terminal corruption.
-fn is_control_char(ch: char) -> bool {
+pub(crate) fn is_control_char(ch: char) -> bool {
     let code = ch as u32;
     if code >= 128 {
         return false;

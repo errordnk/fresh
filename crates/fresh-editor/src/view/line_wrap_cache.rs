@@ -155,13 +155,7 @@ fn layout_for_plain_text_under(
 ) -> Vec<ViewLine> {
     use crate::view::ui::view_pipeline::LineStart;
     use crate::view::wrap_machine::WrapMachine;
-    use fresh_core::api::ViewTokenWire;
-    let tokens = vec![ViewTokenWire {
-        source_offset: Some(0),
-        kind: ViewTokenWireKind::Text(line_text.to_string()),
-        style: None,
-    }];
-    let wrapped = WrapMachine::run(tokens, rule).tokens;
+    let wrapped = WrapMachine::run(line_tokens(line_text), rule).tokens;
     let mut lines: Vec<ViewLine> =
         ViewLineIterator::new(&wrapped, false, true, tab_size, false).collect();
     // Invariant: every logical line is at least one visual row.  An
@@ -405,10 +399,16 @@ fn count_segment_rows_with_indent(
 /// wrap algorithm.  Pure function of (text, geometry).
 ///
 /// Behaves exactly like the renderer's per-logical-line wrap count:
-/// runs `apply_wrapping_transform` on a single-`Text`-token input and
-/// tallies non-empty rows.  A trailing `Break` emitted when the last
-/// chunk exactly fills the effective width is followed by nothing
-/// meaningful and does not count as a row.
+/// runs the wrap machine on the line tokenised as `build_base_tokens`
+/// tokenises it, and tallies non-empty rows.  A trailing `Break` emitted
+/// when the last chunk exactly fills the effective width is followed by
+/// nothing meaningful and does not count as a row.
+///
+/// The tokens matter, not only the text: a word that fills a row exactly
+/// is moved to the next row when a `Space` follows it (issue #1363), which
+/// the same line fed as one `Text` token never triggers. Counted that way,
+/// such a line was a row shorter than drawn, and scrolling down a row from
+/// inside it skipped to the next line (issue #1574 at a 3-column gutter).
 pub fn count_visual_rows_for_text(
     line_text: &str,
     effective_width: usize,
@@ -416,15 +416,9 @@ pub fn count_visual_rows_for_text(
     hanging_indent: bool,
 ) -> u32 {
     use crate::view::wrap_machine::{WrapMachine, WrapRule};
-    use fresh_core::api::ViewTokenWire;
 
-    let tokens = vec![ViewTokenWire {
-        source_offset: Some(0),
-        kind: ViewTokenWireKind::Text(line_text.to_string()),
-        style: None,
-    }];
     let out = WrapMachine::run(
-        tokens,
+        line_tokens(line_text),
         WrapRule::Word {
             content_width: effective_width,
             gutter_width,
@@ -432,6 +426,41 @@ pub fn count_visual_rows_for_text(
         },
     );
     (out.rows.len() as u32).max(1)
+}
+
+/// One line's text as `build_base_tokens` tokenises it: each space a `Space`,
+/// each tab starting a `Text`, a control character a `BinaryByte`, and every
+/// other character joining the `Text` before it.
+fn line_tokens(line_text: &str) -> Vec<fresh_core::api::ViewTokenWire> {
+    use fresh_core::api::ViewTokenWire;
+
+    let token = |offset: usize, kind: ViewTokenWireKind| ViewTokenWire {
+        source_offset: Some(offset),
+        kind,
+        style: None,
+    };
+    let mut tokens: Vec<ViewTokenWire> = Vec::new();
+    for (offset, ch) in line_text.char_indices() {
+        match ch {
+            ' ' => tokens.push(token(offset, ViewTokenWireKind::Space)),
+            '\t' => tokens.push(token(offset, ViewTokenWireKind::Text(ch.to_string()))),
+            _ if crate::view::ui::split_rendering::base_tokens::is_control_char(ch) => {
+                tokens.push(token(offset, ViewTokenWireKind::BinaryByte(ch as u8)))
+            }
+            _ => match tokens.last_mut() {
+                Some(ViewTokenWire {
+                    kind: ViewTokenWireKind::Text(run),
+                    source_offset: Some(start),
+                    ..
+                }) if *start + run.len() == offset => run.push(ch),
+                _ => tokens.push(token(offset, ViewTokenWireKind::Text(ch.to_string()))),
+            },
+        }
+    }
+    if tokens.is_empty() {
+        tokens.push(token(0, ViewTokenWireKind::Text(String::new())));
+    }
+    tokens
 }
 
 /// Row count under the terminal-grid rule (fresh#2649).
@@ -674,6 +703,15 @@ mod tests {
                 w,
             );
         }
+    }
+
+    /// A word that fills a row exactly, with a space after it, goes to the
+    /// next row as the renderer draws it (issue #1363's back-up): 35 text
+    /// columns end on "so", and the row count is three, not two (#1574).
+    #[test]
+    fn a_word_filling_the_row_before_a_space_moves_down() {
+        let text = "Padding line 01 — filler content so there is enough room to scroll up.";
+        assert_eq!(count_visual_rows_for_text(text, 38, 3, false), 3);
     }
 
     /// Adding characters never *decreases* the row count at a fixed width.
