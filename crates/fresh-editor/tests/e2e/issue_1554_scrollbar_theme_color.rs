@@ -44,22 +44,33 @@ fn test_vertical_scrollbar_uses_theme_track_and_thumb_colors() {
     harness.load_buffer_from_text(&long_content(200)).unwrap();
     harness.render().unwrap();
 
-    let bgs = scan_column_bgs(&harness, 79);
-    assert!(
-        !bgs.is_empty(),
-        "Rightmost column should contain scrollbar cells"
-    );
+    // The vertical bar is a right half block (`▐`) in the bar's colour, so
+    // its colours are the cells' foregrounds, and the half it leaves is the
+    // row's own ground: the same background as the cell beside it.
+    let (first, last) = harness.content_area_rows();
+    let mut fgs = Vec::new();
+    for row in first as u16..=last as u16 {
+        assert_eq!(
+            harness.get_cell(79, row).as_deref(),
+            Some("▐"),
+            "row {row}: the bar is a half block"
+        );
+        let bar = harness.get_cell_style(79, row).unwrap();
+        let beside = harness.get_cell_style(78, row).unwrap();
+        assert_eq!(
+            bar.bg, beside.bg,
+            "row {row}: the half the bar leaves is the row's ground, not the track"
+        );
+        fgs.extend(bar.fg);
+    }
 
-    let saw_track = bgs.contains(&expected_track);
-    let saw_thumb = bgs.contains(&expected_thumb);
-
     assert!(
-        saw_track,
-        "Scrollbar track should use theme.scrollbar_track_fg ({expected_track:?}); saw bgs {bgs:?}"
+        fgs.contains(&expected_track),
+        "Scrollbar track should use theme.scrollbar_track_fg ({expected_track:?}); saw {fgs:?}"
     );
     assert!(
-        saw_thumb,
-        "Scrollbar thumb should use theme.scrollbar_thumb_fg ({expected_thumb:?}); saw bgs {bgs:?}"
+        fgs.contains(&expected_thumb),
+        "Scrollbar thumb should use theme.scrollbar_thumb_fg ({expected_thumb:?}); saw {fgs:?}"
     );
 }
 

@@ -749,8 +749,11 @@ fn dock_list_scrollbar_shows_only_on_hover() {
     let sb_col = wall_col.saturating_sub(2);
     // Styles of the scrollbar column across the list rows; the bar's presence
     // shows up as a change here (it paints background-coloured cells).
-    let snapshot = |h: &EditorTestHarness| -> Vec<Option<ratatui::style::Style>> {
-        (8u16..30).map(|y| h.get_cell_style(sb_col, y)).collect()
+    // The bar's own colour per row: a half block's foreground, a bare
+    // cell's ground. The other half of a bar cell is the row's ground, which
+    // a hovered row lights.
+    let snapshot = |h: &EditorTestHarness| -> Vec<Option<ratatui::style::Color>> {
+        (8u16..30).map(|y| h.bar_colour_at(sb_col, y)).collect()
     };
 
     // Focused on mount but NOT hovered → the bar is hidden. (Focus alone must
@@ -819,8 +822,11 @@ fn dock_scrollbar_ignores_stale_per_window_cursor_when_blurred() {
     // as the panel wraps, which is two columns short of the divider: one for
     // the divider, one for the slack column the runtime wraps against.
     let sb_col = wall_col.saturating_sub(2);
-    let snapshot = |h: &EditorTestHarness| -> Vec<Option<ratatui::style::Style>> {
-        (8u16..30).map(|y| h.get_cell_style(sb_col, y)).collect()
+    // The bar's own colour per row: a half block's foreground, a bare
+    // cell's ground. The other half of a bar cell is the row's ground, which
+    // a hovered row lights.
+    let snapshot = |h: &EditorTestHarness| -> Vec<Option<ratatui::style::Color>> {
+        (8u16..30).map(|y| h.bar_colour_at(sb_col, y)).collect()
     };
 
     // Blurred and unhovered → the bar is hidden.
@@ -3198,8 +3204,11 @@ fn dock_list_scrollbar_flashes_on_keyboard_nav_and_expires() {
     // divider — `view::shell::dock::DIVIDER_COLS`, which argues the number —
     // so the bar is against the wall now.
     let sb_col = wall_col.saturating_sub(1);
-    let snapshot = |h: &EditorTestHarness| -> Vec<Option<ratatui::style::Style>> {
-        (8u16..30).map(|y| h.get_cell_style(sb_col, y)).collect()
+    // The bar's own colour per row: a half block's foreground, a bare
+    // cell's ground. The other half of a bar cell is the row's ground, which
+    // a hovered row lights.
+    let snapshot = |h: &EditorTestHarness| -> Vec<Option<ratatui::style::Color>> {
+        (8u16..30).map(|y| h.bar_colour_at(sb_col, y)).collect()
     };
 
     // Down moves the tree selection (live-switching the active window)
@@ -4121,12 +4130,11 @@ fn moving_extracted_co_tenant_workspace_to_folder_leaves_original_unfiled() {
 // whatever the active theme paints it with.
 // ---------------------------------------------------------------------
 
-/// Background colour of every column on one screen row.
+/// Colour of every column on one screen row (a scrollbar's half block by
+/// its foreground, every other cell by its background).
 fn row_bgs(h: &EditorTestHarness, row: u16) -> Vec<Option<ratatui::style::Color>> {
     let cols = h.screen_row_text(row).chars().count() as u16;
-    (0..cols)
-        .map(|c| h.get_cell_style(c, row).and_then(|s| s.bg))
-        .collect()
+    (0..cols).map(|c| h.bar_colour_at(c, row)).collect()
 }
 
 /// Inclusive column span whose background differs between two snapshots

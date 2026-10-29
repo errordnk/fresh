@@ -173,7 +173,7 @@ fn buffer_to_string(buffer: &Buffer) -> String {
     for y in 0..height {
         for x in 0..width {
             let cell = &buffer[(x, y)];
-            result.push_str(cell.symbol());
+            result.push_str(crate::common::harness::cell_text(cell));
         }
         if y < height - 1 {
             result.push('\n');

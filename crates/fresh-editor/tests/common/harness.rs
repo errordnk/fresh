@@ -592,6 +592,18 @@ pub fn config_with_status_elements(elements: &[fresh::config::StatusBarElement])
     config
 }
 
+/// A cell as text. The vertical scrollbar is a right half block (`▐`)
+/// painted in the bar's colour; read as text it is the blank it was when
+/// the bar was a coloured space, so rows read as their content. Tests find
+/// the bar by its colour (`is_scrollbar_thumb_at` and friends), and
+/// `get_cell` still returns the glyph.
+pub fn cell_text(cell: &ratatui::buffer::Cell) -> &str {
+    match cell.symbol() {
+        "▐" => " ",
+        symbol => symbol,
+    }
+}
+
 /// The `line:col` cursor readout on a rendered screen: the last row whose
 /// final word is `line:col` (the status bar sits above the prompt line).
 pub fn status_position_in(screen: &str) -> Option<(usize, usize)> {
@@ -1989,7 +2001,7 @@ impl EditorTestHarness {
     /// Compare TestBackend output with vt100-parsed output
     /// Returns a list of differences if any, or empty vec if they match
     pub fn compare_test_vs_real(&self) -> Vec<String> {
-        let test_screen = self.screen_to_string();
+        let test_screen = self.raw_screen_to_string();
         let vt100_screen = self.vt100_screen_to_string();
 
         let test_lines: Vec<&str> = test_screen.lines().collect();
@@ -2123,22 +2135,34 @@ impl EditorTestHarness {
         inside.then(|| buffer.index_of(x, y))
     }
 
-    /// Check if a cell at the given position is a scrollbar thumb.
-    ///
-    /// Since the scrollbar is rendered using background colors (not characters),
-    /// this checks if the cell has a background color matching scrollbar thumb colors.
+    /// The colour a scrollbar cell shows: a vertical bar is a right half
+    /// block (`▐`) in its colour, a horizontal one a space on its background.
+    fn scrollbar_cell_style(&self, x: u16, y: u16) -> Option<ratatui::style::Style> {
+        let style = self.get_cell_style(x, y)?;
+        if self.get_cell(x, y).as_deref() == Some("▐") {
+            return Some(ratatui::style::Style::default().bg(style.fg?));
+        }
+        Some(style)
+    }
+
+    /// The colour a cell shows where a scrollbar may be: the foreground of a
+    /// vertical bar's half block, otherwise the background.
+    pub fn bar_colour_at(&self, x: u16, y: u16) -> Option<ratatui::style::Color> {
+        self.scrollbar_cell_style(x, y).and_then(|style| style.bg)
+    }
+
+    /// Check if a cell at the given position is a scrollbar thumb, by the
+    /// colour it shows (see `scrollbar_cell_style`).
     pub fn is_scrollbar_thumb_at(&self, x: u16, y: u16) -> bool {
-        self.get_cell_style(x, y)
+        self.scrollbar_cell_style(x, y)
             .map(crate::common::scrollbar::is_scrollbar_thumb_style)
             .unwrap_or(false)
     }
 
-    /// Check if a cell at the given position is a scrollbar track.
-    ///
-    /// Since the scrollbar is rendered using background colors (not characters),
-    /// this checks if the cell has a background color matching scrollbar track colors.
+    /// Check if a cell at the given position is a scrollbar track, by the
+    /// colour it shows (see `scrollbar_cell_style`).
     pub fn is_scrollbar_track_at(&self, x: u16, y: u16) -> bool {
-        self.get_cell_style(x, y)
+        self.scrollbar_cell_style(x, y)
             .map(crate::common::scrollbar::is_scrollbar_track_style)
             .unwrap_or(false)
     }
@@ -2167,7 +2191,7 @@ impl EditorTestHarness {
         for x in 0..width {
             let pos = buffer.index_of(x, y);
             if let Some(cell) = buffer.content.get(pos) {
-                row_text.push_str(cell.symbol());
+                row_text.push_str(cell_text(cell));
             }
         }
 
@@ -2176,6 +2200,17 @@ impl EditorTestHarness {
 
     /// Get entire screen as string (for debugging)
     pub fn screen_to_string(&self) -> String {
+        self.screen_text(cell_text)
+    }
+
+    /// The screen as the terminal shows it, every glyph included — the
+    /// vertical scrollbar's half block too. For comparing with what a real
+    /// terminal parses out of the escape stream.
+    pub fn raw_screen_to_string(&self) -> String {
+        self.screen_text(|cell| cell.symbol())
+    }
+
+    fn screen_text(&self, text: fn(&ratatui::buffer::Cell) -> &str) -> String {
         let buffer = self.buffer();
         let (width, height) = (buffer.area.width, buffer.area.height);
         let mut result = String::new();
@@ -2184,7 +2219,7 @@ impl EditorTestHarness {
             for x in 0..width {
                 let pos = buffer.index_of(x, y);
                 if let Some(cell) = buffer.content.get(pos) {
-                    result.push_str(cell.symbol());
+                    result.push_str(text(cell));
                 }
             }
             if y < height - 1 {
@@ -2209,7 +2244,7 @@ impl EditorTestHarness {
         while col < width {
             let pos = buffer.index_of(col, row);
             if let Some(cell) = buffer.content.get(pos) {
-                let sym = cell.symbol();
+                let sym = cell_text(cell);
                 let stripped = strip_osc8(sym);
                 if stripped.chars().count() > 1 {
                     // This is a multi-char OSC 8 chunk — it contains chars
@@ -2258,7 +2293,7 @@ impl EditorTestHarness {
                 buffer
                     .content
                     .get(buffer.index_of(x, y))
-                    .map(|cell| cell.symbol())
+                    .map(cell_text)
                     .unwrap_or("")
             });
             if let Some(col) = find_text_in_row(symbols, text) {

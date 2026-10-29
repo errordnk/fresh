@@ -55,7 +55,7 @@ fn read(harness: &EditorTestHarness) -> String {
     for y in 0..buffer.area.height {
         let mut x = 0;
         while x < buffer.area.width {
-            let symbol = buffer.content[buffer.index_of(x, y)].symbol();
+            let symbol = crate::common::harness::cell_text(&buffer.content[buffer.index_of(x, y)]);
             out.push_str(symbol);
             x += symbol.width().max(1) as u16;
         }

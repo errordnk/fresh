@@ -348,14 +348,15 @@ pub fn fold_band(
                     }
                 }
             }
-            // **A bar is two background colours, not two glyphs.** Each
-            // track cell is a space carrying a background, because
-            // box-drawing glyphs leave gaps between rows in some terminals —
-            // and every test that finds a scrollbar on screen finds it by that
-            // background. So the pair the item names reads the way it does
-            // everywhere else, with the thumb in front of the track it sits
-            // on: the foreground is the thumb, the background is the track,
-            // and both are written as the cell's background.
+            // **A bar is two colours, not two glyphs.** A horizontal bar's
+            // cell is a space carrying a background, because box-drawing
+            // glyphs leave gaps between rows in some terminals; a vertical
+            // bar's is a right half block (`▐`), which block-element fonts
+            // draw edge to edge, in the bar's colour over the cell's own
+            // ground, so it takes half the column. The pair the item names
+            // reads the way it does everywhere else, with the thumb in front
+            // of the track it sits on: the foreground is the thumb, the
+            // background is the track.
             Draw::Scrollbar {
                 offset,
                 content,
@@ -376,21 +377,33 @@ pub fn fold_band(
                         style.bg
                     };
                     let mut cell = Style::default();
+                    // A vertical bar is half a cell wide: a right half block
+                    // in the bar's colour, over the row's own ground. A
+                    // horizontal one keeps the whole cell. A bar with no
+                    // colour (a fold without a palette, such as the page
+                    // mirror that turns a widget page into buffer text) stays
+                    // a blank, so the glyph never becomes text.
+                    let half = matches!(axis, fresh_ui::Axis::Vertical)
+                        && colour.is_some_and(|c| c != ratatui::style::Color::Reset);
+                    let mut glyph = if half { '▐' } else { ' ' };
                     if let Some(c) = colour {
-                        // Both halves, not just the ground. The glyph is a
-                        // space, so the foreground is invisible either way —
-                        // what naming it buys is that the cell is the *bar's*
-                        // whatever it covers. An overlay bar floats over rows
-                        // that light on hover, and a cell that took its
-                        // foreground from the row underneath would change
-                        // colour when the row did.
-                        cell = cell.fg(c).bg(c);
+                        if half {
+                            cell = cell.fg(c);
+                        } else {
+                            // Both halves, not just the ground. The glyph is a
+                            // space, so the foreground is invisible either way —
+                            // what naming it buys is that the cell is the *bar's*
+                            // whatever it covers. An overlay bar floats over rows
+                            // that light on hover, and a cell that took its
+                            // foreground from the row underneath would change
+                            // colour when the row did.
+                            cell = cell.fg(c).bg(c);
+                        }
                     }
                     // A mark shares the cell with the bar: a half block in
                     // the mark's colour over the bar's own ground shows both
                     // the mark and the scroll position; a full mark takes
                     // the cell (a track cell lit under the pointer).
-                    let mut glyph = ' ';
                     if let Some(m) = marks.iter().find(|m| m.at == i) {
                         let ms = palette.style(&m.theme);
                         if m.full {
@@ -398,6 +411,13 @@ pub fn fold_band(
                                 cell = cell.fg(c).bg(c);
                             }
                         } else if let Some(c) = ms.fg {
+                            // On a half-width bar the mark takes the left
+                            // half and the bar keeps its own.
+                            if half {
+                                if let Some(bar) = colour {
+                                    cell = cell.bg(bar);
+                                }
+                            }
                             cell = cell.fg(c);
                             glyph = '▌';
                         }
@@ -406,6 +426,14 @@ pub fn fold_band(
                         fresh_ui::Axis::Vertical => (rect.x, rect.y.saturating_add(i)),
                         fresh_ui::Axis::Horizontal => (rect.x.saturating_add(i), rect.y),
                     };
+                    // The half the bar leaves is the row's own ground: the
+                    // cell beside it, not whatever lay under the bar (its
+                    // lane is filled with the track colour, which would make
+                    // the bar as wide as before).
+                    if half && cell.bg.is_none() && x > buf.area.x && contains(buf.area, x, y) {
+                        let ground = buf[(x - 1, y)].bg;
+                        cell = cell.bg(ground);
+                    }
                     put(buf, x, y, glyph, cell, clip);
                 }
             }

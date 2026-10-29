@@ -1253,8 +1253,9 @@ mod tests {
         panel_with(tree_of(rows, parent, offset), cols)
     }
 
-    /// The background of every cell in the panel's last inner column — the
-    /// bar's lane — from the first body row down.
+    /// The colour of every cell in the panel's last inner column — the
+    /// bar's lane — from the first body row down. The bar is a half block
+    /// (`▐`) in its colour, so that is the cell's foreground.
     fn bar_column(e: Sidebar, w: u16, h: u16) -> Vec<ratatui::style::Color> {
         let ui = laid_out(e, w, h);
         let spec = ui.spec().clone();
@@ -1265,7 +1266,7 @@ mod tests {
         // the bar's lane is the one before it. Rows: the title is row 0 and
         // the bottom border the last.
         let x = w - 2;
-        (1..h - 1).map(|y| buf[(x, y)].bg).collect()
+        (1..h - 1).map(|y| buf[(x, y)].fg).collect()
     }
 
     /// What a thumb cell and a track cell actually carry, painted.
@@ -1454,7 +1455,7 @@ mod tests {
         let ui = laid_out(pinned_panel(40, 2, 32, 20), 20, 10);
         let names: Vec<String> = lines_of(&ui, 20, 10)[1..9]
             .iter()
-            .map(|l| l.trim_matches(|c| c == '│' || c == ' ').to_string())
+            .map(|l| l.trim_matches(|c| matches!(c, '│' | '▐' | ' ')).to_string())
             .collect();
         assert_eq!(
             names,

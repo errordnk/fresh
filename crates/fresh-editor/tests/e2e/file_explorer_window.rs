@@ -31,11 +31,7 @@ fn bar_column(harness: &EditorTestHarness) -> u16 {
 fn rows_with_bg(harness: &EditorTestHarness, column: u16, want: Color) -> Vec<u16> {
     let (first, last) = harness.content_area_rows();
     (first as u16..=last as u16)
-        .filter(|&y| {
-            harness
-                .get_cell_style(column, y)
-                .is_some_and(|s| s.bg == Some(want))
-        })
+        .filter(|&y| harness.bar_colour_at(column, y) == Some(want))
         .collect()
 }
 

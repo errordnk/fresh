@@ -71,7 +71,7 @@ fn explorer_body_rows(harness: &EditorTestHarness) -> Vec<u16> {
 }
 
 fn cell_bg(harness: &EditorTestHarness, col: u16, row: u16) -> Option<Color> {
-    harness.get_cell_style(col, row).and_then(|style| style.bg)
+    harness.bar_colour_at(col, row)
 }
 
 /// Body rows whose scrollbar cell carries a themed bar colour, track or thumb.
