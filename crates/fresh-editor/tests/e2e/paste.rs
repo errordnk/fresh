@@ -1082,3 +1082,125 @@ fn test_paste_column_mode_undo_is_atomic() {
     harness.render().unwrap();
     harness.assert_buffer_content("aaa\nbbb\nccc");
 }
+
+/// Pastes the block `clip` with the cursor at character column `col` of
+/// line `line` in a buffer holding `text`; returns the buffer and the
+/// cursor's (line, column) afterwards.
+fn block_paste(text: &str, line: usize, col: usize, clip: &str) -> (String, (usize, usize)) {
+    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    harness.editor_mut().paste_text(text.to_string());
+    harness
+        .send_key(KeyCode::Home, KeyModifiers::CONTROL)
+        .unwrap();
+    for _ in 0..line {
+        harness.send_key(KeyCode::Down, KeyModifiers::NONE).unwrap();
+    }
+    harness.send_key(KeyCode::Home, KeyModifiers::NONE).unwrap();
+    for _ in 0..col {
+        harness.send_key(KeyCode::Right, KeyModifiers::NONE).unwrap();
+    }
+    harness
+        .editor_mut()
+        .set_block_clipboard_for_test(clip.to_string());
+    harness.editor_mut().paste_for_test();
+    harness.render().unwrap();
+    assert_eq!(harness.editor().active_cursors().count(), 1);
+    let content = harness.get_buffer_content().unwrap();
+    let position = harness.cursor_position();
+    let before = &content[..position];
+    let cursor_line = before.matches('\n').count();
+    let cursor_col = before.rsplit('\n').next().unwrap_or("").chars().count();
+    (content, (cursor_line, cursor_col))
+}
+
+/// A block copied as a column pastes as a column (FAR style): each piece
+/// goes into its own line at the cursor's column, whatever is there.
+#[test]
+fn test_block_paste_as_a_column() {
+    let cases: &[(&str, &str, usize, usize, &str, &str)] = &[
+        ("start of line: text moves right", "abc\ndef\nghi", 0, 0, "XY\nZW", "XYabc\nZWdef\nghi"),
+        ("middle: text moves right as a column", "abcd\nefgh\nijkl", 0, 2, "12\n34\n56", "ab12cd\nef34gh\nij56kl"),
+        ("not the first line", "abcd\nefgh\nijkl", 1, 1, "1\n2", "abcd\ne1fgh\ni2jkl"),
+        ("end of line: appended, longer lines pushed", "ab\nabcd\nabcd", 0, 2, "12\n34\n56", "ab12\nab34cd\nab56cd"),
+        ("end of line: shorter lines padded", "abcd\nx\nabcd", 0, 4, "12\n34\n56", "abcd12\nx   34\nabcd56"),
+        ("below the end of the buffer: lines are added", "abc\ndef", 1, 1, "1\n2\n3", "abc\nd1ef\n 2\n 3"),
+        ("empty cursor line", "\nabcd\nabcd", 0, 0, "1\n2\n3", "1\n2abcd\n3abcd"),
+        ("ragged block: short pieces padded when text follows", "abcd\nabcd\nabcd", 0, 1, "123\n\n7", "a123bcd\na   bcd\na7  bcd"),
+        ("ragged block: no trailing spaces at the end of a line", "ab\nab\nab", 0, 2, "123\n\n7", "ab123\nab\nab7"),
+        ("wide characters count as one column", "日本ab\n日本cd", 0, 2, "1\n2", "日本1ab\n日本2cd"),
+    ];
+    for (name, text, line, col, clip, want) in cases {
+        let (content, cursor) = block_paste(text, *line, *col, clip);
+        assert_eq!(content, *want, "{name}");
+        assert_eq!(cursor, (*line, *col), "{name}: the cursor stays at the column's top left");
+    }
+}
+
+/// The whole column is one undo step.
+#[test]
+fn test_block_paste_undo_is_atomic() {
+    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    harness.editor_mut().paste_text("abcd\nefgh".to_string());
+    harness
+        .send_key(KeyCode::Home, KeyModifiers::CONTROL)
+        .unwrap();
+    harness.send_key(KeyCode::Right, KeyModifiers::NONE).unwrap();
+    harness
+        .editor_mut()
+        .set_block_clipboard_for_test("1\n2\n3".to_string());
+    harness.editor_mut().paste_for_test();
+    harness.assert_buffer_content("a1bcd\ne2fgh\n 3");
+    harness
+        .send_key(KeyCode::Char('z'), KeyModifiers::CONTROL)
+        .unwrap();
+    harness.assert_buffer_content("abcd\nefgh");
+}
+
+/// Ordinary multi-line text on the clipboard still pastes as lines.
+#[test]
+fn test_plain_multiline_paste_is_not_a_column() {
+    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    harness.editor_mut().paste_text("abcd\nefgh".to_string());
+    harness
+        .send_key(KeyCode::Home, KeyModifiers::CONTROL)
+        .unwrap();
+    harness.send_key(KeyCode::Right, KeyModifiers::NONE).unwrap();
+    harness
+        .editor_mut()
+        .set_clipboard_for_test("1\n2".to_string());
+    harness.editor_mut().paste_for_test();
+    harness.assert_buffer_content("a1\n2bcd\nefgh");
+}
+
+/// A real block copy (block selection, Copy) pasted with one cursor lands
+/// as a column.
+#[test]
+fn test_block_copy_then_paste_with_one_cursor() {
+    use fresh::input::keybindings::Action;
+    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    harness.editor_mut().paste_text("abcd\nefgh\nijkl".to_string());
+    // Select "bc" / "fg" as a block.
+    harness
+        .send_key(KeyCode::Home, KeyModifiers::CONTROL)
+        .unwrap();
+    harness.send_key(KeyCode::Right, KeyModifiers::NONE).unwrap();
+    harness
+        .editor_mut()
+        .dispatch_action_for_tests(Action::BlockSelectDown);
+    for _ in 0..2 {
+        harness
+            .editor_mut()
+            .dispatch_action_for_tests(Action::BlockSelectRight);
+    }
+    harness.editor_mut().copy_selection();
+    assert_eq!(harness.editor().clipboard_content_for_test(), "bc\nfg");
+    // One cursor at the start of the last line.
+    harness.send_key(KeyCode::Esc, KeyModifiers::NONE).unwrap();
+    harness
+        .send_key(KeyCode::End, KeyModifiers::CONTROL)
+        .unwrap();
+    harness.send_key(KeyCode::Home, KeyModifiers::NONE).unwrap();
+    assert_eq!(harness.editor().active_cursors().count(), 1);
+    harness.editor_mut().paste_for_test();
+    harness.assert_buffer_content("abcd\nefgh\nbcijkl\nfg");
+}

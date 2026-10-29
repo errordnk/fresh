@@ -110,6 +110,124 @@ pub struct PendingPaste {
 
 static NEXT_PASTE_REQUEST_ID: AtomicU64 = AtomicU64::new(1);
 
+/// A block (column) copy, kept so that pasting it back — while the
+/// clipboard still holds exactly its text — inserts it as a column, FAR
+/// style, instead of as whole lines: piece `i` goes into line `top + i` at
+/// the paste column. Text that follows the column on a line moves right
+/// as one column (short pieces are padded to the block's width there);
+/// a line too short to reach the column is padded with spaces up to it;
+/// lines past the end of the buffer are added. Columns are counted in
+/// characters, the unit block selection uses.
+#[derive(Debug, Clone)]
+pub struct BlockClip {
+    /// The copied text, LF line endings, no trailing newline.
+    text: String,
+    lines: Vec<String>,
+    /// The widest piece, in characters.
+    width: usize,
+}
+
+impl BlockClip {
+    /// The block a block copy of `text` put on the clipboard; `None` for a
+    /// single line, which pastes as plain text anyway.
+    fn new(text: &str) -> Option<Self> {
+        let text = normalize_clip(text);
+        let lines: Vec<String> = text.split('\n').map(String::from).collect();
+        if lines.len() < 2 {
+            return None;
+        }
+        let width = lines.iter().map(|line| line.chars().count()).max().unwrap_or(0);
+        Some(Self { text, lines, width })
+    }
+
+    /// Whether `clip` is still this block (terminals and the system
+    /// clipboard may change line endings or add a trailing newline).
+    fn is(&self, clip: &str) -> bool {
+        normalize_clip(clip) == self.text
+    }
+
+    /// The edits that insert the block with its top left at character
+    /// column `col` of line `line`, and the byte position of that top left
+    /// once they are applied. `None` when the buffer can't be addressed by
+    /// line (no line index) or a line isn't UTF-8 — the caller then pastes
+    /// the text as it is.
+    fn insert_events(
+        &self,
+        buffer: &crate::model::buffer::Buffer,
+        line: usize,
+        col: usize,
+        line_ending: &str,
+    ) -> Option<(Vec<Event>, usize)> {
+        let line_count = buffer.line_count()?;
+        let mut events = Vec::new();
+        let mut top_left = None;
+        // Lines past the end of the buffer: added in one insert at its end.
+        let mut appended = String::new();
+        for (i, piece) in self.lines.iter().enumerate() {
+            let y = line + i;
+            if y >= line_count {
+                if top_left.is_none() {
+                    top_left = Some(buffer.len() + line_ending.len() + col);
+                }
+                appended.push_str(line_ending);
+                appended.push_str(&" ".repeat(col));
+                appended.push_str(piece);
+                continue;
+            }
+            let start = buffer.line_start_offset(y)?;
+            let raw = String::from_utf8(buffer.get_line(y).unwrap_or_default()).ok()?;
+            let content = raw.trim_end_matches(['\n', '\r']);
+            let chars = content.chars().count();
+            let (offset, text, pad) = if chars < col {
+                // Too short to reach the column: spaces up to it.
+                let pad = col - chars;
+                (content.len(), format!("{}{piece}", " ".repeat(pad)), pad)
+            } else {
+                let offset = content.char_indices().nth(col).map_or(content.len(), |(byte, _)| byte);
+                let mut text = piece.clone();
+                // Text follows: it moves right as one column.
+                if col < chars {
+                    let short = self.width.saturating_sub(piece.chars().count());
+                    text.push_str(&" ".repeat(short));
+                }
+                (offset, text, 0)
+            };
+            if top_left.is_none() {
+                top_left = Some(start + offset + pad);
+            }
+            if !text.is_empty() {
+                events.push(Event::Insert {
+                    position: start + offset,
+                    text,
+                    cursor_id: CursorId::UNDO_SENTINEL,
+                });
+            }
+        }
+        if !appended.is_empty() {
+            events.push(Event::Insert {
+                position: buffer.len(),
+                text: appended,
+                cursor_id: CursorId::UNDO_SENTINEL,
+            });
+        }
+        Some((events, top_left?))
+    }
+}
+
+/// The line of `position` and its column there, in characters.
+fn char_line_column(buffer: &crate::model::buffer::Buffer, position: usize) -> (usize, usize) {
+    let line = buffer.get_line_number(position);
+    let start = buffer.line_start_offset(line).unwrap_or(position);
+    let raw = buffer.get_line(line).unwrap_or_default();
+    let before = position.saturating_sub(start).min(raw.len());
+    (line, String::from_utf8_lossy(&raw[..before]).chars().count())
+}
+
+/// Clipboard text in a comparable form: LF line endings, no trailing newline.
+fn normalize_clip(text: &str) -> String {
+    text.replace("\r\n", "\n").replace('\r', "\n").trim_end_matches('\n').to_string()
+}
+
 pub(crate) fn allocate_paste_request_id() -> u64 {
     NEXT_PASTE_REQUEST_ID.fetch_add(1, Ordering::Relaxed)
 }
@@ -144,6 +262,7 @@ impl Editor {
             // for the formatting-preserving variant).
             let text = strip_ansi_codes(&self.copy_block_selection_text());
             if !text.is_empty() {
+                self.block_clip = BlockClip::new(&text);
                 self.clipboard.copy(text);
                 self.active_window_mut()
                     .post_status_message(t!("clipboard.copied").to_string());
@@ -1042,6 +1161,34 @@ impl Editor {
                 .collect()
         };
 
+        let block = text
+            .as_deref()
+            .filter(|_| pending.cursor_count_at_dispatch == 1 && anchor_positions.len() == 1)
+            .and_then(|text| self.block_clip.as_ref().filter(|clip| clip.is(text)))
+            .cloned();
+        if let Some(clip) = block {
+            let state = self.buffers().get(&pending.buffer_id).expect("checked above");
+            let (line, col) = char_line_column(&state.buffer, anchor_positions[0].1);
+            let line_ending = pending.line_ending.insertion_str();
+            if let Some((events, _)) = clip.insert_events(&state.buffer, line, col, line_ending) {
+                // The cursor stays where the user has it, as for any
+                // background paste.
+                if let Err(e) =
+                    self.apply_events_to_buffer_as_bulk_edit(pending.buffer_id, events, "Paste".to_string())
+                {
+                    tracing::warn!("block paste insertion failed: {}", e);
+                } else {
+                    self.set_status_message(t!("clipboard.pasted").to_string());
+                }
+                if let Some(state) = self.buffers_mut().get_mut(&pending.buffer_id) {
+                    for anchor in pending.anchors {
+                        state.virtual_texts.remove(anchor.virtual_text_id);
+                    }
+                }
+                return;
+            }
+        }
+
         if let Some(raw_text) = text.filter(|s| !s.is_empty()) {
             // Normalise to LF (mirrors `paste_text`) so column-mode
             // line splitting is unambiguous, then convert back to the
@@ -1361,6 +1508,12 @@ impl Editor {
             return;
         }
 
+        if self.paste_block_at_cursor(&normalized) {
+            self.active_window_mut()
+                .post_status_message(t!("clipboard.pasted").to_string());
+            return;
+        }
+
         // Collect cursor info sorted in reverse order by position
         let vs_mode = self.active_state().buffer_settings.virtual_space;
         let mut cursor_data: Vec<_> = {
@@ -1473,6 +1626,62 @@ impl Editor {
 
         self.active_window_mut()
             .post_status_message(t!("clipboard.pasted").to_string());
+    }
+
+    /// Pastes `text` as a column at the cursor when it is the block the last
+    /// block copy produced and there is one cursor with nothing selected;
+    /// reports whether it did. The cursor stays at the column's top left.
+    fn paste_block_at_cursor(&mut self, text: &str) -> bool {
+        let Some(clip) = self.block_clip.as_ref().filter(|clip| clip.is(text)).cloned() else {
+            return false;
+        };
+        let cursors = self.active_cursors();
+        if cursors.count() != 1 {
+            return false;
+        }
+        let Some((cursor_id, cursor)) = cursors.iter().next().map(|(id, c)| (id, c.clone())) else {
+            return false;
+        };
+        if cursor.selection_range().is_some() || cursor.has_block_selection() {
+            return false;
+        }
+        let state = self.active_state();
+        let vs_mode = state.buffer_settings.virtual_space;
+        let buffer = &state.buffer;
+        let line_ending = buffer.line_ending().insertion_str();
+        let (line, col_in_line) = char_line_column(buffer, cursor.position);
+        // A cursor in virtual space pastes where it is shown.
+        let virtual_lines = crate::model::virtual_space::cursor_virtual_lines(vs_mode, buffer, &cursor);
+        let (line, col) = if virtual_lines > 0 {
+            (line + virtual_lines, cursor.sticky_column.unwrap_or(0))
+        } else {
+            let virtual_cols = crate::model::virtual_space::cursor_virtual_columns(vs_mode, buffer, &cursor);
+            (line, col_in_line + virtual_cols)
+        };
+        let Some((mut events, top_left)) = clip.insert_events(buffer, line, col, line_ending) else {
+            return false;
+        };
+        events.push(Event::MoveCursor {
+            cursor_id,
+            old_position: cursor.position,
+            new_position: top_left,
+            old_anchor: cursor.anchor,
+            new_anchor: None,
+            old_sticky_column: cursor.sticky_column,
+            new_sticky_column: None,
+        });
+        if let Some(applied) = self.apply_events_as_bulk_edit(events, "Paste".to_string()) {
+            self.active_event_log_mut().append(applied);
+        }
+        true
+    }
+
+    /// Put `text` on the (internal) clipboard as a block copy would, so a
+    /// paste of it inserts a column. For tests.
+    #[doc(hidden)]
+    pub fn set_block_clipboard_for_test(&mut self, text: String) {
+        self.block_clip = BlockClip::new(&text);
+        self.set_clipboard_for_test(text);
     }
 
     /// Set clipboard content for testing purposes

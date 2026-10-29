@@ -667,6 +667,7 @@ impl Editor {
             tokio_runtime: parts.tokio_runtime,
             async_bridge: Some(parts.async_bridge),
             paste_pending: std::collections::HashMap::new(),
+            block_clip: None,
             terminal_paste_deadline: None,
             paste_slow_path_just_armed: false,
             paste_render_suppress_until: None,

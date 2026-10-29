@@ -826,6 +826,9 @@ pub struct Editor {
     /// entries, each capturing the OS clipboard contents at the moment
     /// its own background thread starts.
     pub(super) paste_pending: std::collections::HashMap<u64, crate::app::clipboard::PendingPaste>,
+    /// The block the last block copy put on the clipboard: a paste of
+    /// exactly that text inserts it as a column (`clipboard::BlockClip`).
+    pub(super) block_clip: Option<crate::app::clipboard::BlockClip>,
     /// Set while a Ctrl+V waits for the terminal's answer to an OSC 52
     /// clipboard query; the answer arrives as a paste event.
     pub(super) terminal_paste_deadline: Option<std::time::Instant>,
