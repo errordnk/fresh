@@ -36,9 +36,13 @@ fn test_vertical_scrollbar_uses_theme_track_and_thumb_colors() {
     };
 
     let mut harness = EditorTestHarness::with_config(80, 24, config).unwrap();
-    let (expected_track, expected_thumb) = {
+    let (expected_track, expected_thumb, ground) = {
         let theme = harness.editor().theme();
-        (theme.scrollbar_track_fg, theme.scrollbar_thumb_fg)
+        (
+            theme.scrollbar_track_fg,
+            theme.scrollbar_thumb_fg,
+            theme.editor_bg,
+        )
     };
 
     harness.load_buffer_from_text(&long_content(200)).unwrap();
@@ -46,7 +50,8 @@ fn test_vertical_scrollbar_uses_theme_track_and_thumb_colors() {
 
     // The vertical bar is a right half block (`▐`) in the bar's colour, so
     // its colours are the cells' foregrounds, and the half it leaves is the
-    // row's own ground: the same background as the cell beside it.
+    // editor's ground on every row — the cursor row's highlight stops short
+    // of the bar.
     let (first, last) = harness.content_area_rows();
     let mut fgs = Vec::new();
     for row in first as u16..=last as u16 {
@@ -56,10 +61,10 @@ fn test_vertical_scrollbar_uses_theme_track_and_thumb_colors() {
             "row {row}: the bar is a half block"
         );
         let bar = harness.get_cell_style(79, row).unwrap();
-        let beside = harness.get_cell_style(78, row).unwrap();
         assert_eq!(
-            bar.bg, beside.bg,
-            "row {row}: the half the bar leaves is the row's ground, not the track"
+            bar.bg,
+            Some(ground),
+            "row {row}: the half the bar leaves is the editor's ground"
         );
         fgs.extend(bar.fg);
     }

@@ -124,7 +124,13 @@ fn render_implicit_line_into(
         } else {
             0
         };
-        let content_width = ctx.render_area.width.saturating_sub(gutter_w as u16) as usize;
+        // A column short of the edge, as on every cursor row (see
+        // `band_off_last_column`).
+        let content_width = ctx
+            .render_area
+            .width
+            .saturating_sub(gutter_w as u16)
+            .saturating_sub(1) as usize;
         if content_width > 0 {
             implicit_line_spans.push(Span::styled(" ".repeat(content_width), bg));
         }

@@ -221,7 +221,12 @@ pub fn fold_band(
         Band::Background => spec.in_flow(),
         Band::Overlay => spec.layers(),
     };
-    for item in items {
+    // The ground under a vertical bar's lane, row by row, as it was before
+    // the bar's own node filled the lane with the track colour: the half of
+    // each cell a half-width bar leaves shows it (see `Draw::Scrollbar`).
+    let mut lane_ground: Option<(Rect, Vec<Option<ratatui::style::Color>>)> = None;
+    let mut items = items.into_iter().peekable();
+    while let Some(item) = items.next() {
         if paints == Paints::HostsOnly && !matches!(item.draw, Draw::Host(_)) {
             continue;
         }
@@ -260,6 +265,19 @@ pub fn fold_band(
 
         match &item.draw {
             Draw::Fill => {
+                let lane_of_bar = matches!(
+                    items.peek().map(|next| &next.draw),
+                    Some(Draw::Scrollbar {
+                        axis: fresh_ui::Axis::Vertical,
+                        ..
+                    })
+                ) && items.peek().is_some_and(|next| next.rect == item.rect);
+                if lane_of_bar {
+                    let ground = (rect.y..rect.y.saturating_add(rect.height))
+                        .map(|y| contains(buf.area, rect.x, y).then(|| buf[(rect.x, y)].bg))
+                        .collect();
+                    lane_ground = Some((rect, ground));
+                }
                 fill(buf, rect, ' ', style, clip);
                 // **The class's box, drawn on the item that is the box.** A
                 // node that names a class emits this fill over its own
@@ -426,13 +444,29 @@ pub fn fold_band(
                         fresh_ui::Axis::Vertical => (rect.x, rect.y.saturating_add(i)),
                         fresh_ui::Axis::Horizontal => (rect.x.saturating_add(i), rect.y),
                     };
-                    // The half the bar leaves is the row's own ground: the
-                    // cell beside it, not whatever lay under the bar (its
-                    // lane is filled with the track colour, which would make
-                    // the bar as wide as before).
-                    if half && cell.bg.is_none() && x > buf.area.x && contains(buf.area, x, y) {
-                        let ground = buf[(x - 1, y)].bg;
-                        cell = cell.bg(ground);
+                    // The half the bar leaves is the pane's ground as it was
+                    // before the bar's node filled its lane with the track
+                    // colour — not the row beside it, whose current-line or
+                    // selection band must stop short of the bar.
+                    if half && cell.bg.is_none() {
+                        let ground = lane_ground
+                            .as_ref()
+                            .filter(|(lane, _)| lane.x == x)
+                            .and_then(|(lane, rows)| rows.get(usize::from(y.checked_sub(lane.y)?)))
+                            .copied()
+                            .flatten()
+                            // Nothing painted there before the lane (an editor
+                            // pane leaves its bar's column to the bar): the
+                            // editor's own ground.
+                            .filter(|c| *c != ratatui::style::Color::Reset)
+                            .or_else(|| {
+                                palette
+                                    .style(&ThemeKey(Some("editor.bg/editor.bg".into())))
+                                    .bg
+                            });
+                        if let Some(ground) = ground {
+                            cell = cell.bg(ground);
+                        }
                     }
                     put(buf, x, y, glyph, cell, clip);
                 }
