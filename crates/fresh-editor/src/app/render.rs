@@ -4781,6 +4781,13 @@ impl Editor {
 
         let cursor_color = self.theme.read().unwrap().cursor;
         let bg_color = self.theme.read().unwrap().editor_bg;
+        // The trail takes the cursor's own shape.
+        let trail = match self.config.editor.cursor_style {
+            crate::config::CursorStyle::BlinkingUnderline | crate::config::CursorStyle::SteadyUnderline => {
+                crate::view::animation::CursorTrail::Underline
+            }
+            _ => crate::view::animation::CursorTrail::Block,
+        };
         let id = self.active_window_mut().animations.start(
             // The bounding box is for runner bookkeeping only — CursorJump
             // paints at absolute screen coords and ignores `area`.
@@ -4796,6 +4803,7 @@ impl Editor {
                 duration: std::time::Duration::from_millis(140),
                 cursor_color,
                 bg_color,
+                trail,
             },
         );
         self.cursor_jump_animation = Some(id);

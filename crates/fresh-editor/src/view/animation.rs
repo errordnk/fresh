@@ -13,7 +13,7 @@
 
 use ratatui::buffer::{Buffer, Cell};
 use ratatui::layout::Rect;
-use ratatui::style::Color;
+use ratatui::style::{Color, Modifier};
 use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -30,6 +30,16 @@ pub enum Edge {
     Right,
 }
 
+/// What a `CursorJump` trail looks like: the shape of the cursor it
+/// follows, so the trail reads as that cursor moving.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CursorTrail {
+    /// Whole cells tinted — a block (or bar) cursor.
+    Block,
+    /// Cells underlined — an underline cursor.
+    Underline,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AnimationKind {
     SlideIn {
@@ -39,15 +49,16 @@ pub enum AnimationKind {
     },
     /// Animate the cursor moving from one screen cell to another. Paints a
     /// short trail of cells along the line from `from` to `to`: the head
-    /// cell uses `cursor_color` as background; trailing cells fade toward
-    /// `bg_color` (older positions are closer to bg). `from`/`to` are
-    /// absolute screen coordinates (col, row).
+    /// cell uses `cursor_color` (as background, or as an underline — see
+    /// `trail`); trailing cells fade toward `bg_color` (older positions are
+    /// closer to bg). `from`/`to` are absolute screen coordinates (col, row).
     CursorJump {
         from: (u16, u16),
         to: (u16, u16),
         duration: Duration,
         cursor_color: Color,
         bg_color: Color,
+        trail: CursorTrail,
     },
     /// Crossfade every cell's fg/bg color from what was on screen last
     /// frame to the freshly painted colors. Glyphs are untouched — only
@@ -266,9 +277,10 @@ impl FrameEffect for SlideIn {
 
 /// Cursor-jump effect. Paints a moving "head" cell along the straight line
 /// from `from` to `to` with a short fading trail. Both endpoints are in
-/// absolute screen coordinates (col, row). The head cell's background is
-/// set to `cursor_color`; trailing cells blend toward `bg_color` so that
-/// older positions appear progressively dimmer. The effect operates
+/// absolute screen coordinates (col, row). The head cell takes
+/// `cursor_color` — as its background for a block trail, as an underline
+/// beneath the cell's text for an underline one; trailing cells blend
+/// toward `bg_color` so that older positions appear progressively dimmer. The effect operates
 /// outside the `area` snapshot model used by `SlideIn`: it directly
 /// mutates cells along the interpolated path and never reads/snapshots an
 /// area, so the `area` passed to the runner is only used for dedupe and
@@ -279,6 +291,7 @@ pub struct CursorJump {
     duration: Duration,
     cursor_rgb: (u8, u8, u8),
     bg_rgb: (u8, u8, u8),
+    trail: CursorTrail,
 }
 
 impl CursorJump {
@@ -288,6 +301,7 @@ impl CursorJump {
         duration: Duration,
         cursor_color: Color,
         bg_color: Color,
+        trail: CursorTrail,
     ) -> Self {
         // Themes occasionally use Color::Reset / named colors for which we
         // have no RGB; fall back to white/black so the effect still
@@ -300,10 +314,11 @@ impl CursorJump {
             duration,
             cursor_rgb,
             bg_rgb,
+            trail,
         }
     }
 
-    fn paint_cell(buf: &mut Buffer, col: i32, row: i32, bg: Color) {
+    fn paint_cell(buf: &mut Buffer, col: i32, row: i32, color: Color, trail: CursorTrail) {
         if col < 0 || row < 0 {
             return;
         }
@@ -318,7 +333,15 @@ impl CursorJump {
             return;
         }
         if let Some(cell) = buf.cell_mut((c, r)) {
-            cell.set_bg(bg);
+            match trail {
+                CursorTrail::Block => {
+                    cell.set_bg(color);
+                }
+                CursorTrail::Underline => {
+                    cell.modifier.insert(Modifier::UNDERLINED);
+                    cell.underline_color = color;
+                }
+            }
         }
     }
 }
@@ -364,7 +387,7 @@ impl FrameEffect for CursorJump {
             let row = (fy + dy * sample).round() as i32;
             let alpha = 1.0 - back;
             let blended = blend_rgb(self.cursor_rgb, self.bg_rgb, alpha);
-            Self::paint_cell(buf, col, row, blended);
+            Self::paint_cell(buf, col, row, blended, self.trail);
         }
 
         EffectStatus::Running
@@ -1125,8 +1148,9 @@ impl AnimationRunner {
                     duration,
                     cursor_color,
                     bg_color,
+                    trail,
                 } => (
-                    Box::new(CursorJump::new(from, to, duration, cursor_color, bg_color)),
+                    Box::new(CursorJump::new(from, to, duration, cursor_color, bg_color, trail)),
                     Duration::ZERO,
                     duration,
                 ),
@@ -1667,6 +1691,7 @@ mod tests {
             Duration::from_millis(100),
             Color::Rgb(255, 200, 0),
             Color::Rgb(20, 20, 20),
+            CursorTrail::Block,
         );
         let status = effect.apply(&mut buf, area, Duration::from_millis(100));
         assert_eq!(status, EffectStatus::Done);
@@ -1695,7 +1720,7 @@ mod tests {
 
         let cursor = Color::Rgb(255, 100, 0);
         let bg = Color::Rgb(0, 0, 0);
-        let mut effect = CursorJump::new((0, 0), (10, 4), Duration::from_millis(100), cursor, bg);
+        let mut effect = CursorJump::new((0, 0), (10, 4), Duration::from_millis(100), cursor, bg, CursorTrail::Block);
         let status = effect.apply(&mut buf, area, Duration::from_millis(50));
         assert_eq!(status, EffectStatus::Running);
 
@@ -1726,7 +1751,7 @@ mod tests {
 
         let cursor = Color::Rgb(255, 0, 0);
         let bg = Color::Rgb(0, 0, 0);
-        let mut effect = CursorJump::new((0, 0), (18, 4), Duration::from_millis(100), cursor, bg);
+        let mut effect = CursorJump::new((0, 0), (18, 4), Duration::from_millis(100), cursor, bg, CursorTrail::Block);
         let _ = effect.apply(&mut buf, area, Duration::from_millis(70));
 
         let mut blended_count = 0;
@@ -1749,6 +1774,41 @@ mod tests {
     }
 
     #[test]
+    fn cursor_jump_underline_trail_underlines_and_leaves_the_cells_ground() {
+        // An underline cursor's trail is an underline beneath the text it
+        // passes: the head is underlined in the full cursor color, and no
+        // cell's background or glyph is touched.
+        let area = Rect::new(0, 0, 12, 5);
+        let mut buf = make_buf(12, 5);
+        paint(&mut buf, area, '.', Color::White);
+        let before = buf.clone();
+
+        let cursor = Color::Rgb(144, 238, 144);
+        let bg = Color::Rgb(0, 0, 0);
+        let mut effect =
+            CursorJump::new((0, 0), (10, 4), Duration::from_millis(100), cursor, bg, CursorTrail::Underline);
+        let status = effect.apply(&mut buf, area, Duration::from_millis(50));
+        assert_eq!(status, EffectStatus::Running);
+
+        let mut head = false;
+        let mut underlined = 0;
+        for dy in 0..area.height {
+            for dx in 0..area.width {
+                let cell = buf.cell((dx, dy)).unwrap();
+                let was = before.cell((dx, dy)).unwrap();
+                assert_eq!(cell.bg, was.bg, "the trail must not tint ({dx}, {dy})");
+                assert_eq!(cell.symbol(), was.symbol(), "the trail must not change the glyph at ({dx}, {dy})");
+                if cell.modifier.contains(Modifier::UNDERLINED) {
+                    underlined += 1;
+                    head |= cell.underline_color == cursor;
+                }
+            }
+        }
+        assert!(underlined >= 2, "a trail of underlined cells, got {underlined}");
+        assert!(head, "the head is underlined in the full cursor color");
+    }
+
+    #[test]
     fn cursor_jump_through_runner() {
         let mut runner = AnimationRunner::new();
         let area = Rect::new(0, 0, 10, 5);
@@ -1760,6 +1820,7 @@ mod tests {
                 duration: Duration::from_millis(50),
                 cursor_color: Color::Rgb(255, 255, 0),
                 bg_color: Color::Rgb(0, 0, 0),
+                trail: CursorTrail::Block,
             },
         );
         assert!(runner.is_active());
