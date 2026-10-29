@@ -665,57 +665,6 @@ fn test_current_line_highlight_spans_full_width() {
     );
 }
 
-/// The current-line band stops a column short of the scrollbar, as it stops
-/// short of the line numbers: the text area's last column keeps the editor's
-/// ground, whether it shows a character of the line or the fill past it.
-#[test]
-fn test_current_line_highlight_stops_before_the_last_column() {
-    let mut config = crate::common::harness::test_config();
-    config.editor.line_wrap = false;
-    let mut harness = EditorTestHarness::with_config(80, 24, config).unwrap();
-    // Two lines: one reaching the text area's last column, one short.
-    let text_cols = 80 - 1 - harness_gutter(&mut harness);
-    harness
-        .load_buffer_from_text(&format!("{}\nab\n", "x".repeat(text_cols)))
-        .unwrap();
-    harness.render().unwrap();
-    let theme = harness.editor().theme().clone();
-    let (band, ground) = (theme.current_line_bg, theme.editor_bg);
-    let top = harness.content_start_row() as u16;
-    let last_col = 80 - 2; // the column before the scrollbar's
-
-    for (row, what) in [(top, "the line's last character"), (top + 1, "the fill")] {
-        if row == top + 1 {
-            harness
-                .send_key(
-                    crossterm::event::KeyCode::Down,
-                    crossterm::event::KeyModifiers::NONE,
-                )
-                .unwrap();
-            harness.render().unwrap();
-        }
-        let before = harness.get_cell_style(last_col - 1, row).unwrap();
-        let at = harness.get_cell_style(last_col, row).unwrap();
-        assert_eq!(
-            before.bg,
-            Some(band),
-            "{what}: the band runs up to the edge"
-        );
-        assert_eq!(
-            at.bg,
-            Some(ground),
-            "{what}: the last column keeps the editor's ground"
-        );
-    }
-}
-
-/// The gutter width once a buffer is open (numbers and their space).
-fn harness_gutter(harness: &mut EditorTestHarness) -> usize {
-    harness.load_buffer_from_text("x\n").unwrap();
-    harness.render().unwrap();
-    harness.gutter_width()
-}
-
 /// Test that disabling highlight_current_line removes the background color.
 #[test]
 fn test_current_line_highlight_disabled() {

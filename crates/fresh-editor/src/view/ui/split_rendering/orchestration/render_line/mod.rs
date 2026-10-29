@@ -1112,11 +1112,6 @@ pub(crate) fn render_view_lines(input: LineRenderInput<'_>) -> LineRenderOutput 
             &state.buffer,
         ));
 
-        let line_spans = if cursor_line_active {
-            band_off_last_column(line_spans, render_area.width as usize, theme)
-        } else {
-            line_spans
-        };
         lines.push(Line::from(line_spans));
 
         // Detect the trailing empty ViewLine produced by ViewLineIterator
@@ -1510,51 +1505,6 @@ fn locate_cursor_in_view_map(
         }
     }
     last_visible_x
-}
-
-/// The current-line band stops a column short of the pane's right edge, the
-/// way it stops short of the line numbers: the last column of the text area,
-/// the one beside the scrollbar, keeps the editor's own ground under whatever
-/// it shows.
-fn band_off_last_column(
-    spans: Vec<Span<'static>>,
-    width: usize,
-    theme: &crate::view::theme::Theme,
-) -> Vec<Span<'static>> {
-    use unicode_width::UnicodeWidthStr;
-    let Some(last) = width.checked_sub(1) else {
-        return spans;
-    };
-    let band = theme.current_line_bg;
-    let mut out = Vec::with_capacity(spans.len() + 1);
-    let mut col = 0usize;
-    for span in spans {
-        let w = span.content.width();
-        if col <= last && last < col + w && span.style.bg == Some(band) {
-            // Split off the span's cells from the last column on (a wide
-            // glyph straddling it takes the whole glyph with it).
-            let mut head = String::new();
-            let mut tail = String::new();
-            let mut c = col;
-            for ch in span.content.chars() {
-                let cw = unicode_width::UnicodeWidthChar::width(ch).unwrap_or(0);
-                if c + cw > last && cw > 0 || !tail.is_empty() {
-                    tail.push(ch);
-                } else {
-                    head.push(ch);
-                }
-                c += cw;
-            }
-            if !head.is_empty() {
-                out.push(Span::styled(head, span.style));
-            }
-            out.push(Span::styled(tail, span.style.theme_bg(theme, "editor.bg")));
-        } else {
-            out.push(span);
-        }
-        col += w;
-    }
-    out
 }
 
 /// Right-align an inline diagnostic message after the line's content.
