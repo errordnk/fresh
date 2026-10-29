@@ -116,3 +116,35 @@ fn test_horizontal_scrollbar_uses_theme_track_color() {
         "Horizontal scrollbar track should use theme.scrollbar_track_fg ({expected_track:?}); saw bgs {bgs:?}"
     );
 }
+
+/// A file whose lines all fit the window has nothing to scroll: no vertical
+/// bar is drawn, and its column shows the editor's ground. A longer one does
+/// get its bar.
+#[test]
+fn test_vertical_scrollbar_hidden_while_the_file_fits() {
+    let mut harness = EditorTestHarness::new(80, 24).unwrap();
+    let ground = harness.editor().theme().editor_bg;
+    harness.load_buffer_from_text(&long_content(5)).unwrap();
+    harness.render().unwrap();
+
+    let (first, last) = harness.content_area_rows();
+    for row in first as u16..=last as u16 {
+        assert!(
+            !harness.is_scrollbar_thumb_at(79, row) && !harness.is_scrollbar_track_at(79, row),
+            "row {row}: no bar on a file that fits"
+        );
+        assert_eq!(harness.get_cell(79, row).as_deref(), Some(" "));
+        assert_eq!(
+            harness.get_cell_style(79, row).and_then(|s| s.bg),
+            Some(ground),
+            "row {row}: the bar's column shows the editor's ground"
+        );
+    }
+
+    harness.load_buffer_from_text(&long_content(200)).unwrap();
+    harness.render().unwrap();
+    assert!(
+        (first as u16..=last as u16).any(|row| harness.is_scrollbar_thumb_at(79, row)),
+        "a file longer than the window gets its bar"
+    );
+}

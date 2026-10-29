@@ -299,11 +299,11 @@ fn test_scrollbar_with_small_buffer() {
 
     harness.render().unwrap();
 
-    // Scrollbar should still be rendered even with small content
-    // Check for scrollbar at rightmost column (79 for 80-width terminal)
+    // Content that fits the window has nothing to scroll: no bar is drawn
+    // in the rightmost column (79 for an 80-wide terminal).
     assert!(
-        harness.has_scrollbar_at_column(79),
-        "Scrollbar should be visible even with small buffers"
+        !harness.has_scrollbar_at_column(79),
+        "a buffer that fits the window should show no scrollbar"
     );
 }
 

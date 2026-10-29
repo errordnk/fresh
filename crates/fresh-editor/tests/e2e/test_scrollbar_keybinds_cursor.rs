@@ -1,10 +1,10 @@
 use crate::common::harness::EditorTestHarness;
 use crossterm::event::{KeyCode, KeyModifiers};
 
-/// Test 1: Scrollbar handle fills entire height when buffer fits in viewport
-/// This makes it obvious to the user that there's no scrolling possible
+/// Test 1: No scrollbar is drawn when the buffer fits in the viewport, which
+/// makes it obvious to the user that there's no scrolling possible
 #[test]
-fn test_scrollbar_fills_height_when_no_scrolling_needed() {
+fn test_scrollbar_hidden_when_no_scrolling_needed() {
     // Create a small buffer that fits entirely within the viewport
     let mut harness = EditorTestHarness::new(80, 24).unwrap();
 
@@ -16,19 +16,16 @@ fn test_scrollbar_fills_height_when_no_scrolling_needed() {
     // Get content area bounds from harness (accounts for menu bar, tab bar, status bar)
     let (content_first_row, content_last_row) = harness.content_area_rows();
 
-    // The scrollbar is in the rightmost column (column 79 for 80-width terminal)
-    // For a buffer that fits entirely in the viewport, the thumb should fill
-    // the entire scrollbar height
+    // The scrollbar is in the rightmost column (column 79 for 80-width
+    // terminal). For a buffer that fits entirely in the viewport, no row of
+    // it shows a thumb or a track.
     let scrollbar_col = 79;
 
-    // Check that every row in the scrollbar column shows the thumb (detected by background color).
-    // Scrollbars are rendered with background fills, not characters.
     for row in content_first_row..=content_last_row {
         assert!(
-            harness.is_scrollbar_thumb_at(scrollbar_col, row as u16),
-            "Row {}: Expected scrollbar thumb (background color). \
-             When buffer fits in viewport, entire scrollbar should be filled with thumb. \
-             Got style: {:?}",
+            !harness.is_scrollbar_thumb_at(scrollbar_col, row as u16)
+                && !harness.is_scrollbar_track_at(scrollbar_col, row as u16),
+            "Row {}: no scrollbar when the buffer fits the viewport. Got style: {:?}",
             row,
             harness.get_cell_style(scrollbar_col, row as u16)
         );

@@ -388,6 +388,14 @@ pub fn fold_band(
                 };
                 let (top, len) =
                     Draw::scrollbar_thumb(*offset, *content, u32::from(*window), track);
+                // Content shorter than the window, unscrolled, has nothing to
+                // scroll: a vertical bar is not drawn, and its lane shows the
+                // ground under it. Strictly shorter: content that exactly
+                // fills the window keeps its bar, since a wrapped row count
+                // at that boundary is not exact enough to hide on.
+                let fits = matches!(axis, fresh_ui::Axis::Vertical)
+                    && *offset == 0
+                    && *content < u32::from(*window);
                 for i in 0..track {
                     let colour = if i >= top && i < top + len {
                         style.fg
@@ -403,8 +411,8 @@ pub fn fold_band(
                     // a blank, so the glyph never becomes text.
                     let half = matches!(axis, fresh_ui::Axis::Vertical)
                         && colour.is_some_and(|c| c != ratatui::style::Color::Reset);
-                    let mut glyph = if half { '▐' } else { ' ' };
-                    if let Some(c) = colour {
+                    let mut glyph = if half && !fits { '▐' } else { ' ' };
+                    if let Some(c) = colour.filter(|_| !(half && fits)) {
                         if half {
                             cell = cell.fg(c);
                         } else {
@@ -421,8 +429,10 @@ pub fn fold_band(
                     // A mark shares the cell with the bar: a half block in
                     // the mark's colour over the bar's own ground shows both
                     // the mark and the scroll position; a full mark takes
-                    // the cell (a track cell lit under the pointer).
-                    if let Some(m) = marks.iter().find(|m| m.at == i) {
+                    // the cell (a track cell lit under the pointer). A
+                    // half-width bar carries no marks: it shows the thumb
+                    // and the track and nothing else.
+                    if let Some(m) = marks.iter().find(|m| m.at == i).filter(|_| !half) {
                         let ms = palette.style(&m.theme);
                         if m.full {
                             if let Some(c) = ms.bg.or(ms.fg) {
