@@ -118,13 +118,26 @@ impl Session {
 
     /// Opens another file in place of this one (the quick view following the
     /// cursor of a panel); the read-only state carries over.
+    ///
+    /// The file before is closed, its unsaved changes dropped (a viewer has
+    /// none): a session is one file, not a tab per file looked at, and a buffer
+    /// out of sight would keep its timers armed and the host redrawing.
     pub fn open_other(&mut self, path: &Path) -> Result<()> {
         let read_only = self.read_only();
         let path = std::path::absolute(path)?;
-        self.editor.open_file(&path)?;
+        let before = self.editor.active_buffer();
+        let now = self.editor.open_file(&path)?;
+        if now != before {
+            self.editor.force_close_buffer(before)?;
+        }
         self.path = path;
         self.set_read_only(read_only);
         Ok(())
+    }
+
+    /// How many buffers the session holds (one, the file shown).
+    pub fn buffer_count(&self) -> usize {
+        self.editor.active_window().buffers.len()
     }
 
     /// Read-only (a viewer) or editable (F3 → F4 in the same session).
@@ -304,6 +317,23 @@ mod tests {
         session.set_read_only(true);
         session.open_other(&other).unwrap();
         assert!(session.read_only());
+        assert_eq!(session.path(), std::path::absolute(&other).unwrap());
+        assert_eq!(
+            session.buffer_count(),
+            1,
+            "the file before is closed, not kept as a tab"
+        );
+        // and again over many files: still one, and nothing left asking for frames
+        for round in 0..5 {
+            let next = temp.path().join(format!("more{round}.txt"));
+            std::fs::write(&next, format!("file {round}\n")).unwrap();
+            session.open_other(&next).unwrap();
+        }
+        assert_eq!(session.buffer_count(), 1);
+        // the same file again is not closed under itself
+        session.open_other(&other).unwrap();
+        session.open_other(&other).unwrap();
+        assert_eq!(session.buffer_count(), 1);
         assert_eq!(session.path(), std::path::absolute(&other).unwrap());
         let mut terminal = Terminal::new(TestBackend::new(40, 8)).unwrap();
         let rows = screen(&mut session, &mut terminal);
