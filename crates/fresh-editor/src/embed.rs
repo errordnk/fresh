@@ -34,6 +34,9 @@ pub struct EmbedOptions {
     /// Applied to the config after the embedding defaults: the host's own
     /// settings (tab size, keymap, theme...).
     pub configure: Option<fn(&mut Config)>,
+    /// A theme as JSON (a partial one may `extends` a builtin), applied to the
+    /// session without touching any file: the host's colors.
+    pub theme_json: Option<String>,
     /// Where the config, data and caches are; the user's (`~/.config/fresh`,
     /// `~/.local/share/fresh`...) when `None`. Tests pass a temporary one.
     pub dirs: Option<DirectoryContext>,
@@ -103,6 +106,10 @@ impl Session {
             true,  // a file launch: this file, no session
         )?;
         editor.set_workspace_persistence(false);
+        if let Some(json) = &options.theme_json {
+            let theme = crate::view::theme::Theme::from_json(json).map_err(|e| anyhow::anyhow!(e))?;
+            *editor.theme.write().unwrap() = theme;
+        }
         editor.open_file(&path)?;
         let mut session = Self { editor, path };
         if options.read_only {
@@ -341,5 +348,25 @@ mod tests {
             rows.iter().any(|r| r.contains("the next file")),
             "{rows:#?}"
         );
+    }
+
+    #[test]
+    fn the_host_theme_colors_the_text_area() {
+        let temp = tempfile::tempdir().unwrap();
+        let file = temp.path().join("note.txt");
+        std::fs::write(&file, "hello
+").unwrap();
+        let mut opts = options(&temp.path().join("dirs"), true);
+        opts.theme_json = Some(
+            r#"{"name":"host","extends":"builtin://dark","editor":{"bg":[0,0,128],"after_eof_bg":[0,0,128],"fg":[0,255,255]}}"#.into(),
+        );
+        let mut session = Session::open(&file, 20, 4, opts).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(20, 4)).unwrap();
+        let _ = screen(&mut session, &mut terminal);
+        let buffer = terminal.backend().buffer();
+        assert_eq!(buffer[(15, 3)].bg, ratatui::style::Color::Rgb(0, 0, 128));
+        let first = (0..20).find(|x| buffer[(*x, 0)].symbol() == "h").unwrap();
+        assert_eq!(buffer[(first, 0)].fg, ratatui::style::Color::Rgb(0, 255, 255));
+        assert_eq!(buffer[(10, 3)].bg, ratatui::style::Color::Rgb(0, 0, 128));
     }
 }
