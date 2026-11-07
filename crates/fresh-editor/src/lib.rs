@@ -31,6 +31,9 @@ pub use fresh_editor_core::primitives;
 // Runtime-only modules (heavy dependencies, platform-specific)
 #[cfg(feature = "runtime")]
 pub mod app;
+/// Fresh as an editor inside another program's screen (farsh): see [`embed::Session`].
+#[cfg(feature = "runtime")]
+pub mod embed;
 #[cfg(feature = "runtime")]
 pub mod input;
 #[cfg(feature = "runtime")]
